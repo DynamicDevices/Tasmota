@@ -483,9 +483,12 @@ void MqttConnected(void)
     Mqtt.retry_counter = 0;
     Mqtt.connect_count++;
 
+#if !defined(USE_MQTT_WATSON_IOT)
+    // Disable LWT when using Watson as it doesn't like it
     GetTopic_P(stopic, TELE, mqtt_topic, S_LWT);
     Response_P(PSTR(D_ONLINE));
     MqttPublish(stopic, true);
+#endif
 
     if (!Settings.flag4.only_json_message) {  // SetOption90 - Disable non-json MQTT response
       // Satisfy iobroker (#299)
@@ -493,6 +496,8 @@ void MqttConnected(void)
       MqttPublishPrefixTopic_P(CMND, S_RSLT_POWER);
     }
 
+#if !defined(USE_MQTT_WATSON_IOT)
+    // Subscriptions for Watson IoT not working yet
     GetTopic_P(stopic, CMND, mqtt_topic, PSTR("#"));
     MqttSubscribe(stopic);
     if (strstr_P(SettingsText(SET_MQTT_FULLTOPIC), MQTT_TOKEN_TOPIC) != nullptr) {
@@ -507,6 +512,7 @@ void MqttConnected(void)
       GetFallbackTopic_P(stopic, PSTR("#"));
       MqttSubscribe(stopic);
     }
+#endif
 
     XdrvCall(FUNC_MQTT_SUBSCRIBE);
   }
@@ -638,7 +644,12 @@ void MqttReconnect(void)
   AddLog_P2(LOG_LEVEL_INFO, PSTR(D_LOG_MQTT "AWS IoT endpoint: %s"), SettingsText(SET_MQTT_HOST));
   if (MqttClient.connect(mqtt_client, nullptr, nullptr, stopic, 1, false, mqtt_data, MQTT_CLEAN_SESSION)) {
 #else
+#if defined(USE_IBM_WATSON_IOT)
   if (MqttClient.connect(mqtt_client, mqtt_user, mqtt_pwd, stopic, 1, true, mqtt_data, MQTT_CLEAN_SESSION)) {
+#else
+   // NO WILL ON CONNECT AS IT BUGGERS UP IBM IOT
+  if (MqttClient.connect(mqtt_client, mqtt_user, mqtt_pwd, 0,0,0,0, MQTT_CLEAN_SESSION)) {
+#endif
 #endif
 #ifdef USE_MQTT_TLS
     AddLog_P2(LOG_LEVEL_INFO, PSTR(D_LOG_MQTT "TLS connected in %d ms, max ThunkStack used %d"),
