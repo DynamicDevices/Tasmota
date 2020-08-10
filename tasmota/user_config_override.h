@@ -109,8 +109,9 @@
 #define MQTT_HOST         "jit4q3.messaging.internetofthings.ibmcloud.com"
 #define MQTT_PORT         8883
 #define MQTT_USER         "use-token-auth"
-#define MQTT_PASS         "@F-cZ6IzSLi&H42HYb"
-#define MQTT_CLIENT_ID    "d:jit4q3:SmartPlug:255"
+//#define MQTT_PASS         "@F-cZ6IzSLi&H42HYb"
+#define MQTT_PASS         "AUTH_TOKEN_HERE"
+#define MQTT_CLIENT_ID    "d:jit4q3:SmartPlug:ID_HERE"
 #endif
 
 #if 0
