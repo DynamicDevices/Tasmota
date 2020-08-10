@@ -161,7 +161,12 @@ void MqttInit(void)
 #ifdef USE_MQTT_AWS_IOT
   tlsClient->setTrustAnchor(&AmazonRootCA1_TA);
 #else
+#ifdef USE_MQTT_WATSON_IOT
+  // FixMe
+  tlsClient->setTrustAnchor(&TAs[0]);
+#else
   tlsClient->setTrustAnchor(&LetsEncryptX3CrossSigned_TA);
+#endif
 #endif // USE_MQTT_AWS_IOT
 #endif // USE_MQTT_TLS_CA_CERT
 
