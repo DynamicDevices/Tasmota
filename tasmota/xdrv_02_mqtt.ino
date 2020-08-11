@@ -240,6 +240,13 @@ void MqttDataHandler(char* mqtt_topic, uint8_t* mqtt_data, unsigned int data_len
   AddLog_P2(LOG_LEVEL_DEBUG_MORE, PSTR(D_LOG_MQTT D_RECEIVED_TOPIC " \"%s\", " D_DATA_SIZE " %d, " D_DATA " \"%s\""), topic, data_len, data);
 //  if (LOG_LEVEL_DEBUG_MORE <= seriallog_level) { Serial.println(data); }
 
+#ifdef USE_MQTT_WATSON_IOT
+    // Strip off ending fmt/text
+    String topicN = String(topic);
+    topicN.replace(F("/fmt/text"), "");
+    strlcpy(topic, topicN.c_str(), sizeof(topic));
+#endif
+
   // MQTT pre-processing
   XdrvMailbox.index = strlen(topic);
   XdrvMailbox.data_len = data_len;
@@ -502,7 +509,6 @@ void MqttConnected(void)
     }
 
 #if !defined(USE_MQTT_WATSON_IOT)
-    // Subscriptions for Watson IoT not working yet
     GetTopic_P(stopic, CMND, mqtt_topic, PSTR("#"));
     MqttSubscribe(stopic);
     if (strstr_P(SettingsText(SET_MQTT_FULLTOPIC), MQTT_TOKEN_TOPIC) != nullptr) {
@@ -517,6 +523,8 @@ void MqttConnected(void)
       GetFallbackTopic_P(stopic, PSTR("#"));
       MqttSubscribe(stopic);
     }
+#else
+    MqttSubscribe("iot-2/cmd/+/fmt/text");
 #endif
 
     XdrvCall(FUNC_MQTT_SUBSCRIBE);
