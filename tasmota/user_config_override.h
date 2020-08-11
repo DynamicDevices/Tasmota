@@ -40,6 +40,9 @@
  *   - All parameters can be persistent changed online using commands via MQTT, WebConsole or Serial.
 \*****************************************************************************************************/
 
+#undef PROJECT
+#define PROJECT                "imissu"         // PROJECT is used as the default topic delimiter
+
 // We are currently using a custom template fo rthe Avatar UK 10A Smart Switch
 // so make sure that this is the default when we first power up.
 #undef MODULE
@@ -134,13 +137,32 @@
 
 #define MQTT_FULLTOPIC    "iot-2/evt/%prefix%|%topic%"
 
+#undef MQTT_GRPTOPIC
+#define MQTT_GRPTOPIC          "imissus"        // [GroupTopic] MQTT Group topic
+
 // Heartbeat currently set to 60s. Could easily take this up to 5 mins or more
 #undef TELE_PERIOD
 #define TELE_PERIOD            60               // [TelePeriod] Telemetry (0 = disable, 10 - 3600 seconds)
 
+// Web / Alexa friendly nam
+#undef FRIENDLY_NAME
+#define FRIENDLY_NAME          "IMissU"         // [FriendlyName] Friendlyname up to 32 characters used by webpages and Alexa
+
 // Set the web admin password here
 #undef WEB_PASSWORD
 #define WEB_PASSWORD           "decafbad00"                // [WebPassword] Web server Admin mode Password for WEB_USERNAME (empty string = Disable)
+
+// Enable m-DNS
+#undef MDNS_ENABLED
+#define MDNS_ENABLED           true             // [SetOption55] Use mDNS (false = Disable, true = Enable)
+
+// -- Time - Up to three NTP servers in your region
+#undef NTP_SERVER1
+#undef NTP_SERVER2
+#undef NTP_SERVER3
+#define NTP_SERVER1            "pool.ntp.org"       // [NtpServer1] Select first NTP server by name or IP address (129.250.35.250)
+#define NTP_SERVER2            "uk.pool.ntp.org"    // [NtpServer2] Select second NTP server by name or IP address (5.39.184.5)
+#define NTP_SERVER3            "0.uk.pool.ntp.org"  // [NtpServer3] Select third NTP server by name or IP address (93.94.224.67)
 
 // GPS coords for London for rough sunrise/sunset timings
 #undef LATITUDE
@@ -162,5 +184,8 @@
 #define TIME_STD_HOUR          2   
 #undef TIME_STD_OFFSET
 #define TIME_STD_OFFSET        +0               // Offset from UTC in minutes (-780 to +780)
+
+#undef USE_PING
+#define USE_PING                                 // Enable Ping command (+2k code)
 
 #endif  // _USER_CONFIG_OVERRIDE_H_
