@@ -62,8 +62,8 @@
 // Set default AP and password here for ease of debugging
 #undef  STA_SSID1
 #undef  STA_PASS1
-#define STA_SSID1         "VM0184406-2G"
-#define STA_PASS1         "2sqmsfFGqpry"
+#define STA_SSID1         "DoESLiverpool"
+#define STA_PASS1         "decafbad00"
 
 // Set the minimal OTAU firmware image. This is because with our normal image it is too
 // big in the device to do an update. So the process is do an OTA online from the mininmal
