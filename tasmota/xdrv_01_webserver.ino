@@ -1994,9 +1994,9 @@ void HandleWifiConfiguration(void) {
 
   if (WifiIsInManagerMode()) {
 #ifndef FIRMWARE_MINIMAL
-    WSContentTextCenterStart(WebColor(COL_TEXT_WARNING));
-    WSContentSend_P(PSTR("<h3>"));
-
+// AJL 23/01/21 - Disable this as AndySC says it causes problems
+//    WSContentSpaceButton(BUTTON_RESTORE);
+//    WSContentButton(BUTTON_RESET_CONFIGURATION);
     if (WIFI_TESTING == Web.wifiTest) {
       WSContentSend_P(PSTR(D_TRYING_TO_CONNECT "<br>%s</h3></div>"), SettingsText(SET_STASSID1));
     } else if (WIFI_TEST_FINISHED_BAD == Web.wifiTest) {
