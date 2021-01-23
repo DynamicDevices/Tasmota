@@ -2113,8 +2113,9 @@ void HandleWifiConfiguration(void)
 
   if (WifiIsInManagerMode()) {
 #ifndef FIRMWARE_MINIMAL
-    WSContentSpaceButton(BUTTON_RESTORE);
-    WSContentButton(BUTTON_RESET_CONFIGURATION);
+// AJL 23/01/21 - Disable this as AndySC says it causes problems
+//    WSContentSpaceButton(BUTTON_RESTORE);
+//    WSContentButton(BUTTON_RESET_CONFIGURATION);
 #endif  // FIRMWARE_MINIMAL
     WSContentSpaceButton(BUTTON_RESTART);
   } else {
