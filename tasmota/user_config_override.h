@@ -41,7 +41,7 @@
 \*****************************************************************************************************/
 
 #undef PROJECT
-#define PROJECT                "imissu"         // PROJECT is used as the default topic delimiter
+#define PROJECT                "kettle"         // PROJECT is used as the default topic delimiter
 
 // We are currently using a custom template fo rthe Avatar UK 10A Smart Switch
 // so make sure that this is the default when we first power up.
@@ -138,7 +138,7 @@
 #define MQTT_FULLTOPIC    "iot-2/evt/%prefix%|%topic%"
 
 #undef MQTT_GRPTOPIC
-#define MQTT_GRPTOPIC          "imissus"        // [GroupTopic] MQTT Group topic
+#define MQTT_GRPTOPIC          "kettles"        // [GroupTopic] MQTT Group topic
 
 // Heartbeat currently set to 60s. Could easily take this up to 5 mins or more
 #undef TELE_PERIOD
@@ -146,7 +146,7 @@
 
 // Web / Alexa friendly nam
 #undef FRIENDLY_NAME
-#define FRIENDLY_NAME          "IMissU"         // [FriendlyName] Friendlyname up to 32 characters used by webpages and Alexa
+#define FRIENDLY_NAME          "Kettle"         // [FriendlyName] Friendlyname up to 32 characters used by webpages and Alexa
 
 // Set the web admin password here
 #undef WEB_PASSWORD
