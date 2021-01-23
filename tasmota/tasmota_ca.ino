@@ -337,29 +337,7 @@ static const unsigned char TA2_RSA_E[] PROGMEM = {
 	0x01, 0x00, 0x01
 };
 
-static const br_x509_trust_anchor TAs[3] = {
-	{
-		{ (unsigned char *)TA0_DN, sizeof TA0_DN },
-		0,
-		{
-			BR_KEYTYPE_RSA,
-			{ .rsa = {
-				(unsigned char *)TA0_RSA_N, sizeof TA0_RSA_N,
-				(unsigned char *)TA0_RSA_E, sizeof TA0_RSA_E,
-			} }
-		}
-	},
-	{
-		{ (unsigned char *)TA1_DN, sizeof TA1_DN },
-		BR_X509_TA_CA,
-		{
-			BR_KEYTYPE_RSA,
-			{ .rsa = {
-				(unsigned char *)TA1_RSA_N, sizeof TA1_RSA_N,
-				(unsigned char *)TA1_RSA_E, sizeof TA1_RSA_E,
-			} }
-		}
-	},
+static const br_x509_trust_anchor TAs[1] = {
 	{
 		{ (unsigned char *)TA2_DN, sizeof TA2_DN },
 		BR_X509_TA_CA,
@@ -373,6 +351,6 @@ static const br_x509_trust_anchor TAs[3] = {
 	}
 };
 
-#define TAs_NUM   3
+#define TAs_NUM   1
 
 #endif // defined(USE_TLS) && defined (USE_MQTT_TLS_CA_CERT) && defined(USE_MQTT_WATSON_IOT)
