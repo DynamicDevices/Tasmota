@@ -188,4 +188,9 @@
 #undef USE_PING
 #define USE_PING                                 // Enable Ping command (+2k code)
 
+// APP
+
+#undef APP_POWERON_STATE
+#define APP_POWERON_STATE      POWER_ALL_ALWAYS_ON   // [PowerOnState] Always on (disable button)
+
 #endif  // _USER_CONFIG_OVERRIDE_H_
