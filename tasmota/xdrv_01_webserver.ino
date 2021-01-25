@@ -1282,6 +1282,7 @@ void HandleRoot(void)
 
   if (WifiIsInManagerMode()) {
 #ifndef FIRMWARE_MINIMAL
+#if 0
     if (strlen(SettingsText(SET_WEBPWD)) && !(Webserver->hasArg("USER1")) && !(Webserver->hasArg("PASS1")) && HTTP_MANAGER_RESET_ONLY != Web.state) {
       HandleWifiLogin();
     } else {
@@ -1292,6 +1293,11 @@ void HandleRoot(void)
         HandleWifiLogin();
       }
     }
+#else
+        // In manager 
+        HandleWifiConfiguration();
+#endif // 0
+
 #endif  // Not FIRMWARE_MINIMAL
     return;
   }
