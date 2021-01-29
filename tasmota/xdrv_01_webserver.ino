@@ -1480,7 +1480,8 @@ void HandleRoot(void)
 
 bool HandleRootStatusRefresh(void)
 {
-  if (!WebAuthenticate()) {
+  // AJL - Don't require auth if we are in manager mode
+  if (!WebAuthenticate() && !WifiIsInManagerMode() ) {
     Webserver->requestAuthentication();
     return true;
   }
