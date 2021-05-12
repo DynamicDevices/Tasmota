@@ -1043,6 +1043,11 @@ void HandleRoot(void)
         HandleWifiLogin();
       }
     }
+#else
+        // In manager 
+        HandleWifiConfiguration();
+#endif // 0
+
 #endif  // Not FIRMWARE_MINIMAL
     return;
   }
