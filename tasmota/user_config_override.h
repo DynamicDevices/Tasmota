@@ -41,7 +41,7 @@
 \*****************************************************************************************************/
 
 #undef PROJECT
-#define PROJECT                "kettle"         // PROJECT is used as the default topic delimiter
+#define PROJECT                "SmartPlug"         // PROJECT is used as the default topic delimiter
 
 // We are currently using a custom template fo rthe Avatar UK 10A Smart Switch
 // so make sure that this is the default when we first power up.
@@ -67,8 +67,8 @@
 // Set default AP and password here for ease of debugging
 #undef  STA_SSID1
 #undef  STA_PASS1
-#define STA_SSID1         "DoESLiverpool"
-#define STA_PASS1         "decafbad00"
+#define STA_SSID1         "guest"
+#define STA_PASS1         ""
 
 // Set the minimal OTAU firmware image. This is because with our normal image it is too
 // big in the device to do an update. So the process is do an OTA online from the mininmal
@@ -112,7 +112,10 @@
 #undef MQTT_USER
 #undef MQTT_PASS
 #undef MQTT_CLIENT_ID
+#undef MQTT_TOPIC
 #undef MQTT_FULLTOPIC
+
+#define MQTT_TOPIC             PROJECT "_FactoryDefault"
 
 // For Watson IoT
 
@@ -165,6 +168,13 @@
 // Enable m-DNS
 #undef MDNS_ENABLED
 #define MDNS_ENABLED           true             // [SetOption55] Use mDNS (false = Disable, true = Enable)
+
+#undef USE_DISCOVERY
+#define USE_DISCOVERY                            // Enable mDNS for the following services (+8k code or +23.5k code with core 2_5_x, +0.3k mem)
+#undef WEBSERVER_ADVERTISE
+#define WEBSERVER_ADVERTISE                    // Provide access to webserver by name <Hostname>.local/
+#undef MQTT_HOST_DISCOVERY
+//#define MQTT_HOST_DISCOVERY                    // Find MQTT host server (overrides MQTT_HOST if found)
 
 // -- Time - Up to three NTP servers in your region
 #undef NTP_SERVER1
