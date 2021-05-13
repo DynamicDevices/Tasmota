@@ -364,7 +364,8 @@ static const unsigned char TA2_RSA_E[] PROGMEM = {
 	0x01, 0x00, 0x01
 };
 
-static const br_x509_trust_anchor TAs[1] = {
+// cumulative CA
+const br_x509_trust_anchor PROGMEM Tasmota_TA[] = {
 	{
 		{ (unsigned char *)TA2_DN, sizeof TA2_DN },
 		BR_X509_TA_CA,
@@ -378,6 +379,6 @@ static const br_x509_trust_anchor TAs[1] = {
 	}
 };
 
-#define TAs_NUM   1
+const size_t Tasmota_TA_size = nitems(Tasmota_TA);
 
 #endif // defined(USE_TLS) && defined (USE_MQTT_TLS_CA_CERT) && defined(USE_MQTT_WATSON_IOT)
