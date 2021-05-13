@@ -125,10 +125,14 @@ char* GetTopic_P(char *stopic, uint32_t prefix, char *topic, const char* subtopi
   }
   fulltopic.replace(F("#"), "");
   fulltopic.replace(F("//"), "/");
+#ifdef USE_MQTT_WATSON_IOT
+  snprintf_P(stopic, TOPSZ, PSTR("%s|%s/fmt/text"), fulltopic.c_str(), romram);
+#else
   if (!fulltopic.endsWith("/")) {
     fulltopic += "/";
   }
   snprintf_P(stopic, TOPSZ, PSTR("%s%s"), fulltopic.c_str(), romram);
+#endif
   return stopic;
 }
 
