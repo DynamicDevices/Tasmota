@@ -21,7 +21,7 @@
 #define _USER_CONFIG_OVERRIDE_H_
 
 // force the compiler to show a warning to confirm that this file is included
-#warning **** user_config_override.h: Using Settings from this File ****
+//#warning **** user_config_override.h: Using Settings from this File ****
 
 /*****************************************************************************************************\
  * USAGE:
@@ -52,7 +52,10 @@
 #undef USER_TEMPLATE
 
 //#define USER_TEMPLATE "{\"NAME\":\"Avatar UK 10A\",\"GPIO\":[0,0,56,0,0,134,0,0,131,17,132,21,0],\"FLAG\":0,\"BASE\":45}" // [Template] Set JSON template
-#define USER_TEMPLATE "{\"NAME\":\"Gosund UP111\",\"GPIO\":[0,320,0,32,2720,2656,0,0,2624,576,224,0,0,0],\"FLAG\":0,\"BASE\":18}" // Template Set JSON template
+// - button enabled
+//#define USER_TEMPLATE "{\"NAME\":\"Gosund UP111\",\"GPIO\":[0,320,0,32,2720,2656,0,0,2624,576,224,0,0,0],\"FLAG\":0,\"BASE\":18}" // Template Set JSON template
+// - button disabled locally
+#define USER_TEMPLATE "{\"NAME\":\"Gosund UP111\",\"GPIO\":[0,320,0,0,2720,2656,0,0,2624,576,224,0,0,0],\"FLAG\":0,\"BASE\":18}" // Template Set JSON template
 
 // This needs a little thinking. In general we want to be able to get into the WiFi manager
 // running as an AP to configure the network. However if there is a network outage (e.g. AP
@@ -77,8 +80,10 @@
 //     "get out of jail" card but I am leaving this set to the uncompressed image size to 
 //     serve as a warning that things are getting too big in the main image if we can't update
 //     to this one ***
+
+// EDIT: Moved to using official one now
 #undef OTA_URL
-#define OTA_URL                "http://thehackbox.org/tasmota/release/tasmota-minimal.bin"  // [OtaUrl]
+#define OTA_URL                "http://ota.tasmota.com/tasmota/release/tasmota-minimal.bin.gz"  // [OtaUrl]
 
 // -- Setup your own MQTT settings  ---------------
 #undef  MQTT_HOST
@@ -95,11 +100,13 @@
 // *** MORE IMPORTANTLY IT IS NOT FULLY UNDERSTOOD WHEN THIS FINGERPRINT MIGHT
 //     CHANGE AND WHAT THE IMPACT WOULD BE ON DEVICE OPERATION ***
 
+#if 0
 #ifndef USE_MQTT_TLS 
 #define USE_MQTT_TLS                             // Use TLS for MQTT connection (+34.5k code, +7.0k mem and +4.8k additional during connection handshake)
 #define USE_MQTT_TLS_CA_CERT                   // Force full CA validation instead of fingerprints, slower, but simpler to use.  (+2.2k code, +1.9k mem during connection handshake)
                                                   // This includes the LetsEncrypt CA in tasmota_ca.ino for verifying server certificates
 //  #define USE_MQTT_TLS_FORCE_EC_CIPHER           // Force Elliptic Curve cipher (higher security) required by some servers (automatically enabled with USE_MQTT_AWS_IOT) (+11.4k code, +0.4k mem)
+#endif
 #endif
 
 #undef MQTT_USER
@@ -111,6 +118,7 @@
 
 #if 1
 // Andy's
+
 #define MQTT_HOST         "jit4q3.messaging.internetofthings.ibmcloud.com"
 #define MQTT_PORT         8883
 #define MQTT_USER         "use-token-auth"
@@ -148,7 +156,7 @@
 
 // Web / Alexa friendly nam
 #undef FRIENDLY_NAME
-#define FRIENDLY_NAME          "Kettle"         // [FriendlyName] Friendlyname up to 32 characters used by webpages and Alexa
+#define FRIENDLY_NAME          "Kettle Companion"         // [FriendlyName] Friendlyname up to 32 characters used by webpages and Alexa
 
 // Set the web admin password here
 #undef WEB_PASSWORD
@@ -191,8 +199,5 @@
 #define USE_PING                                 // Enable Ping command (+2k code)
 
 // APP
-
-#undef APP_POWERON_STATE
-#define APP_POWERON_STATE      POWER_ALL_ALWAYS_ON   // [PowerOnState] Always on (disable button)
 
 #endif  // _USER_CONFIG_OVERRIDE_H_
