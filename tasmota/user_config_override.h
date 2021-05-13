@@ -91,7 +91,7 @@
 #undef MQTT_FULLTOPIC
 
 // We have a partial implementation for Watson topic requirements
-// Subscriptions are currently not supported and LWT is disabled
+// Subscriptions are currently not supported and LWT is disabled?
 #define USE_MQTT_WATSON_IOT
 
 // MQTT TLS works but we are using fingerprint "learning" checking 
@@ -101,7 +101,7 @@
 //     CHANGE AND WHAT THE IMPACT WOULD BE ON DEVICE OPERATION ***
 
 #if 0
-#ifndef USE_MQTT_TLS 
+#ifndef USE_MQTT_TLS
 #define USE_MQTT_TLS                             // Use TLS for MQTT connection (+34.5k code, +7.0k mem and +4.8k additional during connection handshake)
 #define USE_MQTT_TLS_CA_CERT                   // Force full CA validation instead of fingerprints, slower, but simpler to use.  (+2.2k code, +1.9k mem during connection handshake)
                                                   // This includes the LetsEncrypt CA in tasmota_ca.ino for verifying server certificates

@@ -788,9 +788,11 @@ void MqttConnected(void) {
     Mqtt.retry_counter_delay = 1;
     Mqtt.connect_count++;
 
+#if !defined(USE_MQTT_WATSON_IOT)
     GetTopic_P(stopic, TELE, TasmotaGlobal.mqtt_topic, S_LWT);
     Response_P(PSTR(MQTT_LWT_ONLINE));
     MqttPublish(stopic, true);
+#endif
 
     if (!Settings.flag4.only_json_message) {  // SetOption90 - Disable non-json MQTT response
       // Satisfy iobroker (#299)
@@ -970,6 +972,9 @@ void MqttReconnect(void) {
     allow_all_fingerprints |= learn_fingerprint2;
     tlsClient->setPubKeyFingerprint(Settings.mqtt_fingerprint[0], Settings.mqtt_fingerprint[1], allow_all_fingerprints);
   }
+#endif
+#if defined(USE_MQTT_WATSON_IOT)
+  Settings.flag4.mqtt_no_retain = true; // Don't support this
 #endif
   bool lwt_retain = Settings.flag4.mqtt_no_retain ? false : true;   // no retained last will if "no_retain"
 #if defined(USE_MQTT_TLS) && defined(USE_MQTT_AWS_IOT)
