@@ -20,13 +20,4 @@
 #ifndef _USER_CONFIG_OVERRIDE_PRIVATE_H_
 #define _USER_CONFIG_OVERRIDE_PRIVATE_H_
 
-// DEBUG
-#undef MQTT_CLIENT_ID
-#undef MQTT_PASS
-#define MQTT_CLIENT_ID "d:jit4q3:SmartPlug:257"
-#define MQTT_PASS "6FdF-8wNuA9qRneEwE"
-
-#undef WEB_PASSWORD
-#define WEB_PASSWORD           "decafbad00"                // [WebPassword] Web server Admin mode Password for WEB_USERNAME (empty string = Disable)
-
 #endif  // _USER_CONFIG_OVERRIDE_PRIVATE_H_
