@@ -435,10 +435,10 @@ typedef union {
   };
 } DisplayOptions;
 
-const uint32_t settings_text_size = 699;   // Settings.text_pool[size] = Settings.display_model (2D2) - Settings.text_pool (017)
+const uint32_t settings_text_size = 699;   // Settings->text_pool[size] = Settings->display_model (2D2) - Settings->text_pool (017)
 const uint8_t MAX_TUYA_FUNCTIONS = 16;
 
-struct {
+typedef struct {
   uint16_t      cfg_holder;                // 000  v6 header
   uint16_t      cfg_size;                  // 002
   unsigned long save_flag;                 // 004
@@ -588,9 +588,7 @@ struct {
 
   uint16_t      mqtt_keepalive;            // 52C
   uint16_t      mqtt_socket_timeout;       // 52E
-
-  uint8_t       free_530[1];               // 530
-
+  uint8_t       mqtt_wifi_timeout;         // 530
   uint8_t       ina219_mode;               // 531
   uint16_t      pulse_timer[MAX_PULSETIMERS];  // 532
   uint16_t      button_debounce;           // 542
@@ -762,7 +760,7 @@ struct {
   uint32_t      i2c_drivers[3];            // FEC  I2cDriver
   uint32_t      cfg_timestamp;             // FF8
   uint32_t      cfg_crc32;                 // FFC
-} Settings;
+} TSettings;
 
 typedef struct {
   uint16_t      valid;                     // 280  (RTC memory offset 100 - sizeof(RTCRBT))

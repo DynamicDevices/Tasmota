@@ -42,6 +42,7 @@ import json
 broker = "domus1"                      # MQTT broker ip address or name
 broker_port = 1883                     # MQTT broker port
 
+mypassword = ""                        # Tasmota MQTT password
 mytopic = "demo"                       # Tasmota MQTT topic
 #myfile = "../../build_output/firmware/tasmota32.bin"   # Tasmota esp32 firmware file name
 myfile = "../../build_output/firmware/tasmota.bin.gz"  # Tasmota esp8266 firmware file name
@@ -49,11 +50,14 @@ myfiletype = 1                         # Tasmota firmware file type
 
 # **** End of User Configuration Section
 
+use_base64 = False
+
 # Derive fulltopic from broker LWT message
 mypublish = "cmnd/"+mytopic+"/fileupload"
 mysubscribe = "stat/"+mytopic+"/FILEUPLOAD"  # Case sensitive
 
 Ack_flag = False
+Err_flag = False
 
 file_id = 114                          # Even id between 2 and 254
 file_chunk_size = 700                  # Default Tasmota MQTT max message size
@@ -61,6 +65,7 @@ file_chunk_size = 700                  # Default Tasmota MQTT max message size
 # The callback for when mysubscribe message is received
 def on_message(client, userdata, msg):
    global Ack_flag
+   global Err_flag
    global file_chunk_size
 
    rcv_code = ""
@@ -69,26 +74,43 @@ def on_message(client, userdata, msg):
 #   print("Received message =",str(msg.payload.decode("utf-8")))
 
    root = json.loads(msg.payload.decode("utf-8"))
-   if "Command" in root: rcv_code = root["Command"]
-   if rcv_code == "Error":
-      print("Error: Command error")
-      return
-
-   if "Id" in root: rcv_id = root["Id"]
-   if rcv_id == file_id:
-      if "MaxSize" in root: file_chunk_size = root["MaxSize"]
+   if "FileUpload" in root:
+      rcv_code = root["FileUpload"]
+      if "Aborted" in rcv_code:
+         print("Error: Aborted")
+         Err_flag = True
+         return
+      if "MD5 mismatch" in rcv_code:
+         print("Error: MD5 mismatch")
+         Err_flag = True
+         return
+      if "Started" in rcv_code:
+         return
+      if "Error" in rcv_code:
+         print("Error: "+rcv_code)
+         Err_flag = True
+         return
+   if "Command" in root:
+      rcv_code = root["Command"]
+      if rcv_code == "Error":
+         print("Error: Command error")
+         Err_flag = True
+         return
+   if "Id" in root:
+      rcv_id = root["Id"]
+      if rcv_id == file_id:
+         if "MaxSize" in root: file_chunk_size = root["MaxSize"]
 
    Ack_flag = False
 
 def wait_for_ack():
-   global Ack_flag
    timeout = 100
-   while Ack_flag and timeout > 0:
+   while Ack_flag and Err_flag == False and timeout > 0:
       time.sleep(0.01)
       timeout = timeout -1
 
-   if Ack_flag:
-      print("Error: Ack timeout")
+   if 0 == timeout:
+      print("Error: Timeout")
 
    return Ack_flag
 
@@ -105,25 +127,35 @@ fo = open(myfile,"rb")
 fo.seek(0, 2)  # os.SEEK_END
 file_size = fo.tell()
 fo.seek(0, 0)  # os.SEEK_SET
+file_pos = 0
 
-client.publish(mypublish, "{\"File\":\""+myfile+"\",\"Id\":"+str("%3d"%file_id)+",\"Type\":"+str(myfiletype)+",\"Size\":"+str(file_size)+"}")
+client.publish(mypublish, "{\"Password\":\""+mypassword+"\",\"File\":\""+myfile+"\",\"Id\":"+str("%3d"%file_id)+",\"Type\":"+str(myfiletype)+",\"Size\":"+str(file_size)+"}")
 Ack_flag = True
 
 out_hash_md5 = hashlib.md5()
 
 Run_flag = True
 while Run_flag:
-   if wait_for_ack():                   # We use Ack here
+   if wait_for_ack():                  # We use Ack here
+      client.publish(mypublish, "0")   # Abort any failed upload
       Run_flag = False
 
    else:
       chunk = fo.read(file_chunk_size)
       if chunk:
-         out_hash_md5.update(chunk)       # Update hash
-         base64_encoded_data = base64.b64encode(chunk)
-         base64_data = base64_encoded_data.decode('utf-8')
-         # Message length used by Tasmota (FileTransferHeaderSize)
-         client.publish(mypublish, "{\"Id\":"+str("%3d"%file_id)+",\"Data\":\""+base64_data+"\"}")
+         out_hash_md5.update(chunk)    # Update hash
+         if use_base64:
+            base64_encoded_data = base64.b64encode(chunk)
+            base64_data = base64_encoded_data.decode('utf-8')
+            # Message length used by Tasmota (FileTransferHeaderSize)
+            client.publish(mypublish, "{\"Id\":"+str("%3d"%file_id)+",\"Data\":\""+base64_data+"\"}")
+         else:
+            client.publish(mypublish+"201", chunk)
+         file_pos = file_pos + file_chunk_size
+         if file_pos % 102400 < file_chunk_size:
+            progress = round((file_pos / 10240)) * 10
+            print("Progress "+str("%d"%progress)+" kB")
+
          Ack_flag = True
 
       else:
