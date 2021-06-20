@@ -51,7 +51,11 @@
 #define FALLBACK_MODULE        USER_MODULE
 #undef USER_TEMPLATE
 
+// - button enabled
 //#define USER_TEMPLATE "{\"NAME\":\"Avatar UK 10A\",\"GPIO\":[0,0,56,0,0,134,0,0,131,17,132,21,0],\"FLAG\":0,\"BASE\":45}" // [Template] Set JSON template
+// - button disabled locally
+//#define USER_TEMPLATE "{\"NAME\":\"Avatar UK 10A\",\"GPIO\":[0,0,56,0,0,134,0,0,131,0,132,21,0],\"FLAG\":0,\"BASE\":45}" // [Template] Set JSON template
+
 // - button enabled
 //#define USER_TEMPLATE "{\"NAME\":\"Gosund UP111\",\"GPIO\":[0,320,0,32,2720,2656,0,0,2624,576,224,0,0,0],\"FLAG\":0,\"BASE\":18}" // Template Set JSON template
 // - button disabled locally
