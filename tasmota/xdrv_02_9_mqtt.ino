@@ -864,9 +864,11 @@ void MqttConnected(void) {
     Mqtt.retry_counter_delay = 1;
     Mqtt.connect_count++;
 
+#if !defined(USE_MQTT_WATSON_IOT)
     GetTopic_P(stopic, TELE, TasmotaGlobal.mqtt_topic, S_LWT);
     Response_P(PSTR(MQTT_LWT_ONLINE));
     MqttPublish(stopic, true);
+#endif
 
     if (!Settings->flag4.only_json_message) {  // SetOption90 - Disable non-json MQTT response
       // Satisfy iobroker (#299)
@@ -874,6 +876,7 @@ void MqttConnected(void) {
       MqttPublishPrefixTopic_P(CMND, S_RSLT_POWER);
     }
 
+#if !defined(USE_MQTT_WATSON_IOT)
     GetTopic_P(stopic, CMND, TasmotaGlobal.mqtt_topic, PSTR("#"));
     MqttSubscribe(stopic);
     if (strstr_P(SettingsText(SET_MQTT_FULLTOPIC), MQTT_TOKEN_TOPIC) != nullptr) {
@@ -888,6 +891,9 @@ void MqttConnected(void) {
       GetFallbackTopic_P(stopic, PSTR("#"));
       MqttSubscribe(stopic);
     }
+#else
+    MqttSubscribe("iot-2/cmd/+/fmt/text");
+#endif
 
     XdrvCall(FUNC_MQTT_SUBSCRIBE);
   }
