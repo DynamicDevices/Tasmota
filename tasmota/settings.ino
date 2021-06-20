@@ -657,7 +657,6 @@ void SettingsLoad(void) {
 
 #ifndef FIRMWARE_MINIMAL
   if ((0 == settings_location) || (Settings->cfg_holder != (uint16_t)CFG_HOLDER)) {  // Init defaults if cfg_holder differs from user settings in my_user_config.h
-//  if ((0 == settings_location) || (Settings->cfg_size != sizeof(TSettings)) || (Settings->cfg_holder != (uint16_t)CFG_HOLDER)) {  // Init defaults if cfg_holder differs from user settings in my_user_config.h
 #ifdef USE_UFILESYS
     if (TfsLoadFile(TASM_FILE_SETTINGS_LKG, (uint8_t*)Settings, sizeof(TSettings)) && (Settings->cfg_crc32 == GetSettingsCrc32())) {
       settings_location = 1;
@@ -955,7 +954,7 @@ void SettingsDefaultSet2(void) {
 //  Settings->energy_kWhdoy = 0;
 //  Settings->energy_min_power = 0;
 // AJL
-  Settings.energy_max_power = 1000;
+  Settings->energy_max_power = 1000;
 //  Settings->energy_min_voltage = 0;
 //  Settings->energy_max_voltage = 0;
 //  Settings->energy_min_current = 0;
