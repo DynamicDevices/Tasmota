@@ -104,7 +104,7 @@
 // *** MORE IMPORTANTLY IT IS NOT FULLY UNDERSTOOD WHEN THIS FINGERPRINT MIGHT
 //     CHANGE AND WHAT THE IMPACT WOULD BE ON DEVICE OPERATION ***
 
-#if 0
+#if 1
 #ifndef USE_MQTT_TLS
 #define USE_MQTT_TLS                             // Use TLS for MQTT connection (+34.5k code, +7.0k mem and +4.8k additional during connection handshake)
 #define USE_MQTT_TLS_CA_CERT                   // Force full CA validation instead of fingerprints, slower, but simpler to use.  (+2.2k code, +1.9k mem during connection handshake)
@@ -129,27 +129,8 @@
 #define MQTT_HOST         "jit4q3.messaging.internetofthings.ibmcloud.com"
 #define MQTT_PORT         8883
 #define MQTT_USER         "use-token-auth"
-//#define MQTT_PASS         "@F-cZ6IzSLi&H42HYb"
 #define MQTT_PASS         "AUTH_TOKEN_HERE"
 #define MQTT_CLIENT_ID    "d:jit4q3:SmartPlug:ID_HERE"
-#endif
-
-#if 0
-// Mine
-//#define MQTT_HOST         "43okzt.messaging.internetofthings.ibmcloud.com"
-//#define MQTT_PORT         8883
-//#define MQTT_USER         "use-token-auth"
-//#define MQTT_PASS          "Zrh*xf79dGjlay+s6h"
-//#define MQTT_CLIENT_ID    "d:43okzt:Avatar:2CF43283C42B"
-#endif
-
-#if 0
-// Node Red DD
-#define MQTT_HOST         "node-red.dynamicdevices.co.uk"
-#define MQTT_PORT         8883
-#define MQTT_USER         "mqtt"
-#define MQTT_PASS          "decafba00"
-#define MQTT_CLIENT_ID    "tasmota"
 #endif
 
 #define MQTT_FULLTOPIC    "iot-2/evt/%prefix%|%topic%"
@@ -167,7 +148,6 @@
 
 // Set the web admin password here
 #undef WEB_PASSWORD
-#define WEB_PASSWORD           "decafbad00"                // [WebPassword] Web server Admin mode Password for WEB_USERNAME (empty string = Disable)
 
 // Enable m-DNS
 #undef MDNS_ENABLED
@@ -179,6 +159,8 @@
 #define WEBSERVER_ADVERTISE                    // Provide access to webserver by name <Hostname>.local/
 #undef MQTT_HOST_DISCOVERY
 //#define MQTT_HOST_DISCOVERY                    // Find MQTT host server (overrides MQTT_HOST if found)
+
+#undef USE_HOME_ASSISTANT                      // HA publications bugger up Watson
 
 // -- Time - Up to three NTP servers in your region
 #undef NTP_SERVER1
@@ -213,5 +195,8 @@
 #define USE_PING                                 // Enable Ping command (+2k code)
 
 // APP
+
+// PRIVATE
+#include "user_config_override_private.h"
 
 #endif  // _USER_CONFIG_OVERRIDE_H_
