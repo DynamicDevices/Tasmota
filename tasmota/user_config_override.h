@@ -71,7 +71,7 @@
 // Set default AP and password here for ease of debugging
 #undef  STA_SSID1
 #undef  STA_PASS1
-#define STA_SSID1         "guest"
+#define STA_SSID1         ""
 #define STA_PASS1         ""
 
 // Set the minimal OTAU firmware image. This is because with our normal image it is too
@@ -148,6 +148,7 @@
 
 // Set the web admin password here
 #undef WEB_PASSWORD
+#define WEB_PASSWORD ""
 
 // Enable m-DNS
 #undef MDNS_ENABLED
