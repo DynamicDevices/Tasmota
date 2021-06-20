@@ -555,6 +555,13 @@ void MqttDataHandler(char* mqtt_topic, uint8_t* mqtt_data, unsigned int data_len
     TasmotaGlobal.masterlog_level = LOG_LEVEL_DEBUG_MORE;  // Hide logging
   }
 
+#ifdef USE_MQTT_WATSON_IOT
+    // Strip off ending fmt/text
+    String topicN = String(topic);
+    topicN.replace(F("/fmt/text"), "");
+    strlcpy(topic, topicN.c_str(), sizeof(topic));
+#endif
+
   // MQTT pre-processing
   XdrvMailbox.index = strlen(topic);
   XdrvMailbox.data_len = data_len;
