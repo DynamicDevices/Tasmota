@@ -2003,22 +2003,20 @@ void HandleWifiConfiguration(void) {
 
   if (WifiIsInManagerMode()) {
 #ifndef FIRMWARE_MINIMAL
-// AJL 23/01/21 - Disable this as AndySC says it causes problems
-//    WSContentSpaceButton(BUTTON_RESTORE);
-//    WSContentButton(BUTTON_RESET_CONFIGURATION);
     if (WIFI_TESTING == Web.wifiTest) {
       WSContentSend_P(PSTR(D_TRYING_TO_CONNECT "<br>%s</h3></div>"), SettingsText(SET_STASSID1));
     } else if (WIFI_TEST_FINISHED_BAD == Web.wifiTest) {
       WSContentSend_P(PSTR(D_CONNECT_FAILED_TO " %s<br>" D_CHECK_CREDENTIALS "</h3></div>"), SettingsText(SET_STASSID1));
     }
     // More Options Button
-    WSContentSend_P(PSTR("<div id=butmod style=\"display:%s;\"></div><p><form id=butmo style=\"display:%s;\"><button type='button' onclick='hidBtns()'>" D_SHOW_MORE_OPTIONS "</button></form></p>"),
-      (WIFI_TEST_FINISHED_BAD == Web.wifiTest) ? "none" : Web.initial_config ? "block" : "none", Web.initial_config ? "block" : "none"
-    );
-    WSContentSpaceButton(BUTTON_RESTORE, !Web.initial_config);
-    WSContentButton(BUTTON_RESET_CONFIGURATION, !Web.initial_config);
+//    WSContentSend_P(PSTR("<div id=butmod style=\"display:%s;\"></div><p><form id=butmo style=\"display:%s;\"><button type='button' onclick='hidBtns()'>" D_SHOW_MORE_OPTIONS "</button></form></p>"),
+//      (WIFI_TEST_FINISHED_BAD == Web.wifiTest) ? "none" : Web.initial_config ? "block" : "none", Web.initial_config ? "block" : "none"
+//    );
+// AJL 23/01/21 - Disable this as AndySC says it causes problems
+//    WSContentSpaceButton(BUTTON_RESTORE, !Web.initial_config);
+//    WSContentButton(BUTTON_RESET_CONFIGURATION, !Web.initial_config);
 #endif  // FIRMWARE_MINIMAL
-    WSContentSpaceButton(BUTTON_RESTART, !Web.initial_config);
+//    WSContentSpaceButton(BUTTON_RESTART, !Web.initial_config);
   } else {
     WSContentSpaceButton(BUTTON_CONFIGURATION);
   }
