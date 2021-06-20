@@ -944,7 +944,8 @@ void PerformEverySecond(void)
       if (TasmotaGlobal.tele_period >= Settings->tele_period) {
         TasmotaGlobal.tele_period = 0;
 
-        MqttPublishTeleState();
+// AJL - AndySC asked to comment out... 
+//        MqttPublishTeleState();
         MqttPublishTeleperiodSensor();
 
         XsnsCall(FUNC_AFTER_TELEPERIOD);
