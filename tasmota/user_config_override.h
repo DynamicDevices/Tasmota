@@ -140,7 +140,7 @@
 
 // Heartbeat currently set to 60s. Could easily take this up to 5 mins or more
 #undef TELE_PERIOD
-#define TELE_PERIOD            60               // [TelePeriod] Telemetry (0 = disable, 10 - 3600 seconds)
+#define TELE_PERIOD            120               // [TelePeriod] Telemetry (0 = disable, 10 - 3600 seconds)
 
 // Web / Alexa friendly nam
 #undef FRIENDLY_NAME
