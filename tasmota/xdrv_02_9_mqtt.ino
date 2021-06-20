@@ -1037,6 +1037,7 @@ void MqttReconnect(void) {
   }
 #endif
   bool lwt_retain = Settings->flag4.mqtt_no_retain ? false : true;   // no retained last will if "no_retain"
+
 #if defined(USE_MQTT_TLS) && defined(USE_MQTT_AWS_IOT)
   if (Mqtt.mqtt_tls) {
     if ((nullptr != AWS_IoT_Private_Key) && (nullptr != AWS_IoT_Client_Certificate)) {
@@ -1062,12 +1063,16 @@ void MqttReconnect(void) {
   if (MqttClient.connect(TasmotaGlobal.mqtt_client, azureMqtt_userString.c_str(), azureMqtt_password.c_str(), stopic, 1, lwt_retain, TasmotaGlobal.mqtt_data, MQTT_CLEAN_SESSION)) {
 #endif
 #else
+#ifdef USE_MQTT_WATSON_IOT // Watson doesn't support LWT
+  if (MqttClient.connect(TasmotaGlobal.mqtt_client, mqtt_user, mqtt_pwd, NULL, 1, false, NULL, MQTT_CLEAN_SESSION)) {
+#else
 #ifdef MQTT_DATA_STRING
   if (MqttClient.connect(TasmotaGlobal.mqtt_client, mqtt_user, mqtt_pwd, stopic, 1, lwt_retain, TasmotaGlobal.mqtt_data.c_str(), MQTT_CLEAN_SESSION)) {
 #else
   if (MqttClient.connect(TasmotaGlobal.mqtt_client, mqtt_user, mqtt_pwd, stopic, 1, lwt_retain, TasmotaGlobal.mqtt_data, MQTT_CLEAN_SESSION)) {
 #endif
 #endif  // USE_MQTT_AZURE_IOT
+#endif // USE_MQTT_WATSON_IOT
 #ifdef USE_MQTT_TLS
     if (Mqtt.mqtt_tls) {
 #ifdef ESP8266
