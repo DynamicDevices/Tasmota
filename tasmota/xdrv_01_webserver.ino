@@ -506,7 +506,8 @@ const WebServerDispatch_t WebServerDispatch[] PROGMEM = {
   { "mn", HTTP_GET, HandleManagement },
   { "cs", HTTP_GET, HandleConsole },
   { "cs", HTTP_OPTIONS, HandlePreflightRequest },
-  { "cm", HTTP_ANY, HandleHttpCommand },
+// Disable HTTP commands
+//  { "cm", HTTP_ANY, HandleHttpCommand },
 #ifndef FIRMWARE_MINIMAL
   { "cn", HTTP_ANY, HandleConfiguration },
   { "md", HTTP_ANY, HandleModuleConfiguration },
