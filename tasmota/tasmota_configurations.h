@@ -786,7 +786,10 @@
 #undef USE_SUNRISE                               // Disable support for Sunrise and sunset tools
 #undef USE_PING                                  // Disable Ping command (+2k code)
 #undef USE_UNISHOX_COMPRESSION                   // Disable support for string compression in Rules or Scripts
-#undef USE_RULES                                 // Disable support for rules
+
+// AJL - I want rules in minimal
+//#undef USE_RULES                                 // Disable support for rules
+
 #undef USE_SCRIPT                                // Disable support for script
 
 // -- Optional modules ----------------------------

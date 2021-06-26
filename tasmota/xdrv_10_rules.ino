@@ -19,6 +19,7 @@
 
 #ifdef USE_RULES
 #ifndef USE_SCRIPT
+
 /*********************************************************************************************\
  * Rules based heavily on ESP Easy implementation
  *

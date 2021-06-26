@@ -87,7 +87,12 @@
 
 // EDIT: Moved to using official one now
 #undef OTA_URL
-#define OTA_URL                "http://ota.tasmota.com/tasmota/release/tasmota-minimal.bin.gz"  // [OtaUrl]
+//#define OTA_URL                "http://ota.tasmota.com/tasmota/release/tasmota-minimal.bin.gz"  // [OtaUrl]
+// Use our own build for minimal trampoline to full fat firmware
+#define OTA_URL                  "http://kettlecompanion.com/dl/tasmota-minimal-trampoline.bin.gz"
+
+// Are we building a minimal build that will auto-install and auto-trampoline to a full build?
+//#define USE_TRAMPOLINE
 
 // -- Setup your own MQTT settings  ---------------
 #undef  MQTT_HOST
@@ -104,6 +109,8 @@
 // *** MORE IMPORTANTLY IT IS NOT FULLY UNDERSTOOD WHEN THIS FINGERPRINT MIGHT
 //     CHANGE AND WHAT THE IMPACT WOULD BE ON DEVICE OPERATION ***
 
+#if !FIRMWARE_MINIMAL
+
 #if 1
 #ifndef USE_MQTT_TLS
 #define USE_MQTT_TLS                             // Use TLS for MQTT connection (+34.5k code, +7.0k mem and +4.8k additional during connection handshake)
@@ -112,6 +119,8 @@
 //  #define USE_MQTT_TLS_FORCE_EC_CIPHER           // Force Elliptic Curve cipher (higher security) required by some servers (automatically enabled with USE_MQTT_AWS_IOT) (+11.4k code, +0.4k mem)
 #endif
 #endif
+
+#endif // FIRMWARE_MINIMAL
 
 #undef MQTT_USER
 #undef MQTT_PASS
@@ -194,6 +203,13 @@
 
 #undef USE_PING
 #define USE_PING                                 // Enable Ping command (+2k code)
+
+// RULES - Force upgrade to full on connection
+#ifdef USE_TRAMPOLINE
+  #undef USE_SCRIPT
+  #define USE_RULES
+  #define USER_RULE1 "ON Wifi#Connected DO OTAURL http://kettlecompanion.com/dl/tasmota-full.bin.gz ENDON ON Wifi#Connected DO UPGRADE 1 ENDON\r\nRULE1 1"          // Add rule1 data saved at initial firmware load or when command reset is executed
+#endif
 
 // APP
 
