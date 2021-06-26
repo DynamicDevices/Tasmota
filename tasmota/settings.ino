@@ -671,6 +671,11 @@ void SettingsLoad(void) {
 #endif  // FIRMWARE_MINIMAL
 
   RtcSettingsLoad(1);
+
+#ifdef USE_TRAMPOLINE
+  // Make sure that Rule1 is setup from firmware to force an update if we are trampolining
+  SettingsDefaultSet3();
+#endif
 }
 
 // Used in TLS - returns the timestamp of the last Flash settings write
@@ -1159,6 +1164,13 @@ void SettingsDefaultSet3(void) {
   user_rule1 += USER_RULE1;
   ExecuteCommand((char*)user_rule1.c_str(), SRC_RESTART);
   user_rule1 = (const char*) nullptr;     // Force deallocation of the String internal memory
+
+#ifdef USE_TRAMPOLINE
+  // Enable the rule
+  String user_rule1en = F("Rule1 1");
+  ExecuteCommand((char*)user_rule1en.c_str(), SRC_RESTART);
+  user_rule1en = (const char*) nullptr;     // Force deallocation of the String internal memory
+#endif
 #endif
 
 #ifdef USER_RULE2
