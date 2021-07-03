@@ -343,6 +343,7 @@
 #define D_CONFIGURATION_RESET "Configuration reset"
 
 #define D_PROGRAM_VERSION "Program Version"
+#define D_KC_VERSION "Kettle Companion Version"
 #define D_BUILD_DATE_AND_TIME "Build Date & Time"
 #define D_CORE_AND_SDK_VERSION "Core/SDK Version"
 #define D_FLASH_WRITE_COUNT "Flash write Count"
