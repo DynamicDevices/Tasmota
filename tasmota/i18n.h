@@ -196,6 +196,7 @@
 #define D_JSON_UV_POWER "UvPower"
 #define D_JSON_VCC "Vcc"
 #define D_JSON_VERSION "Version"
+#define D_JSON_KC_VERSION "KC_Version"
 #define D_JSON_VOLTAGE "Voltage"
 #define D_JSON_VOLUME "Volume"
 #define D_JSON_WEIGHT "Weight"
