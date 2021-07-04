@@ -1,7 +1,7 @@
 name: Tasmota CI (Kettle Companion)
 
 on:
-  pull_request:
+  push:
 
 jobs:
   tasmota:
