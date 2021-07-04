@@ -15,12 +15,9 @@ jobs:
   tasmota:
     runs-on: ubuntu-latest
     steps:
-     - name: Declare some variables
-       id: vars
-       shell: bash
-       run: |
-         echo "##[set-output name=branch;]$(echo ${GITHUB_REF#refs/heads/})"
-         echo "::set-output name=sha_short::$(git rev-parse --short HEAD)"
+    - name: Set variables
+      run: |
+        echo ::set-env name=SHORT_SHA::$(git rev-parse --short HEAD)
     - name: Checkout
       uses: actions/checkout@v1
     - name: Set up Python
@@ -36,7 +33,7 @@ jobs:
     - name: Store artifacts
       uses: actions/upload-artifact@v2
       with:
-        name: firmware-${{ steps.vars.outputs.sha_short }}
+        name: firmware-${{ env.SHORT_SHA }}
         path: ./build_output/firmware
     - name: Deploy Development (if 'kettlecompanion' branch)
       if: ${{ github.ref == 'refs/heads/kettlecompanion' }}
