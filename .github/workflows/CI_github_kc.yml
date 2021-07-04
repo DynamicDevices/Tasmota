@@ -12,8 +12,83 @@ on:
 #    types: published
 
 jobs:
+  tasmota-minimal:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v1
+    - name: Set up Python
+      uses: actions/setup-python@v1
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -U platformio
+        platformio upgrade --dev
+        platformio update
+    - name: Run PlatformIO
+      run: platformio run -e tasmota-minimal
+    - name: Store artifacts
+      uses: actions/upload-artifact@v2
+      with:
+        name: firmware-${{ github.sha }}
+        path: ./build_output/firmware
+    - name: Deploy Development (if 'kettlecompanion' branch)
+      if: ${{ github.ref == 'refs/heads/kettlecompanion' }}
+      uses: JamesIves/github-pages-deploy-action@4.1.4
+      with:
+        branch: gh-pages # The branch the action should deploy to.
+        folder: build_output/firmware  # The folder the action should deploy.
+        target-folder: devel
+        clean: false
+    - name: Deploy Production (if 'kettlecompanion-prod' branch)
+      if: ${{ github.ref == 'refs/heads/kettlecompanion-prod' }}
+      uses: JamesIves/github-pages-deploy-action@4.1.4
+      with:
+        branch: gh-pages # The branch the action should deploy to.
+        folder: build_output/firmware  # The folder the action should deploy.
+        target-folder: prod
+        clean: false
+  tasmota-minimal-trampoline:
+    runs-on: ubuntu-latest
+    needs: tasmota-minimal
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v1
+    - name: Set up Python
+      uses: actions/setup-python@v1
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -U platformio
+        platformio upgrade --dev
+        platformio update
+    - name: Run PlatformIO
+      run: platformio run -e tasmota-minimal-trampoline
+    - name: Store artifacts
+      uses: actions/upload-artifact@v2
+      with:
+        name: firmware-${{ github.sha }}
+        path: ./build_output/firmware
+    - name: Deploy Development (if 'kettlecompanion' branch)
+      if: ${{ github.ref == 'refs/heads/kettlecompanion' }}
+      uses: JamesIves/github-pages-deploy-action@4.1.4
+      with:
+        branch: gh-pages # The branch the action should deploy to.
+        folder: build_output/firmware  # The folder the action should deploy.
+        target-folder: devel
+        clean: false
+    - name: Deploy Production (if 'kettlecompanion-prod' branch)
+      if: ${{ github.ref == 'refs/heads/kettlecompanion-prod' }}
+      uses: JamesIves/github-pages-deploy-action@4.1.4
+      with:
+        branch: gh-pages # The branch the action should deploy to.
+        folder: build_output/firmware  # The folder the action should deploy.
+        target-folder: prod
+        clean: false
+
   tasmota:
     runs-on: ubuntu-latest
+    needs: tasmota-minimal-trampoline
     steps:
     - name: Checkout
       uses: actions/checkout@v1
@@ -39,18 +114,12 @@ jobs:
         branch: gh-pages # The branch the action should deploy to.
         folder: build_output/firmware  # The folder the action should deploy.
         target-folder: devel
-        clean: true
-        clean-exclude: |
-          *.bin
-          *.bin.gz
+        clean: false
     - name: Deploy Production (if 'kettlecompanion-prod' branch)
-      if: ${{ github.ref == 'refs/heads/kettlecompanion-deploy' }}
+      if: ${{ github.ref == 'refs/heads/kettlecompanion-prod' }}
       uses: JamesIves/github-pages-deploy-action@4.1.4
       with:
         branch: gh-pages # The branch the action should deploy to.
         folder: build_output/firmware  # The folder the action should deploy.
         target-folder: prod
-        clean: true
-        clean-exclude: |
-          *.bin
-          *.bin.gz
+        clean: false

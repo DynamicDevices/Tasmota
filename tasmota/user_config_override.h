@@ -89,7 +89,7 @@
 #undef OTA_URL
 //#define OTA_URL                "http://ota.tasmota.com/tasmota/release/tasmota-minimal.bin.gz"  // [OtaUrl]
 // Use our own build for minimal trampoline to full fat firmware
-#define OTA_URL                  "http://kettlecompanion.com/dl/tasmota-minimal-trampoline.bin.gz"
+#define OTA_URL                  "http://dl.kettlecompanion.com/prod/tasmota-minimal-trampoline.bin.gz"
 
 // Are we building a minimal build that will auto-install and auto-trampoline to a full build?
 //#define USE_TRAMPOLINE
@@ -208,7 +208,7 @@
 #ifdef USE_TRAMPOLINE
   #undef USE_SCRIPT
   #define USE_RULES
-  #define USER_RULE1 "ON Wifi#Connected DO OTAURL http://kettlecompanion.com/dl/tasmota.bin.gz ENDON ON Wifi#Connected DO UPGRADE 1 ENDON\r\nRULE1 1"          // Add rule1 data saved at initial firmware load or when command reset is executed
+  #define USER_RULE1 "ON Wifi#Connected DO OTAURL http://dl.kettlecompanion.com/prod/tasmota.bin.gz ENDON ON Wifi#Connected DO UPGRADE 1 ENDON\r\nRULE1 1"          // Add rule1 data saved at initial firmware load or when command reset is executed
 #endif
 
 // APP
