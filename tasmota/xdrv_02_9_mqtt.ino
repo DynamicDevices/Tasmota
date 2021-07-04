@@ -1069,7 +1069,7 @@ void MqttReconnect(void) {
   }
 #endif
 #if defined(USE_MQTT_WATSON_IOT)
-  Settings.flag4.mqtt_no_retain = true; // Don't support this
+  Settings->flag4.mqtt_no_retain = true; // Don't support this
 #endif
   bool lwt_retain = Settings->flag4.mqtt_no_retain ? false : true;   // no retained last will if "no_retain"
 
