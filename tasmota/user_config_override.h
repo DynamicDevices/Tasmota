@@ -208,7 +208,7 @@
 #ifdef USE_TRAMPOLINE
   #undef USE_SCRIPT
   #define USE_RULES
-  #define USER_RULE1 "ON Wifi#Connected DO OTAURL http://kettlecompanion.com/dl/tasmota-full.bin.gz ENDON ON Wifi#Connected DO UPGRADE 1 ENDON\r\nRULE1 1"          // Add rule1 data saved at initial firmware load or when command reset is executed
+  #define USER_RULE1 "ON Wifi#Connected DO OTAURL http://kettlecompanion.com/dl/tasmota.bin.gz ENDON ON Wifi#Connected DO UPGRADE 1 ENDON\r\nRULE1 1"          // Add rule1 data saved at initial firmware load or when command reset is executed
 #endif
 
 // APP
