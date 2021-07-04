@@ -857,9 +857,9 @@ void SettingsDefaultSet2(void) {
   flag4.network_wifi |= 1;
   flag3.use_wifi_scan |= WIFI_SCAN_AT_RESTART;
   flag3.use_wifi_rescan |= WIFI_SCAN_REGULARLY;
-// AJL - Change to maximum
-//  Settings->wifi_output_power = 170;
-  Settings->wifi_output_power = 205;
+// AJL - We are told not to set this higher than 17dBm ref: https://github.com/DynamicDevices/Tasmota/blob/ajl/ambientkettle2/tasmota/support_wifi.ino
+//       So leave this at the default for now...
+  Settings->wifi_output_power = 170;
   Settings->param[P_ARP_GRATUITOUS] = WIFI_ARP_INTERVAL;
   ParseIPv4(&Settings->ipv4_address[0], PSTR(WIFI_IP_ADDRESS));
   ParseIPv4(&Settings->ipv4_address[1], PSTR(WIFI_GATEWAY));
