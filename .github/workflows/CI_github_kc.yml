@@ -27,12 +27,12 @@ jobs:
         platformio update
     - name: Run PlatformIO
       run: platformio run -e tasmota
-    - name: Upload artifact
+    - name: Store artifacts
       uses: actions/upload-artifact@v2
       with:
         name: firmware
         path: ./build_output/firmware
-    - name: Deploy
+    - name: Deploy (if 'kettlecompanion-deploy' branch)
       if: ${{ github.ref == 'refs/heads/kettlecompanion-deploy' }}
       uses: JamesIves/github-pages-deploy-action@4.1.4
       with:
