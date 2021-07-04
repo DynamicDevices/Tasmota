@@ -15,8 +15,10 @@ jobs:
   tasmota:
     runs-on: ubuntu-latest
     env:
-      SHORT_SHA: ${{git rev-parse --short HEAD}}
     steps:
+    - name: Set envvars
+      run: |
+        echo '::set-output name=SHORT_SHA::$(git rev-parse --short HEAD)'
     - name: Checkout
       uses: actions/checkout@v1
     - name: Set up Python
