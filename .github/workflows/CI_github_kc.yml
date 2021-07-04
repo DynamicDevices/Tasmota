@@ -18,10 +18,16 @@ jobs:
         platformio update
     - name: Run PlatformIO
       run: platformio run -e tasmota
-    - uses: actions/upload-artifact@v2
+#    - name: Upload artifact
+#    - uses: actions/upload-artifact@v2
+#      with:
+#        name: firmware
+#        path: ./build_output
+    - name: Deploy
+      uses: JamesIves/github-pages-deploy-action@4.1.4
       with:
-        name: firmware
-        path: ./build_output
+        branch: gh-pages # The branch the action should deploy to.
+        folder: build_output/firmware  # The folder the action should deploy.
 
   tasmota-minimal:
     runs-on: ubuntu-latest
@@ -41,6 +47,11 @@ jobs:
       with:
         name: firmware
         path: ./build_output
+    - name: Deploy
+      uses: JamesIves/github-pages-deploy-action@4.1.4
+      with:
+        branch: gh-pages # The branch the action should deploy to.
+        folder: build_output/firmware  # The folder the action should deploy.
 
   tasmota-minimal-trampoline:
     runs-on: ubuntu-latest
@@ -60,4 +71,8 @@ jobs:
       with:
         name: firmware
         path: ./build_output
-
+    - name: Deploy
+      uses: JamesIves/github-pages-deploy-action@4.1.4
+      with:
+        branch: gh-pages # The branch the action should deploy to.
+        folder: build_output/firmware  # The folder the action should deploy.
