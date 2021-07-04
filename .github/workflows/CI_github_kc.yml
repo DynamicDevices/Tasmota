@@ -14,7 +14,6 @@ on:
 jobs:
   tasmota:
     runs-on: ubuntu-latest
-    env:
     steps:
     - name: Set envvars
       run: |
