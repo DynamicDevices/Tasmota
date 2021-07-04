@@ -18,6 +18,7 @@ jobs:
     - name: Set envvars
       run: |
         echo '::set-output name=SHORT_SHA::$(git rev-parse --short HEAD)'
+      id: setupvars
     - name: Checkout
       uses: actions/checkout@v1
     - name: Set up Python
@@ -33,7 +34,7 @@ jobs:
     - name: Store artifacts
       uses: actions/upload-artifact@v2
       with:
-        name: firmware-${{ env.SHORT_SHA }}
+        name: firmware-${{ steps.setupvars.outputs.SHORT_SHA }}
         path: ./build_output/firmware
     - name: Deploy Development (if 'kettlecompanion' branch)
       if: ${{ github.ref == 'refs/heads/kettlecompanion' }}
