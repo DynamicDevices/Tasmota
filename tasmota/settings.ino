@@ -1375,6 +1375,19 @@ void SettingsDelta(void) {
       Settings->mqtt_wifi_timeout = MQTT_WIFI_CLIENT_TIMEOUT / 100;
     }
 
+#ifdef CONFIG_IDF_TARGET_ESP32C3
+    if (Settings->version < 0x09050002) {
+      if (Settings->cfg_size != sizeof(TSettings)) {
+        // Fix onetime Settings layout due to changed ESP32-C3 myio and mytmplt types sizes
+        memmove_P((uint8_t*)&Settings->user_template, (uint8_t*)&Settings->free_esp32c3_3D8, sizeof(TSettings) - 0x3FC);
+        memmove_P((uint8_t*)&Settings->eth_type, (uint8_t*)&Settings->free_esp32c3_42A, sizeof(TSettings) - 0x446);
+        // Reset for future use
+        memset(&Settings->free_esp32c3_3D8, 0x00, sizeof(Settings->free_esp32c3_3D8));
+        memset(&Settings->free_esp32c3_42A, 0x00, sizeof(Settings->free_esp32c3_42A));
+      }
+    }
+#endif
+
     Settings->version = VERSION;
     SettingsSave(1);
   }
