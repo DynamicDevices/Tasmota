@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - kettlecompanion
-      - kettlecompanion-deploy
+      - kettlecompanion-prod
   pull_request:
     branches:
       - kettlecompanion
@@ -32,12 +32,24 @@ jobs:
       with:
         name: firmware
         path: ./build_output/firmware
-    - name: Deploy (if 'kettlecompanion-deploy' branch)
+    - name: Deploy Development (if 'kettlecompanion' branch)
+      if: ${{ github.ref == 'refs/heads/kettlecompanion' }}
+      uses: JamesIves/github-pages-deploy-action@4.1.4
+      with:
+        branch: gh-pages # The branch the action should deploy to.
+        folder: build_output/firmware  # The folder the action should deploy.
+        target-folder: devel
+        clean: true
+        clean-exclude: |
+          *.bin
+          *.bin.gz
+    - name: Deploy Production (if 'kettlecompanion-prod' branch)
       if: ${{ github.ref == 'refs/heads/kettlecompanion-deploy' }}
       uses: JamesIves/github-pages-deploy-action@4.1.4
       with:
         branch: gh-pages # The branch the action should deploy to.
         folder: build_output/firmware  # The folder the action should deploy.
+        target-folder: prod
         clean: true
         clean-exclude: |
           *.bin
