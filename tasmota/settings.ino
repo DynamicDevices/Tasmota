@@ -954,7 +954,8 @@ void SettingsDefaultSet2(void) {
 //  Settings->energy_kWhyesterday = 0;
 //  Settings->energy_kWhdoy = 0;
 //  Settings->energy_min_power = 0;
-//  Settings->energy_max_power = 0;
+// AJL
+  Settings.energy_max_power = 1000;
 //  Settings->energy_min_voltage = 0;
 //  Settings->energy_max_voltage = 0;
 //  Settings->energy_min_current = 0;
