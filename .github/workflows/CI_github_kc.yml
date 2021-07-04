@@ -2,12 +2,21 @@ name: Tasmota CI (Kettle Companion)
 
 on:
   push:
+    branches:
+      - kettlecompanion
+      - kettlecompanion-deploy
+  pull_request:
+    branches:
+      - kettlecompanion
+#  release:
+#    types: published
 
 jobs:
   tasmota:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v1
+    - name: Checkout
+      uses: actions/checkout@v1
     - name: Set up Python
       uses: actions/setup-python@v1
     - name: Install dependencies
@@ -18,64 +27,18 @@ jobs:
         platformio update
     - name: Run PlatformIO
       run: platformio run -e tasmota
-#    - name: Upload artifact
-#    - uses: actions/upload-artifact@v2
-#      with:
-#        name: firmware
-#        path: ./build_output
-    - name: Deploy
-      uses: JamesIves/github-pages-deploy-action@4.1.4
-      with:
-        branch: gh-pages # The branch the action should deploy to.
-        folder: build_output/firmware  # The folder the action should deploy.
-        clean-exclude: *.bin, *.bin.gz
-
-  tasmota-minimal:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v1
-    - name: Set up Python
-      uses: actions/setup-python@v1
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -U platformio
-        platformio upgrade --dev
-        platformio update
-    - name: Run PlatformIO
-      run: platformio run -e tasmota-minimal
-    - uses: actions/upload-artifact@v2
+    - name: Upload artifact
+      uses: actions/upload-artifact@v2
       with:
         name: firmware
-        path: ./build_output
+        path: ./build_output/firmware
     - name: Deploy
+      if: ${{ github.ref == 'refs/heads/kettlecompanion-deploy' }}
       uses: JamesIves/github-pages-deploy-action@4.1.4
       with:
         branch: gh-pages # The branch the action should deploy to.
         folder: build_output/firmware  # The folder the action should deploy.
-        clean-exclude: *.bin, *.bin.gz
-
-  tasmota-minimal-trampoline:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v1
-    - name: Set up Python
-      uses: actions/setup-python@v1
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -U platformio
-        platformio upgrade --dev
-        platformio update
-    - name: Run PlatformIO
-      run: platformio run -e tasmota-minimal-trampoline
-    - uses: actions/upload-artifact@v2
-      with:
-        name: firmware
-        path: ./build_output
-    - name: Deploy
-      uses: JamesIves/github-pages-deploy-action@4.1.4
-      with:
-        branch: gh-pages # The branch the action should deploy to.
-        folder: build_output/firmware  # The folder the action should deploy.
-        clean-exclude: *.bin, *.bin.gz
+        clean: true
+        clean-exclude: |
+          *.bin
+          *.bin.gz
