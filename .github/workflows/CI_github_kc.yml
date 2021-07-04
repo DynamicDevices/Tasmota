@@ -55,7 +55,7 @@ jobs:
         platformio upgrade --dev
         platformio update
     - name: Run PlatformIO
-      run: platformio run -e tasmota-minimal
+      run: platformio run -e tasmota-minimal-trampoline
     - uses: actions/upload-artifact@v2
       with:
         name: firmware
