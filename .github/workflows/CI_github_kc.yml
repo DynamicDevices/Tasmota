@@ -17,7 +17,7 @@ jobs:
     steps:
     - name: Set envvars
       run: |
-        echo '::set-output name=SHORT_SHA::${git rev-parse --short HEAD}'
+        echo '::set-output name=SHORT_SHA::${{git rev-parse --short HEAD}}'
       id: setupvars
     - name: Checkout
       uses: actions/checkout@v1
