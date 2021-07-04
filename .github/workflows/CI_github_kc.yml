@@ -28,7 +28,7 @@ jobs:
       with:
         branch: gh-pages # The branch the action should deploy to.
         folder: build_output/firmware  # The folder the action should deploy.
-        clean-exclude: *.bin, *.bin.gz
+        clean-exclude: "*.bin, *.bin.gz"
 
   tasmota-minimal:
     runs-on: ubuntu-latest
@@ -53,7 +53,7 @@ jobs:
       with:
         branch: gh-pages # The branch the action should deploy to.
         folder: build_output/firmware  # The folder the action should deploy.
-        clean-exclude: *.bin, *.bin.gz
+        clean-exclude: "*.bin, *.bin.gz"
 
   tasmota-minimal-trampoline:
     runs-on: ubuntu-latest
@@ -78,4 +78,4 @@ jobs:
       with:
         branch: gh-pages # The branch the action should deploy to.
         folder: build_output/firmware  # The folder the action should deploy.
-        clean-exclude: *.bin, *.bin.gz
+        clean-exclude: "*.bin, *.bin.gz"
