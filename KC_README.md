@@ -1,4 +1,7 @@
 
+05/07/2021  v9.5.0.2/v1.0.3.0   - Add in default provisioning MQTT user and password
+                                - Change default AP to "Provisoning" with no password
+
 04/07/2021  v9.5.0.2/v1.0.2.0   Merge upstream in
 
 04/07/2021  v1.0.1.0            The Tasmota docs say don't exceed 17dBm for Wifi Tx power and we changed it up to 25dBm

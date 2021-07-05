@@ -71,7 +71,7 @@
 // Set default AP and password here for ease of debugging
 #undef  STA_SSID1
 #undef  STA_PASS1
-#define STA_SSID1         ""
+#define STA_SSID1         "Provisoning"
 #define STA_PASS1         ""
 
 // Set the minimal OTAU firmware image. This is because with our normal image it is too
@@ -133,13 +133,12 @@
 // For Watson IoT
 
 #if 1
-// Andy's
-
+// Andy's - set for provisioning
 #define MQTT_HOST         "jit4q3.messaging.internetofthings.ibmcloud.com"
 #define MQTT_PORT         8883
 #define MQTT_USER         "use-token-auth"
-#define MQTT_PASS         "AUTH_TOKEN_HERE"
-#define MQTT_CLIENT_ID    "d:jit4q3:SmartPlug:ID_HERE"
+#define MQTT_CLIENT_ID    "d:jit4q3:KettleControl:provisioning"
+#define MQTT_PASS         "7bOAVc7ttF_qHF*q-J"
 #endif
 
 #define MQTT_FULLTOPIC    "iot-2/evt/%prefix%|%topic%"
