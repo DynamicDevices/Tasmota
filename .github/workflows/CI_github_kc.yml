@@ -14,6 +14,10 @@ on:
 jobs:
   tasmota-minimal:
     runs-on: ubuntu-latest
+    environment: 
+      name: build
+    env:
+      PLATFORMIO_BUILD_FLAGS: -D MQTT_CLIENT_ID='"${{ secrets.MQTT_CLIENT_ID }}"' -D MQTT_PASS='"${{ secrets.MQTT_PASS }}"'
     steps:
     - name: Checkout
       uses: actions/checkout@v1
@@ -50,6 +54,10 @@ jobs:
         clean: false
   tasmota-minimal-trampoline:
     runs-on: ubuntu-latest
+    environment: 
+      name: build
+    env:
+      PLATFORMIO_BUILD_FLAGS: -D MQTT_CLIENT_ID='"${{ secrets.MQTT_CLIENT_ID }}"' -D MQTT_PASS='"${{ secrets.MQTT_PASS }}"'
     needs: tasmota-minimal
     steps:
     - name: Checkout
@@ -88,6 +96,10 @@ jobs:
 
   tasmota:
     runs-on: ubuntu-latest
+    environment: 
+      name: build
+    env:
+      PLATFORMIO_BUILD_FLAGS: -D MQTT_CLIENT_ID='"${{ secrets.MQTT_CLIENT_ID }}"' -D MQTT_PASS='"${{ secrets.MQTT_PASS }}"'
     needs: tasmota-minimal-trampoline
     steps:
     - name: Checkout

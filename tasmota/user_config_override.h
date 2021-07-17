@@ -103,12 +103,6 @@
 // Subscriptions are currently not supported and LWT is disabled?
 #define USE_MQTT_WATSON_IOT
 
-// MQTT TLS works but we are using fingerprint "learning" checking 
-// It is unknown if full CA cert checking will work or fit in the space
-//
-// *** MORE IMPORTANTLY IT IS NOT FULLY UNDERSTOOD WHEN THIS FINGERPRINT MIGHT
-//     CHANGE AND WHAT THE IMPACT WOULD BE ON DEVICE OPERATION ***
-
 #if !FIRMWARE_MINIMAL
 
 #if 1
@@ -131,15 +125,11 @@
 #define MQTT_TOPIC             PROJECT "_FactoryDefault"
 
 // For Watson IoT
-
-#if 1
-// Andy's - set for provisioning
-#define MQTT_HOST         "jit4q3.messaging.internetofthings.ibmcloud.com"
+#define MQTT_HOST         "broker.kettlecompanion.com"
 #define MQTT_PORT         8883
 #define MQTT_USER         "use-token-auth"
-#define MQTT_CLIENT_ID    "d:jit4q3:KettleControl:provisioning"
-#define MQTT_PASS         "7bOAVc7ttF_qHF*q-J"
-#endif
+//#define MQTT_CLIENT_ID    "REPLACE HERE"
+//#define MQTT_PASS         "REPLACE HERE"
 
 #define MQTT_FULLTOPIC    "iot-2/evt/%prefix%|%topic%"
 

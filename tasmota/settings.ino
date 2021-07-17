@@ -768,6 +768,8 @@ void SettingsDefaultSet1(void) {
 const uint8_t default_fingerprint1[] PROGMEM = { MQTT_FINGERPRINT1 };
 const uint8_t default_fingerprint2[] PROGMEM = { MQTT_FINGERPRINT2 };
 
+#include "inofixup.h"
+
 void SettingsDefaultSet2(void) {
   memset((char*)Settings +16, 0x00, sizeof(TSettings) -16);
 
@@ -917,9 +919,9 @@ void SettingsDefaultSet2(void) {
   flag3.grouptopic_mode |= MQTT_GROUPTOPIC_FORMAT;
   SettingsUpdateText(SET_MQTT_HOST, MQTT_HOST);
   Settings->mqtt_port = MQTT_PORT;
-  SettingsUpdateText(SET_MQTT_CLIENT, PSTR(MQTT_CLIENT_ID));
+  SettingsUpdateText(SET_MQTT_CLIENT, GetDefaultMqttClientId());
   SettingsUpdateText(SET_MQTT_USER, PSTR(MQTT_USER));
-  SettingsUpdateText(SET_MQTT_PWD, PSTR(MQTT_PASS));
+  SettingsUpdateText(SET_MQTT_PWD, GetDefaultMqttPassword());
   SettingsUpdateText(SET_MQTT_TOPIC, PSTR(MQTT_TOPIC));
   SettingsUpdateText(SET_MQTT_BUTTON_TOPIC, PSTR(MQTT_BUTTON_TOPIC));
   SettingsUpdateText(SET_MQTT_SWITCH_TOPIC, PSTR(MQTT_SWITCH_TOPIC));
