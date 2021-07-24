@@ -135,11 +135,20 @@
 #define MQTT_TOPIC             PROJECT "_FactoryDefault"
 
 // For Watson IoT
+
+// We are forwarding the connection via DNS so don't
+// check the actual hostname of the server
+#define DISABLE_SNI_CHECK
+
 #define MQTT_HOST         "broker.kettlecompanion.com"
 #define MQTT_PORT         8883
 #define MQTT_USER         "use-token-auth"
-//#define MQTT_CLIENT_ID    "REPLACE HERE"
-//#define MQTT_PASS         "REPLACE HERE"
+#ifndef MQTT_CLIENT_ID
+#define MQTT_CLIENT_ID    "DummyClientId"
+#endif
+#ifndef MQTT_PASS
+#define MQTT_PASS         "DummyPass"
+#endif
 
 #define MQTT_FULLTOPIC    "iot-2/evt/%prefix%|%topic%"
 
