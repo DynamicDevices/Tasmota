@@ -1,4 +1,6 @@
 
+24/07/2021  v9.5.0.3/v1.0.5.0   - Merge in most recent Tasmota changes
+
 24/07/2021  v9.5.0.2/v1.0.4.0   - Make MQTT_PASS and MQTT_CLIENT_ID "secrets" in the github CI build
                                 - Add BUILD_TYPE to fix an issue where the development trampoline updates
                                   to the production image
