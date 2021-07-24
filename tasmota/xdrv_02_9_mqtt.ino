@@ -59,8 +59,8 @@ const char kMqttCommands[] PROGMEM = "|"  // No prefix
 #if defined(USE_MQTT_TLS) && !defined(USE_MQTT_TLS_CA_CERT)
   D_CMND_MQTTFINGERPRINT "|"
 #endif
-  D_CMND_MQTTUSER "|" D_CMND_MQTTPASSWORD "|" D_CMND_MQTTKEEPALIVE "|" D_CMND_MQTTTIMEOUT "|"
-#if defined(USE_MQTT_TLS) && defined(USE_MQTT_AWS_IOT)
+  D_CMND_MQTTUSER "|" D_CMND_MQTTPASSWORD "|" D_CMND_MQTTKEEPALIVE "|" D_CMND_MQTTTIMEOUT "|" D_CMND_MQTTWIFITIMEOUT "|"
+#if defined(USE_MQTT_TLS) && (defined(USE_MQTT_AWS_IOT) || defined(USE_MQTT_WATSON_IOT) )
   D_CMND_TLSKEY "|"
 #endif
 #ifdef USE_MQTT_FILE
@@ -89,7 +89,7 @@ void (* const MqttCommand[])(void) PROGMEM = {
   &CmndMqttFingerprint,
 #endif
   &CmndMqttUser, &CmndMqttPassword, &CmndMqttKeepAlive, &CmndMqttTimeout, &CmndMqttWifiTimeout,
-#if defined(USE_MQTT_TLS) && defined(USE_MQTT_AWS_IOT)
+#if defined(USE_MQTT_TLS) && (defined(USE_MQTT_AWS_IOT) || defined(USE_MQTT_WATSON_IOT) )
   &CmndTlsKey,
 #endif
 #ifdef USE_MQTT_FILE
@@ -114,7 +114,7 @@ struct MQTT {
 #ifdef USE_MQTT_TLS
 
 // This part of code is necessary to store Private Key and Cert in Flash
-#ifdef USE_MQTT_AWS_IOT
+#if defined(USE_MQTT_AWS_IOT) || defined(USE_MQTT_WATSON_IOT)
 #include <base64.hpp>
 
 const br_ec_private_key *AWS_IoT_Private_Key = nullptr;
@@ -1279,6 +1279,7 @@ void CmndMqttlog(void) {
 }
 
 void CmndMqttHost(void) {
+
   if (XdrvMailbox.data_len > 0) {
     SettingsUpdateText(SET_MQTT_HOST, (SC_CLEAR == Shortcut()) ? "" : (SC_DEFAULT == Shortcut()) ? MQTT_HOST : XdrvMailbox.data);
     TasmotaGlobal.restart_flag = 2;
@@ -1287,6 +1288,7 @@ void CmndMqttHost(void) {
 }
 
 void CmndMqttPort(void) {
+
   if ((XdrvMailbox.payload > 0) && (XdrvMailbox.payload < 65536)) {
     Settings->mqtt_port = (1 == XdrvMailbox.payload) ? MQTT_PORT : XdrvMailbox.payload;
     TasmotaGlobal.restart_flag = 2;
@@ -1552,7 +1554,7 @@ void CmndStateRetain(void) {
 /*********************************************************************************************\
  * TLS private key and certificate - store into Flash
 \*********************************************************************************************/
-#if defined(USE_MQTT_TLS) && defined(USE_MQTT_AWS_IOT)
+#if defined(USE_MQTT_TLS) && ( defined(USE_MQTT_AWS_IOT) || defined(USE_MQTT_WATSON_IOT) )
 
 #ifdef ESP32
 static uint8_t * tls_spi_start = nullptr;
@@ -1626,6 +1628,7 @@ void loadTlsDir(void) {
 const char ALLOCATE_ERROR[] PROGMEM = "TLSKey " D_JSON_ERROR ": cannot allocate buffer.";
 
 void CmndTlsKey(void) {
+
 #ifdef DEBUG_DUMP_TLS
   if (0 == XdrvMailbox.index){
     CmndTlsDump();
