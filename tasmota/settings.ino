@@ -915,7 +915,7 @@ void SettingsDefaultSet2(void) {
   flag3.no_hold_retain |= MQTT_NO_HOLD_RETAIN;
   flag3.use_underscore |= MQTT_INDEX_SEPARATOR;
   flag3.grouptopic_mode |= MQTT_GROUPTOPIC_FORMAT;
-  SettingsUpdateText(SET_MQTT_HOST, MQTT_HOST);
+  SettingsUpdateText(SET_MQTT_HOST, PSTR(MQTT_HOST));
   Settings->mqtt_port = MQTT_PORT;
 
   SettingsUpdateText(SET_MQTT_CLIENT, PSTR(MQTT_CLIENT_ID));
