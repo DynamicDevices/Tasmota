@@ -990,7 +990,11 @@ bool WiFiClientSecure_light::_connectSSL(const char* hostName) {
 
     // ============================================================
     // Start TLS connection, ALL
+#ifdef DISABLE_SNI_CHECK
+    if (!br_ssl_client_reset(_sc.get(), 0, 0)) break;
+#else
     if (!br_ssl_client_reset(_sc.get(), hostName, 0)) break;
+#endif
 
     auto ret = _wait_for_handshake();
   #ifdef DEBUG_ESP_SSL
