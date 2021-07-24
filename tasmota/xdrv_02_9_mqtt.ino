@@ -1224,12 +1224,10 @@ void CmndMqttUser(void) {
   ResponseCmndChar(SettingsText(SET_MQTT_USER));
 }
 
-#include "inofixup.h"
-
 void CmndMqttPassword(void) {
   bool show_asterisk = (2 == XdrvMailbox.index);
   if (XdrvMailbox.data_len > 0) {
-    SettingsUpdateText(SET_MQTT_PWD, (SC_CLEAR == Shortcut()) ? "" : (SC_DEFAULT == Shortcut()) ? GetDefaultMqttPassword() : XdrvMailbox.data);
+    SettingsUpdateText(SET_MQTT_PWD, (SC_CLEAR == Shortcut()) ? "" : (SC_DEFAULT == Shortcut()) ? PSTR(MQTT_PASS) : XdrvMailbox.data);
     if (!show_asterisk) {
       ResponseCmndChar(SettingsText(SET_MQTT_PWD));
     }
@@ -1321,7 +1319,7 @@ void CmndStateText(void) {
 
 void CmndMqttClient(void) {
   if (!XdrvMailbox.grpflg && (XdrvMailbox.data_len > 0)) {
-    SettingsUpdateText(SET_MQTT_CLIENT, (SC_DEFAULT == Shortcut()) ? GetDefaultMqttClientId() : XdrvMailbox.data);
+    SettingsUpdateText(SET_MQTT_CLIENT, (SC_DEFAULT == Shortcut()) ? PSTR(MQTT_CLIENT_ID) : XdrvMailbox.data);
     TasmotaGlobal.restart_flag = 2;
   }
   ResponseCmndChar(SettingsText(SET_MQTT_CLIENT));
@@ -1813,7 +1811,7 @@ void HandleMqttConfiguration(void)
 #ifdef USE_MQTT_TLS
     Mqtt.mqtt_tls ? PSTR(" checked") : "",      // SetOption102 - Enable MQTT TLS
 #endif // USE_MQTT_TLS
-    Format(str, GetDefaultMqttClientId(), sizeof(str)), GetDefaultMqttClientId(), SettingsText(SET_MQTT_CLIENT));
+    Format(str, PSTR(MQTT_CLIENT_ID), sizeof(str)), PSTR(MQTT_CLIENT_ID), SettingsText(SET_MQTT_CLIENT));
   WSContentSend_P(HTTP_FORM_MQTT2,
     (!strlen(SettingsText(SET_MQTT_USER))) ? "0" : SettingsText(SET_MQTT_USER),
     Format(str, PSTR(MQTT_TOPIC), sizeof(str)), PSTR(MQTT_TOPIC), SettingsText(SET_MQTT_TOPIC),

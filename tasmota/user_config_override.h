@@ -117,8 +117,8 @@
 #endif // FIRMWARE_MINIMAL
 
 #undef MQTT_USER
-#undef MQTT_PASS
-#undef MQTT_CLIENT_ID
+//#undef MQTT_PASS
+//#undef MQTT_CLIENT_ID
 #undef MQTT_TOPIC
 #undef MQTT_FULLTOPIC
 
