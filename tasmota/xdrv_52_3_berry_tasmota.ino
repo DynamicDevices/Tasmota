@@ -87,6 +87,22 @@ extern "C" {
     }
     be_raise(vm, kTypeError, nullptr);
   }
+  
+  // Berry: `tasmota.publish_result(payload:string, subtopic:string) -> nil``
+  //
+  int32_t l_publish_result(struct bvm *vm);
+  int32_t l_publish_result(struct bvm *vm) {
+    int32_t top = be_top(vm); // Get the number of arguments
+    if (top >= 3 && be_isstring(vm, 2) && be_isstring(vm, 3)) {  // 2 mandatory string arguments
+      const char * payload = be_tostring(vm, 2);
+      const char * subtopic = be_tostring(vm, 3);
+      Response_P(PSTR("%s"), payload);
+      be_pop(vm, top);
+      MqttPublishPrefixTopicRulesProcess_P(RESULT_OR_TELE, subtopic);
+      be_return_nil(vm); // Return
+    }
+    be_raise(vm, kTypeError, nullptr);
+  }
 
   // Berry: `tasmota.cmd(command:string) -> string`
   //
@@ -181,7 +197,7 @@ extern "C" {
       map_insert_int(vm, "heap_free", ESP_getFreeHeap() / 1024);
       int32_t freeMaxMem = 100 - (int32_t)(ESP_getMaxAllocHeap() * 100 / ESP_getFreeHeap());
       map_insert_int(vm, "frag", freeMaxMem);
-      if (psramFound()) {
+      if (UsePSRAM()) {
         map_insert_int(vm, "psram", ESP.getPsramSize() / 1024);
         map_insert_int(vm, "psram_free", ESP.getFreePsram() / 1024);
       }
