@@ -19,6 +19,14 @@ jobs:
     env:
       PLATFORMIO_BUILD_FLAGS: -D MQTT_CLIENT_ID='"${{ secrets.MQTT_CLIENT_ID }}"' -D MQTT_PASS='"${{ secrets.MQTT_PASS }}"'
     steps:
+    - name: Set environment for branch
+      run: |
+        if [[ $GITHUB_REF == 'refs/heads/kettlecompanion' ]]; then
+          echo "BUILD_TYPE=development" >> "$GITHUB_ENV"
+        fi
+        if [[ $GITHUB_REF == 'refs/heads/kettlecompanion-prod' ]]; then
+          echo "BUILD_TYPE=production" >> "$GITHUB_ENV"
+        fi
     - name: Checkout
       uses: actions/checkout@v1
     - name: Set up Python
@@ -30,7 +38,9 @@ jobs:
         platformio upgrade --dev
         platformio update
     - name: Run PlatformIO
-      run: platformio run -e tasmota-minimal
+      run: |
+        export PLATFORMIO_BUILD_FLAGS="${PLATFORMIO_BUILD_FLAGS} -D BUILD_TYPE=${BUILD_TYPE}"
+        platformio run -e tasmota-minimal
     - name: Store artifacts
       uses: actions/upload-artifact@v2
       with:
@@ -60,6 +70,14 @@ jobs:
       PLATFORMIO_BUILD_FLAGS: -D MQTT_CLIENT_ID='"${{ secrets.MQTT_CLIENT_ID }}"' -D MQTT_PASS='"${{ secrets.MQTT_PASS }}"'
     needs: tasmota-minimal
     steps:
+    - name: Set environment for branch
+      run: |
+        if [[ $GITHUB_REF == 'refs/heads/kettlecompanion' ]]; then
+          echo "BUILD_TYPE=development" >> "$GITHUB_ENV"
+        fi
+        if [[ $GITHUB_REF == 'refs/heads/kettlecompanion-prod' ]]; then
+          echo "BUILD_TYPE=production" >> "$GITHUB_ENV"
+        fi
     - name: Checkout
       uses: actions/checkout@v1
     - name: Set up Python
@@ -71,7 +89,9 @@ jobs:
         platformio upgrade --dev
         platformio update
     - name: Run PlatformIO
-      run: platformio run -e tasmota-minimal-trampoline
+      run: |
+        export PLATFORMIO_BUILD_FLAGS="${PLATFORMIO_BUILD_FLAGS} -D BUILD_TYPE=${BUILD_TYPE}"
+        platformio run -e tasmota-minimal-trampoline
     - name: Store artifacts
       uses: actions/upload-artifact@v2
       with:
@@ -102,6 +122,14 @@ jobs:
       PLATFORMIO_BUILD_FLAGS: -D MQTT_CLIENT_ID='"${{ secrets.MQTT_CLIENT_ID }}"' -D MQTT_PASS='"${{ secrets.MQTT_PASS }}"'
     needs: tasmota-minimal-trampoline
     steps:
+    - name: Set environment for branch
+      run: |
+        if [[ $GITHUB_REF == 'refs/heads/kettlecompanion' ]]; then
+          echo "BUILD_TYPE=development" >> "$GITHUB_ENV"
+        fi
+        if [[ $GITHUB_REF == 'refs/heads/kettlecompanion-prod' ]]; then
+          echo "BUILD_TYPE=production" >> "$GITHUB_ENV"
+        fi
     - name: Checkout
       uses: actions/checkout@v1
     - name: Set up Python
@@ -113,7 +141,9 @@ jobs:
         platformio upgrade --dev
         platformio update
     - name: Run PlatformIO
-      run: platformio run -e tasmota
+      run: |
+        export PLATFORMIO_BUILD_FLAGS="${PLATFORMIO_BUILD_FLAGS} -D BUILD_TYPE=${BUILD_TYPE}"
+        platformio run -e tasmota
     - name: Store artifacts
       uses: actions/upload-artifact@v2
       with:
