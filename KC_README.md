@@ -1,4 +1,7 @@
 
+25/07/2021  v9.5.0.3/v1.0.6.0   - Fix issue with MQTT configuration being wrong
+                                - Don't check TLS server name (SNI) on certificate as we now forward
+
 24/07/2021  v9.5.0.3/v1.0.5.0   - Merge in most recent Tasmota changes
 
 24/07/2021  v9.5.0.2/v1.0.4.0   - Make MQTT_PASS and MQTT_CLIENT_ID "secrets" in the github CI build
