@@ -228,6 +228,7 @@
 // LOGGING
 
 #define SYS_LOG_HOST           "192.168.1.55"
+#define SYS_LOG_LEVEL          LOG_LEVEL_DEBUG_MORE
 
 // APP
 
