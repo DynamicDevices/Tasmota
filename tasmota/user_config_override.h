@@ -225,6 +225,10 @@
 
 #endif
 
+// LOGGING
+
+#define SYS_LOG_HOST           "192.168.1.55"
+
 // APP
 
 // PRIVATE
