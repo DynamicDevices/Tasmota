@@ -111,7 +111,8 @@
 
 // We have a partial implementation for Watson topic requirements
 // Subscriptions are currently not supported and LWT is disabled?
-#define USE_MQTT_WATSON_IOT
+//#define USE_MQTT_WATSON_IOT
+#define USE_MQTT_MOSQUITTO // Use our Mosquitto server (which is based on the WIOT changes)
 
 #if !FIRMWARE_MINIMAL
 

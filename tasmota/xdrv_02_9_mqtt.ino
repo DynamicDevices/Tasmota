@@ -60,7 +60,7 @@ const char kMqttCommands[] PROGMEM = "|"  // No prefix
   D_CMND_MQTTFINGERPRINT "|"
 #endif
   D_CMND_MQTTUSER "|" D_CMND_MQTTPASSWORD "|" D_CMND_MQTTKEEPALIVE "|" D_CMND_MQTTTIMEOUT "|" D_CMND_MQTTWIFITIMEOUT "|"
-#if defined(USE_MQTT_TLS) && (defined(USE_MQTT_AWS_IOT) || defined(USE_MQTT_WATSON_IOT) )
+#if defined(USE_MQTT_TLS) && (defined(USE_MQTT_AWS_IOT) || defined(USE_MQTT_WATSON_IOT) || defined(USE_MQTT_MOSQUITTO) )
   D_CMND_TLSKEY "|"
 #endif
 #ifdef USE_MQTT_FILE
@@ -89,7 +89,7 @@ void (* const MqttCommand[])(void) PROGMEM = {
   &CmndMqttFingerprint,
 #endif
   &CmndMqttUser, &CmndMqttPassword, &CmndMqttKeepAlive, &CmndMqttTimeout, &CmndMqttWifiTimeout,
-#if defined(USE_MQTT_TLS) && (defined(USE_MQTT_AWS_IOT) || defined(USE_MQTT_WATSON_IOT) )
+#if defined(USE_MQTT_TLS) && (defined(USE_MQTT_AWS_IOT) || defined(USE_MQTT_WATSON_IOT) || defined(USE_MQTT_MOSQUITTO) )
   &CmndTlsKey,
 #endif
 #ifdef USE_MQTT_FILE
@@ -114,7 +114,7 @@ struct MQTT {
 #ifdef USE_MQTT_TLS
 
 // This part of code is necessary to store Private Key and Cert in Flash
-#if defined(USE_MQTT_AWS_IOT) || defined(USE_MQTT_WATSON_IOT)
+#if defined(USE_MQTT_AWS_IOT) || defined(USE_MQTT_WATSON_IOT) || defined(USE_MQTT_MOSQUITTO)
 #include <base64.hpp>
 
 const br_ec_private_key *AWS_IoT_Private_Key = nullptr;
@@ -572,7 +572,7 @@ void MqttDataHandler(char* mqtt_topic, uint8_t* mqtt_data, unsigned int data_len
 #endif  // ESP32
 #endif  // USE_TASMESH
 
-#ifdef USE_MQTT_WATSON_IOT
+#if defined (USE_MQTT_WATSON_IOT) || defined(USE_MQTT_MOSQUITTO)
     // Strip off ending fmt/text
     String topicN = String(topic);
     topicN.replace(F("/fmt/text"), "");
@@ -884,7 +884,7 @@ void MqttConnected(void) {
     Mqtt.retry_counter_delay = 1;
     Mqtt.connect_count++;
 
-#if !defined(USE_MQTT_WATSON_IOT)
+#if !defined(USE_MQTT_WATSON_IOT) && !defined(USE_MQTT_MOSQUITTO)
     GetTopic_P(stopic, TELE, TasmotaGlobal.mqtt_topic, S_LWT);
     Response_P(PSTR(MQTT_LWT_ONLINE));
     MqttPublish(stopic, true);
@@ -896,7 +896,7 @@ void MqttConnected(void) {
       MqttPublishPrefixTopic_P(CMND, S_RSLT_POWER);
     }
 
-#if !defined(USE_MQTT_WATSON_IOT)
+#if !defined(USE_MQTT_WATSON_IOT) && !defined(USE_MQTT_MOSQUITTO)
     GetTopic_P(stopic, CMND, TasmotaGlobal.mqtt_topic, PSTR("#"));
     MqttSubscribe(stopic);
     if (strstr_P(SettingsText(SET_MQTT_FULLTOPIC), MQTT_TOKEN_TOPIC) != nullptr) {
@@ -1069,7 +1069,7 @@ void MqttReconnect(void) {
     tlsClient->setPubKeyFingerprint(Settings->mqtt_fingerprint[0], Settings->mqtt_fingerprint[1], allow_all_fingerprints);
   }
 #endif
-#if defined(USE_MQTT_WATSON_IOT)
+#if defined(USE_MQTT_WATSON_IOT) || defined(USE_MQTT_MOSQUITTO)
   Settings->flag4.mqtt_no_retain = true; // Don't support this
 #endif
   bool lwt_retain = Settings->flag4.mqtt_no_retain ? false : true;   // no retained last will if "no_retain"
@@ -1099,7 +1099,7 @@ void MqttReconnect(void) {
   if (MqttClient.connect(TasmotaGlobal.mqtt_client, azureMqtt_userString.c_str(), azureMqtt_password.c_str(), stopic, 1, lwt_retain, TasmotaGlobal.mqtt_data, MQTT_CLEAN_SESSION)) {
 #endif
 #else
-#ifdef USE_MQTT_WATSON_IOT // Watson doesn't support LWT
+#if defined(USE_MQTT_WATSON_IOT) || defined(USE_MQTT_MOSQUITTO) // Watson doesn't support LWT
   if (MqttClient.connect(TasmotaGlobal.mqtt_client, mqtt_user, mqtt_pwd, NULL, 1, false, NULL, MQTT_CLEAN_SESSION)) {
 #else
 #ifdef MQTT_DATA_STRING
@@ -1108,7 +1108,7 @@ void MqttReconnect(void) {
   if (MqttClient.connect(TasmotaGlobal.mqtt_client, mqtt_user, mqtt_pwd, stopic, 1, lwt_retain, TasmotaGlobal.mqtt_data, MQTT_CLEAN_SESSION)) {
 #endif
 #endif  // USE_MQTT_AZURE_IOT
-#endif // USE_MQTT_WATSON_IOT
+#endif // USE_MQTT_WATSON_IOT / USE_MQTT_MOSQUITTO
 #ifdef USE_MQTT_TLS
     if (Mqtt.mqtt_tls) {
 #ifdef ESP8266
@@ -1554,7 +1554,7 @@ void CmndStateRetain(void) {
 /*********************************************************************************************\
  * TLS private key and certificate - store into Flash
 \*********************************************************************************************/
-#if defined(USE_MQTT_TLS) && ( defined(USE_MQTT_AWS_IOT) || defined(USE_MQTT_WATSON_IOT) )
+#if defined(USE_MQTT_TLS) && ( defined(USE_MQTT_AWS_IOT) || defined(USE_MQTT_WATSON_IOT) || defined(USE_MQTT_MOSQUITTO) )
 
 #ifdef ESP32
 static uint8_t * tls_spi_start = nullptr;
