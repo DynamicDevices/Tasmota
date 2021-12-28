@@ -139,7 +139,7 @@
 
 // We are forwarding the connection via DNS so don't
 // check the actual hostname of the server
-#define DISABLE_SNI_CHECK
+//#define DISABLE_SNI_CHECK
 
 #define MQTT_HOST         "broker.kettlecompanion.com"
 #define MQTT_PORT         8883
