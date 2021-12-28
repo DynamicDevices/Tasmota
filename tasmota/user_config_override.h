@@ -233,6 +233,10 @@
 
 // APP
 
+// Make plug always come on when plugged in
+#undef APP_POWERON_STATE
+#define APP_POWERON_STATE      POWER_ALL_ON
+
 // PRIVATE
 #include "user_config_override_private.h"
 
