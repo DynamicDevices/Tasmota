@@ -59,7 +59,7 @@
 // - button enabled
 //#define USER_TEMPLATE "{\"NAME\":\"Gosund UP111\",\"GPIO\":[0,320,0,32,2720,2656,0,0,2624,576,224,0,0,0],\"FLAG\":0,\"BASE\":18}" // Template Set JSON template
 // - button disabled locally
-#define USER_TEMPLATE "{\"NAME\":\"Gosund UP111\",\"GPIO\":[0,320,0,0,2720,2656,0,0,2624,576,224,0,0,0],\"FLAG\":0,\"BASE\":18}" // Template Set JSON template
+#define USER_TEMPLATE "{\"NAME\":\"2NICE UP111\",\"GPIO\":[0,320,0,0,2720,2656,0,0,2624,576,224,0,0,0],\"FLAG\":0,\"BASE\":18}" // Template Set JSON template
 
 // This needs a little thinking. In general we want to be able to get into the WiFi manager
 // running as an AP to configure the network. However if there is a network outage (e.g. AP
