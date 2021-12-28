@@ -1,4 +1,7 @@
 
+28/12/2021  v9.5.0.3/v1.1.0.0   - Add support for broker-new.kettlecompanion.com MQTT TLS cert
+                                  This is in *addition* to the Watson TLS cert so both should work
+
 25/07/2021  v9.5.0.3/v1.0.6.0   - Fix issue with MQTT configuration being wrong
                                 - Don't check TLS server name (SNI) on certificate as we now forward
 
