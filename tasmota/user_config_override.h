@@ -162,7 +162,7 @@
 
 // Web / Alexa friendly nam
 #undef FRIENDLY_NAME
-#define FRIENDLY_NAME          "Kettle Companion"         // [FriendlyName] Friendlyname up to 32 characters used by webpages and Alexa
+#define FRIENDLY_NAME          "KC_SmartPlug"         // [FriendlyName] Friendlyname up to 32 characters used by webpages and Alexa
 
 // Set the web admin password here
 #undef WEB_PASSWORD
