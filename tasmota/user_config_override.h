@@ -141,7 +141,7 @@
 // check the actual hostname of the server
 //#define DISABLE_SNI_CHECK
 
-#define MQTT_HOST         "broker.kettlecompanion.com"
+#define MQTT_HOST         "broker-new.kettlecompanion.com"
 #define MQTT_PORT         8883
 #define MQTT_USER         "use-token-auth"
 #ifndef MQTT_CLIENT_ID
