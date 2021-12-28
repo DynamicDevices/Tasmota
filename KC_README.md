@@ -1,4 +1,11 @@
-
+28/12/2021  v9.5.0.3/v1.1.1.0   - user_config_override: Change template default to '2NICE UP111' #3 
+                                - user_config_override: Do not disable SNI check
+                                - user_config_override: Change default broker to broker-new.kettlecompa… 
+                                - user_config_override: Disable SYSLOG settings 
+                                - user_config_override: Make plug always come on enabled when powered #4
+                                - settings: Change power high level 1000->500mA #5 
+                                - user_config_override: Change smart name to KC_SmartPlug #7 
+                                
 28/12/2021  v9.5.0.3/v1.1.0.0   - Add support for broker-new.kettlecompanion.com MQTT TLS cert
                                   This is in *addition* to the Watson TLS cert so both should work
 
