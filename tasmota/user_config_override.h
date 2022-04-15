@@ -71,7 +71,7 @@
 // Set default AP and password here for ease of debugging
 #undef  STA_SSID1
 #undef  STA_PASS1
-#define STA_SSID1         "Provisoning"
+#define STA_SSID1         "Provisioning"
 #define STA_PASS1         ""
 
 // Set the minimal OTAU firmware image. This is because with our normal image it is too
@@ -141,7 +141,8 @@
 // check the actual hostname of the server
 //#define DISABLE_SNI_CHECK
 
-#define MQTT_HOST         "broker-new.kettlecompanion.com"
+//#define MQTT_HOST         "broker-new.kettlecompanion.com"
+#define MQTT_HOST         "jit4q3.messaging.internetofthings.ibmcloud.com"
 #define MQTT_PORT         8883
 #define MQTT_USER         "use-token-auth"
 #ifndef MQTT_CLIENT_ID
