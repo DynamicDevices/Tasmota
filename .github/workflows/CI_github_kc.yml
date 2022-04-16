@@ -12,8 +12,8 @@ on:
 
 jobs:
   tasmota-minimal:
-#    runs-on: ubuntu-latest
-    runs-on: [self-hosted, linux]
+    runs-on: ubuntu-latest
+#    runs-on: [self-hosted, linux]
     environment: 
       name: build
     env:
@@ -64,8 +64,8 @@ jobs:
         target-folder: prod
         clean: false
   tasmota-minimal-trampoline:
-#    runs-on: ubuntu-latest
-    runs-on: [self-hosted, linux]
+    runs-on: ubuntu-latest
+#    runs-on: [self-hosted, linux]
     environment: 
       name: build
     env:
@@ -117,8 +117,8 @@ jobs:
         clean: false
 
   tasmota:
-#    runs-on: ubuntu-latest
-    runs-on: [self-hosted, linux]
+    runs-on: ubuntu-latest
+#    runs-on: [self-hosted, linux]
     environment: 
       name: build
     env:
