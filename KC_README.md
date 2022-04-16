@@ -1,3 +1,6 @@
+15/04/2022  v9.5.0.3/v1.1.2.0   - fix provisioning AP name from 'Provisoning' to 'Provisioning'
+                                - revert to old Watson IoT broker
+
 28/12/2021  v9.5.0.3/v1.1.1.0   - user_config_override: Change template default to '2NICE UP111' #3 
                                 - user_config_override: Do not disable SNI check
                                 - user_config_override: Change default broker to broker-new.kettlecompa… 
