@@ -91,10 +91,14 @@
 
 #if BUILD_TYPE == development
 
+#warning Using Development OTA_URL
+
 // Use our own build for minimal trampoline to full fat firmware
 #define OTA_URL                  "http://dl.kettlecompanion.com/devel/tasmota-minimal-trampoline.bin.gz"
 
 #else
+
+#warning Using Profuction OTA_URL
 
 // Use our own build for minimal trampoline to full fat firmware
 #define OTA_URL                  "http://dl.kettlecompanion.com/prod/tasmota-minimal-trampoline.bin.gz"
