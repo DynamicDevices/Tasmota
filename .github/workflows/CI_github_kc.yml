@@ -119,6 +119,7 @@ jobs:
   tasmota-lite:
     runs-on: ubuntu-latest
 #    runs-on: [self-hosted, linux]
+    needs: tasmota-minimal-trampoline
     environment: 
       name: build
     needs: tasmota-minimal-trampoline
