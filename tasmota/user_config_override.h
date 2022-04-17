@@ -81,25 +81,15 @@
 //
 // *** Note that the full image is now getting to the point that it's too big even to update
 //     to the minimal image. The get out of jail here is to append .bin.gz to the URL as a
-//     "get out of jail" card but I am leaving this set to the uncompressed image size to 
+//     "get out of jail" card but I am leaving this set to the uncompressed image size to
 //     serve as a warning that things are getting too big in the main image if we can't update
 //     to this one ***
 
 // EDIT: Moved to using official one now
+
+// Use our own build for minimal trampoline to full fat firmware
 #undef OTA_URL
-//#define OTA_URL                "http://ota.tasmota.com/tasmota/release/tasmota-minimal.bin.gz"  // [OtaUrl]
-
-#if BUILD_TYPE == development
-
-// Use our own build for minimal trampoline to full fat firmware
-#define OTA_URL                  "http://dl.kettlecompanion.com/devel/tasmota-minimal-trampoline.bin.gz"
-
-#else
-
-// Use our own build for minimal trampoline to full fat firmware
-#define OTA_URL                  "http://dl.kettlecompanion.com/prod/tasmota-minimal-trampoline.bin.gz"
-
-#endif
+#define OTA_URL "http://dl.kettlecompanion.com/prod/tasmota-minimal-trampoline.bin.gz"
 
 // Are we building a minimal build that will auto-install and auto-trampoline to a full build?
 //#define USE_TRAMPOLINE
@@ -206,8 +196,8 @@
 #undef TIME_DST_OFFSET
 #define TIME_DST_OFFSET        +60              // Offset from UTC in minutes (-780 to +780)
 
-#undef TIME_STD_HOUR   
-#define TIME_STD_HOUR          2   
+#undef TIME_STD_HOUR
+#define TIME_STD_HOUR          2
 #undef TIME_STD_OFFSET
 #define TIME_STD_OFFSET        +0               // Offset from UTC in minutes (-780 to +780)
 
@@ -219,11 +209,7 @@
   #undef USE_SCRIPT
   #define USE_RULES
 
-#if BUILD_TYPE == development
-  #define USER_RULE1 "ON Wifi#Connected DO OTAURL http://dl.kettlecompanion.com/devel/tasmota.bin.gz ENDON ON Wifi#Connected DO UPGRADE 1 ENDON\r\nRULE1 1"          // Add rule1 data saved at initial firmware load or when command reset is executed
-#else
-  #define USER_RULE1 "ON Wifi#Connected DO OTAURL http://dl.kettlecompanion.com/prod/tasmota.bin.gz ENDON ON Wifi#Connected DO UPGRADE 1 ENDON\r\nRULE1 1"          // Add rule1 data saved at initial firmware load or when command reset is executed
-#endif
+#define USER_RULE1 "ON Wifi#Connected DO OTAURL http://dl.kettlecompanion.com/prod/tasmota.bin.gz ENDON ON Wifi#Connected DO UPGRADE 1 ENDON\r\nRULE1 1"          // Add rule1 data saved at initial firmware load or when command reset is executed
 
 #endif
 

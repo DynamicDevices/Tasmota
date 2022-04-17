@@ -22,10 +22,10 @@ jobs:
     - name: Set environment for branch
       run: |
         if [[ $GITHUB_REF == 'refs/heads/kettlecompanion' ]]; then
-          echo "BUILD_TYPE=development" >> "$GITHUB_ENV"
+          echo "BUILD_TYPE=devel" >> "$GITHUB_ENV"
         fi
         if [[ $GITHUB_REF == 'refs/heads/kettlecompanion-prod' ]]; then
-          echo "BUILD_TYPE=production" >> "$GITHUB_ENV"
+          echo "BUILD_TYPE=prod" >> "$GITHUB_ENV"
         fi
     - name: Checkout
       uses: actions/checkout@v1
@@ -75,10 +75,10 @@ jobs:
     - name: Set environment for branch
       run: |
         if [[ $GITHUB_REF == 'refs/heads/kettlecompanion' ]]; then
-          echo "BUILD_TYPE=development" >> "$GITHUB_ENV"
+          echo "BUILD_TYPE=devel" >> "$GITHUB_ENV"
         fi
         if [[ $GITHUB_REF == 'refs/heads/kettlecompanion-prod' ]]; then
-          echo "BUILD_TYPE=production" >> "$GITHUB_ENV"
+          echo "BUILD_TYPE=prod" >> "$GITHUB_ENV"
         fi
     - name: Checkout
       uses: actions/checkout@v1
@@ -122,17 +122,16 @@ jobs:
     needs: tasmota-minimal-trampoline
     environment: 
       name: build
-    needs: tasmota-minimal-trampoline
     env:
       PLATFORMIO_BUILD_FLAGS: -D MQTT_CLIENT_ID='"${{ secrets.MQTT_CLIENT_ID }}"' -D MQTT_PASS='"${{ secrets.MQTT_PASS }}"'
     steps:
     - name: Set environment for branch
       run: |
         if [[ $GITHUB_REF == 'refs/heads/kettlecompanion' ]]; then
-          echo "BUILD_TYPE=development" >> "$GITHUB_ENV"
+          echo "BUILD_TYPE=devel" >> "$GITHUB_ENV"
         fi
         if [[ $GITHUB_REF == 'refs/heads/kettlecompanion-prod' ]]; then
-          echo "BUILD_TYPE=production" >> "$GITHUB_ENV"
+          echo "BUILD_TYPE=prod" >> "$GITHUB_ENV"
         fi
     - name: Checkout
       uses: actions/checkout@v1
@@ -182,10 +181,10 @@ jobs:
     - name: Set environment for branch
       run: |
         if [[ $GITHUB_REF == 'refs/heads/kettlecompanion' ]]; then
-          echo "BUILD_TYPE=development" >> "$GITHUB_ENV"
+          echo "BUILD_TYPE=devel" >> "$GITHUB_ENV"
         fi
         if [[ $GITHUB_REF == 'refs/heads/kettlecompanion-prod' ]]; then
-          echo "BUILD_TYPE=production" >> "$GITHUB_ENV"
+          echo "BUILD_TYPE=prod" >> "$GITHUB_ENV"
         fi
     - name: Checkout
       uses: actions/checkout@v1
@@ -235,10 +234,10 @@ jobs:
     - name: Set environment for branch
       run: |
         if [[ $GITHUB_REF == 'refs/heads/kettlecompanion' ]]; then
-          echo "BUILD_TYPE=development" >> "$GITHUB_ENV"
+          echo "BUILD_TYPE=develop" >> "$GITHUB_ENV"
         fi
         if [[ $GITHUB_REF == 'refs/heads/kettlecompanion-prod' ]]; then
-          echo "BUILD_TYPE=production" >> "$GITHUB_ENV"
+          echo "BUILD_TYPE=prod" >> "$GITHUB_ENV"
         fi
     - name: Checkout
       uses: actions/checkout@v1
