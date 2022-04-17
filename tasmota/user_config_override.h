@@ -98,7 +98,7 @@
 
 #else
 
-#warning Using Profuction OTA_URL
+#warning Using Production OTA_URL
 
 // Use our own build for minimal trampoline to full fat firmware
 #define OTA_URL                  "http://dl.kettlecompanion.com/prod/tasmota-minimal-trampoline.bin.gz"
