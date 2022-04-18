@@ -3,9 +3,11 @@ name: Tasmota CI (Kettle Companion)
 on:
   push:
     branches:
+      - kettlecompanion
       - kettlecompanion-prod
   pull_request:
     branches:
+      - kettlecompanion
       - kettlecompanion-prod
 #  release:
 #    types: published

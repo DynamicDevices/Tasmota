@@ -204,6 +204,12 @@
 #undef USE_PING
 #define USE_PING                                 // Enable Ping command (+2k code)
 
+// I am seeing a problem with constant cycling when updating to the full Tasmota image
+// Not sure why this is. The RULE1 seems to be left over in the flash from the previous
+// lite or minimal upgrade and we loop constantly. So as an interim fix I am trying to
+// disable rules in the full version so we don't loop constantly
+#undef USE_RULES
+
 // RULES - Force upgrade to full on connection
 #ifdef USE_TRAMPOLINE
   #undef USE_SCRIPT
