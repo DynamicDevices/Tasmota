@@ -4,9 +4,11 @@ on:
   push:
     branches:
       - kettlecompanion
+      - kettlecompanion-prod
   pull_request:
     branches:
       - kettlecompanion
+      - kettlecompanion-prod
 #  release:
 #    types: published
 
@@ -22,10 +24,10 @@ jobs:
     - name: Set environment for branch
       run: |
         if [[ $GITHUB_REF == 'refs/heads/kettlecompanion' ]]; then
-          echo "BUILD_TYPE=development" >> "$GITHUB_ENV"
+          echo "BUILD_TYPE=devel" >> "$GITHUB_ENV"
         fi
         if [[ $GITHUB_REF == 'refs/heads/kettlecompanion-prod' ]]; then
-          echo "BUILD_TYPE=production" >> "$GITHUB_ENV"
+          echo "BUILD_TYPE=prod" >> "$GITHUB_ENV"
         fi
     - name: Checkout
       uses: actions/checkout@v1
@@ -75,10 +77,10 @@ jobs:
     - name: Set environment for branch
       run: |
         if [[ $GITHUB_REF == 'refs/heads/kettlecompanion' ]]; then
-          echo "BUILD_TYPE=development" >> "$GITHUB_ENV"
+          echo "BUILD_TYPE=devel" >> "$GITHUB_ENV"
         fi
         if [[ $GITHUB_REF == 'refs/heads/kettlecompanion-prod' ]]; then
-          echo "BUILD_TYPE=production" >> "$GITHUB_ENV"
+          echo "BUILD_TYPE=prod" >> "$GITHUB_ENV"
         fi
     - name: Checkout
       uses: actions/checkout@v1
@@ -128,10 +130,10 @@ jobs:
     - name: Set environment for branch
       run: |
         if [[ $GITHUB_REF == 'refs/heads/kettlecompanion' ]]; then
-          echo "BUILD_TYPE=development" >> "$GITHUB_ENV"
+          echo "BUILD_TYPE=devel" >> "$GITHUB_ENV"
         fi
         if [[ $GITHUB_REF == 'refs/heads/kettlecompanion-prod' ]]; then
-          echo "BUILD_TYPE=production" >> "$GITHUB_ENV"
+          echo "BUILD_TYPE=prod" >> "$GITHUB_ENV"
         fi
     - name: Checkout
       uses: actions/checkout@v1
@@ -181,10 +183,10 @@ jobs:
     - name: Set environment for branch
       run: |
         if [[ $GITHUB_REF == 'refs/heads/kettlecompanion' ]]; then
-          echo "BUILD_TYPE=development" >> "$GITHUB_ENV"
+          echo "BUILD_TYPE=devel" >> "$GITHUB_ENV"
         fi
         if [[ $GITHUB_REF == 'refs/heads/kettlecompanion-prod' ]]; then
-          echo "BUILD_TYPE=production" >> "$GITHUB_ENV"
+          echo "BUILD_TYPE=prod" >> "$GITHUB_ENV"
         fi
     - name: Checkout
       uses: actions/checkout@v1
@@ -234,10 +236,10 @@ jobs:
     - name: Set environment for branch
       run: |
         if [[ $GITHUB_REF == 'refs/heads/kettlecompanion' ]]; then
-          echo "BUILD_TYPE=development" >> "$GITHUB_ENV"
+          echo "BUILD_TYPE=develop" >> "$GITHUB_ENV"
         fi
         if [[ $GITHUB_REF == 'refs/heads/kettlecompanion-prod' ]]; then
-          echo "BUILD_TYPE=production" >> "$GITHUB_ENV"
+          echo "BUILD_TYPE=prod" >> "$GITHUB_ENV"
         fi
     - name: Checkout
       uses: actions/checkout@v1
