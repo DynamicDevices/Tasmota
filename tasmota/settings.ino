@@ -1163,6 +1163,7 @@ void SettingsDefaultSet3(void) {
 
 #ifdef USE_RULES
 #ifdef USER_RULE1
+
   String user_rule1 = F("Rule1 ");
   user_rule1 += USER_RULE1;
   ExecuteCommand((char*)user_rule1.c_str(), SRC_RESTART);
