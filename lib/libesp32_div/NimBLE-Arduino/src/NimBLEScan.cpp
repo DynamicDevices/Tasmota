@@ -11,17 +11,16 @@
  *  Created on: Jul 1, 2017
  *      Author: kolban
  */
-#include "sdkconfig.h"
-#if defined(CONFIG_BT_ENABLED)
 
 #include "nimconfig.h"
-#if defined(CONFIG_BT_NIMBLE_ROLE_OBSERVER)
+#if defined(CONFIG_BT_ENABLED) && defined(CONFIG_BT_NIMBLE_ROLE_OBSERVER)
 
 #include "NimBLEScan.h"
 #include "NimBLEDevice.h"
 #include "NimBLELog.h"
 
 #include <string>
+#include <climits>
 
 static const char* LOG_TAG = "NimBLEScan";
 
@@ -110,7 +109,7 @@ NimBLEScan::~NimBLEScan() {
 
             advertisedDevice->m_timestamp = time(nullptr);
             advertisedDevice->setRSSI(event->disc.rssi);
-            advertisedDevice->setPayload(event->disc.data, event->disc.length_data, 
+            advertisedDevice->setPayload(event->disc.data, event->disc.length_data,
             event->disc.event_type == BLE_HCI_ADV_RPT_EVTYPE_SCAN_RSP);
 
             if (pScan->m_pAdvertisedDeviceCallbacks) {
@@ -128,7 +127,7 @@ NimBLEScan::~NimBLEScan() {
                     advertisedDevice->m_callbackSent = true;
                     pScan->m_pAdvertisedDeviceCallbacks->onResult(advertisedDevice);
                 }
-                // If not storing results and we have invoked the callback, delete the device. 
+                // If not storing results and we have invoked the callback, delete the device.
                 if(pScan->m_maxResults == 0 && advertisedDevice->m_callbackSent) {
                     pScan->erase(advertisedAddress);
                 }
@@ -284,7 +283,7 @@ bool NimBLEScan::isScanning() {
  * @return True if scan started or false if there was an error.
  */
 bool NimBLEScan::start(uint32_t duration, void (*scanCompleteCB)(NimBLEScanResults), bool is_continue) {
-    NIMBLE_LOGD(LOG_TAG, ">> start(duration=%d)", duration);
+    NIMBLE_LOGD(LOG_TAG, ">> start: duration=%" PRIu32, duration);
 
     // Save the callback to be invoked when the scan completes.
     m_scanCompleteCB = scanCompleteCB;
@@ -316,6 +315,8 @@ bool NimBLEScan::start(uint32_t duration, void (*scanCompleteCB)(NimBLEScanResul
             break;
 
         case BLE_HS_EALREADY:
+            // Clear the cache if already scanning in case an advertiser was missed.
+            clearDuplicateCache();
             break;
 
         case BLE_HS_EBUSY:
@@ -356,10 +357,15 @@ NimBLEScanResults NimBLEScan::start(uint32_t duration, bool is_continue) {
         NIMBLE_LOGW(LOG_TAG, "Blocking scan called with duration = forever");
     }
 
-    ble_task_data_t taskData = {nullptr, xTaskGetCurrentTaskHandle(),0, nullptr};
+    TaskHandle_t cur_task = xTaskGetCurrentTaskHandle();
+    ble_task_data_t taskData = {nullptr, cur_task, 0, nullptr};
     m_pTaskData = &taskData;
 
     if(start(duration, nullptr, is_continue)) {
+#ifdef ulTaskNotifyValueClear
+        // Clear the task notification value to ensure we block
+        ulTaskNotifyValueClear(cur_task, ULONG_MAX);
+#endif
         ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
     }
 
@@ -396,6 +402,16 @@ bool NimBLEScan::stop() {
     NIMBLE_LOGD(LOG_TAG, "<< stop()");
     return true;
 } // stop
+
+
+/**
+ * @brief Clears the duplicate scan filter cache.
+ */
+void NimBLEScan::clearDuplicateCache() {
+#ifdef CONFIG_IDF_TARGET_ESP32 // Not available for ESP32C3
+    esp_ble_scan_dupilcate_list_flush();
+#endif
+}
 
 
 /**
@@ -453,6 +469,7 @@ void NimBLEScan::clearResults() {
         delete it;
     }
     m_scanResults.m_advertisedDevicesVector.clear();
+    clearDuplicateCache();
 }
 
 
@@ -521,5 +538,4 @@ NimBLEAdvertisedDevice *NimBLEScanResults::getDevice(const NimBLEAddress &addres
     return nullptr;
 }
 
-#endif // #if defined(CONFIG_BT_NIMBLE_ROLE_OBSERVER)
-#endif /* CONFIG_BT_ENABLED */
+#endif /* CONFIG_BT_ENABLED && CONFIG_BT_NIMBLE_ROLE_OBSERVER */

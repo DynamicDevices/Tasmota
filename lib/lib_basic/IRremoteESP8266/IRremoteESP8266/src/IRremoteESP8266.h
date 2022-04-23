@@ -52,8 +52,30 @@
 #include <string>
 #endif  // UNIT_TEST
 
-// Library Version
-#define _IRREMOTEESP8266_VERSION_ "2.7.19"
+// Library Version Information
+// Major version number (X.x.x)
+#define _IRREMOTEESP8266_VERSION_MAJOR 2
+// Minor version number (x.X.x)
+#define _IRREMOTEESP8266_VERSION_MINOR 8
+// Patch version number (x.x.X)
+#define _IRREMOTEESP8266_VERSION_PATCH 2
+// Macro to convert version info into an integer
+#define _IRREMOTEESP8266_VERSION_VAL(major, minor, patch) \
+                                    ((major << 16) | (minor << 8) | (patch))
+// Macro to convert literal into a string
+#define MKSTR_HELPER(x) #x
+#define MKSTR(x) MKSTR_HELPER(x)
+// Integer version
+#define _IRREMOTEESP8266_VERSION _IRREMOTEESP8266_VERSION_VAL(\
+    _IRREMOTEESP8266_VERSION_MAJOR, \
+    _IRREMOTEESP8266_VERSION_MINOR, \
+    _IRREMOTEESP8266_VERSION_PATCH)
+// String version
+#define _IRREMOTEESP8266_VERSION_STR MKSTR(_IRREMOTEESP8266_VERSION_MAJOR) "." \
+                                     MKSTR(_IRREMOTEESP8266_VERSION_MINOR) "." \
+                                     MKSTR(_IRREMOTEESP8266_VERSION_PATCH)
+// String version (DEPRECATED)
+#define _IRREMOTEESP8266_VERSION_ _IRREMOTEESP8266_VERSION_STR
 
 // Set the language & locale for the library. See the `locale` dir for options.
 #ifndef _IR_LOCALE_
@@ -209,6 +231,13 @@
 #define SEND_SANYO_AC          _IR_ENABLE_DEFAULT_
 #endif  // SEND_SANYO_AC
 
+#ifndef DECODE_SANYO_AC88
+#define DECODE_SANYO_AC88      _IR_ENABLE_DEFAULT_
+#endif  // DECODE_SANYO_AC88
+#ifndef SEND_SANYO_AC88
+#define SEND_SANYO_AC88        _IR_ENABLE_DEFAULT_
+#endif  // SEND_SANYO_AC88
+
 #ifndef DECODE_MITSUBISHI
 #define DECODE_MITSUBISHI      _IR_ENABLE_DEFAULT_
 #endif  // DECODE_MITSUBISHI
@@ -307,6 +336,13 @@
 #define SEND_COOLIX            _IR_ENABLE_DEFAULT_
 #endif  // SEND_COOLIX
 
+#ifndef DECODE_COOLIX48
+#define DECODE_COOLIX48        _IR_ENABLE_DEFAULT_
+#endif  // DECODE_COOLIX48
+#ifndef SEND_COOLIX48
+#define SEND_COOLIX48          _IR_ENABLE_DEFAULT_
+#endif  // SEND_COOLIX48
+
 #ifndef DECODE_GLOBALCACHE
 #define DECODE_GLOBALCACHE     false  // Not applicable.
 #endif  // DECODE_GLOBALCACHE
@@ -348,6 +384,13 @@
 #ifndef SEND_TROTEC
 #define SEND_TROTEC            _IR_ENABLE_DEFAULT_
 #endif  // SEND_TROTEC
+
+#ifndef DECODE_TROTEC_3550
+#define DECODE_TROTEC_3550     _IR_ENABLE_DEFAULT_
+#endif  // DECODE_TROTEC_3550
+#ifndef SEND_TROTEC_3550
+#define SEND_TROTEC_3550       _IR_ENABLE_DEFAULT_
+#endif  // SEND_TROTEC_3550
 
 #ifndef DECODE_NIKAI
 #define DECODE_NIKAI           _IR_ENABLE_DEFAULT_
@@ -446,6 +489,20 @@
 #ifndef SEND_HITACHI_AC3
 #define SEND_HITACHI_AC3       _IR_ENABLE_DEFAULT_
 #endif  // SEND_HITACHI_AC3
+
+#ifndef DECODE_HITACHI_AC264
+#define DECODE_HITACHI_AC264   _IR_ENABLE_DEFAULT_
+#endif  // DECODE_HITACHI_AC264
+#ifndef SEND_HITACHI_AC264
+#define SEND_HITACHI_AC264     _IR_ENABLE_DEFAULT_
+#endif  // SEND_HITACHI_AC264
+
+#ifndef DECODE_HITACHI_AC296
+#define DECODE_HITACHI_AC296   _IR_ENABLE_DEFAULT_
+#endif  // DECODE_HITACHI_AC296
+#ifndef SEND_HITACHI_AC296
+#define SEND_HITACHI_AC296     _IR_ENABLE_DEFAULT_
+#endif  // SEND_HITACHI_AC296
 
 #ifndef DECODE_HITACHI_AC344
 #define DECODE_HITACHI_AC344   _IR_ENABLE_DEFAULT_
@@ -769,6 +826,41 @@
 #define SEND_KELON          _IR_ENABLE_DEFAULT_
 #endif  // SEND_KELON
 
+#ifndef DECODE_BOSE
+#define DECODE_BOSE         _IR_ENABLE_DEFAULT_
+#endif  // DECODE_BOSE
+#ifndef SEND_BOSE
+#define SEND_BOSE           _IR_ENABLE_DEFAULT_
+#endif  // SEND_BOSE
+
+#ifndef DECODE_ARRIS
+#define DECODE_ARRIS        _IR_ENABLE_DEFAULT_
+#endif  // DECODE_ARRIS
+#ifndef SEND_ARRIS
+#define SEND_ARRIS          _IR_ENABLE_DEFAULT_
+#endif  // SEND_ARRIS
+
+#ifndef DECODE_RHOSS
+#define DECODE_RHOSS        _IR_ENABLE_DEFAULT_
+#endif  // DECODE_RHOSS
+#ifndef SEND_RHOSS
+#define SEND_RHOSS          _IR_ENABLE_DEFAULT_
+#endif  // SEND_RHOSS
+
+#ifndef DECODE_AIRTON
+#define DECODE_AIRTON       _IR_ENABLE_DEFAULT_
+#endif  // DECODE_AIRTON
+#ifndef SEND_AIRTON
+#define SEND_AIRTON         _IR_ENABLE_DEFAULT_
+#endif  // SEND_AIRTON
+
+#ifndef DECODE_KELON168
+#define DECODE_KELON168     _IR_ENABLE_DEFAULT_
+#endif  // DECODE_KELON168
+#ifndef SEND_KELON168
+#define SEND_KELON168       _IR_ENABLE_DEFAULT_
+#endif  // SEND_KELON168
+
 #if (DECODE_ARGO || DECODE_DAIKIN || DECODE_FUJITSU_AC || DECODE_GREE || \
      DECODE_KELVINATOR || DECODE_MITSUBISHI_AC || DECODE_TOSHIBA_AC || \
      DECODE_TROTEC || DECODE_HAIER_AC || DECODE_HITACHI_AC || \
@@ -782,7 +874,9 @@
      DECODE_MITSUBISHI112 || DECODE_HITACHI_AC424 || DECODE_HITACHI_AC3 || \
      DECODE_HITACHI_AC344 || DECODE_CORONA_AC || DECODE_SANYO_AC || \
      DECODE_VOLTAS || DECODE_MIRAGE || DECODE_HAIER_AC176 || \
-     DECODE_TEKNOPOINT || DECODE_KELON || \
+     DECODE_TEKNOPOINT || DECODE_KELON || DECODE_TROTEC_3550 || \
+     DECODE_SANYO_AC88 || DECODE_RHOSS || DECODE_HITACHI_AC264 || \
+     DECODE_KELON168 || DECODE_HITACHI_AC296 || \
      false)
   // Add any DECODE to the above if it uses result->state (see kStateSizeMax)
   // you might also want to add the protocol to hasACState function
@@ -926,14 +1020,26 @@ enum decode_type_t {
   HAIER_AC176,
   TEKNOPOINT,
   KELON,
+  TROTEC_3550,
+  SANYO_AC88,  // 105
+  BOSE,
+  ARRIS,
+  RHOSS,
+  AIRTON,
+  COOLIX48,  // 110
+  HITACHI_AC264,
+  KELON168,
+  HITACHI_AC296,
   // Add new entries before this one, and update it to point to the last entry.
-  kLastDecodeType = KELON,
+  kLastDecodeType = HITACHI_AC296,
 };
 
 // Message lengths & required repeat values
 const uint16_t kNoRepeat = 0;
 const uint16_t kSingleRepeat = 1;
 
+const uint16_t kAirtonBits = 56;
+const uint16_t kAirtonDefaultRepeat = kNoRepeat;
 const uint16_t kAirwellBits = 34;
 const uint16_t kAirwellMinRepeats = 2;
 const uint16_t kAiwaRcT501Bits = 15;
@@ -945,7 +1051,9 @@ const uint16_t kAmcorDefaultRepeat = kSingleRepeat;
 const uint16_t kArgoStateLength = 12;
 const uint16_t kArgoBits = kArgoStateLength * 8;
 const uint16_t kArgoDefaultRepeat = kNoRepeat;
+const uint16_t kArrisBits = 32;
 const uint16_t kCoolixBits = 24;
+const uint16_t kCoolix48Bits = kCoolixBits * 2;
 const uint16_t kCoolixDefaultRepeat = kSingleRepeat;
 const uint16_t kCarrierAcBits = 32;
 const uint16_t kCarrierAcMinRepeat = kNoRepeat;
@@ -1033,6 +1141,10 @@ const uint16_t kHitachiAc3StateLength = 27;
 const uint16_t kHitachiAc3Bits = kHitachiAc3StateLength * 8;
 const uint16_t kHitachiAc3MinStateLength = 15;
 const uint16_t kHitachiAc3MinBits = kHitachiAc3MinStateLength * 8;
+const uint16_t kHitachiAc264StateLength = 33;
+const uint16_t kHitachiAc264Bits = kHitachiAc264StateLength * 8;
+const uint16_t kHitachiAc296StateLength = 37;
+const uint16_t kHitachiAc296Bits = kHitachiAc296StateLength * 8;
 const uint16_t kHitachiAc344StateLength = 43;
 const uint16_t kHitachiAc344Bits = kHitachiAc344StateLength * 8;
 const uint16_t kHitachiAc424StateLength = 53;
@@ -1041,6 +1153,8 @@ const uint16_t kInaxBits = 24;
 const uint16_t kInaxMinRepeat = kSingleRepeat;
 const uint16_t kJvcBits = 16;
 const uint16_t kKelonBits = 48;
+const uint16_t kKelon168StateLength = 21;
+const uint16_t kKelon168Bits = kKelon168StateLength * 8;
 const uint16_t kKelvinatorStateLength = 16;
 const uint16_t kKelvinatorBits = kKelvinatorStateLength * 8;
 const uint16_t kKelvinatorDefaultRepeat = kNoRepeat;
@@ -1113,6 +1227,9 @@ const uint16_t kSamsungAcExtendedBits = kSamsungAcExtendedStateLength * 8;
 const uint16_t kSamsungAcDefaultRepeat = kNoRepeat;
 const uint16_t kSanyoAcStateLength = 9;
 const uint16_t kSanyoAcBits = kSanyoAcStateLength * 8;
+const uint16_t kSanyoAc88StateLength = 11;
+const uint16_t kSanyoAc88Bits = kSanyoAc88StateLength * 8;
+const uint16_t kSanyoAc88MinRepeat = 2;
 const uint16_t kSanyoSA8650BBits = 12;
 const uint16_t kSanyoLC7461AddressBits = 13;
 const uint16_t kSanyoLC7461CommandBits = 8;
@@ -1166,6 +1283,10 @@ const uint16_t kVoltasStateLength = 10;
 const uint16_t kMilesTag2ShotBits = 14;
 const uint16_t kMilesTag2MsgBits = 24;
 const uint16_t kMilesMinRepeat = 0;
+const uint16_t kBoseBits = 16;
+const uint16_t kRhossStateLength = 12;
+const uint16_t kRhossBits = kRhossStateLength * 8;
+const uint16_t kRhossDefaultRepeat = 0;
 
 
 // Legacy defines. (Deprecated)
@@ -1193,6 +1314,8 @@ const uint16_t kMilesMinRepeat = 0;
 #define HITACHI_AC1_BITS              kHitachiAc1Bits
 #define HITACHI_AC2_STATE_LENGTH      kHitachiAc2StateLength
 #define HITACHI_AC2_BITS              kHitachiAc2Bits
+#define HITACHI_AC296_STATE_LENGTH    kHitachiAc296StateLength
+#define HITACHI_AC296_BITS            kHitachiAc296Bits
 #define JVC_BITS                      kJvcBits
 #define KELVINATOR_STATE_LENGTH       kKelvinatorStateLength
 #define LASERTAG_BITS                 kLasertagBits

@@ -12,15 +12,14 @@
  *      Author: kolban
  */
 
-#include "sdkconfig.h"
-#if defined(CONFIG_BT_ENABLED)
-
 #include "nimconfig.h"
-#if defined( CONFIG_BT_NIMBLE_ROLE_CENTRAL)
+#if defined(CONFIG_BT_ENABLED) && defined(CONFIG_BT_NIMBLE_ROLE_CENTRAL)
 
 #include "NimBLERemoteCharacteristic.h"
 #include "NimBLEUtils.h"
 #include "NimBLELog.h"
+
+#include <climits>
 
 static const char* LOG_TAG = "NimBLERemoteCharacteristic";
 
@@ -55,11 +54,10 @@ static const char* LOG_TAG = "NimBLERemoteCharacteristic";
 
     m_handle             = chr->val_handle;
     m_defHandle          = chr->def_handle;
+    m_endHandle          = 0;
     m_charProp           = chr->properties;
     m_pRemoteService     = pRemoteService;
     m_notifyCallback     = nullptr;
-    m_timestamp          = 0;
-    m_valMux             = portMUX_INITIALIZER_UNLOCKED;
 
     NIMBLE_LOGD(LOG_TAG, "<< NimBLERemoteCharacteristic(): %s", m_uuid.toString().c_str());
  } // NimBLERemoteCharacteristic
@@ -146,31 +144,25 @@ int NimBLERemoteCharacteristic::descriptorDiscCB(uint16_t conn_handle,
                                     const struct ble_gatt_dsc *dsc,
                                     void *arg)
 {
-    NIMBLE_LOGD(LOG_TAG,"Descriptor Discovered >> status: %d handle: %d",
-                        error->status, (error->status == 0) ? dsc->handle : -1);
+    int rc = error->status;
+    NIMBLE_LOGD(LOG_TAG, "Descriptor Discovered >> status: %d handle: %d",
+                         rc, (rc == 0) ? dsc->handle : -1);
 
     desc_filter_t *filter = (desc_filter_t*)arg;
     const NimBLEUUID *uuid_filter = filter->uuid;
     ble_task_data_t *pTaskData = (ble_task_data_t*)filter->task_data;
     NimBLERemoteCharacteristic *characteristic = (NimBLERemoteCharacteristic*)pTaskData->pATT;
-    int rc=0;
 
-    if(characteristic->getRemoteService()->getClient()->getConnId() != conn_handle){
+    if (characteristic->getRemoteService()->getClient()->getConnId() != conn_handle){
         return 0;
     }
 
-    switch (error->status) {
+    switch (rc) {
         case 0: {
-            if(dsc->uuid.u.type == BLE_UUID_TYPE_16 && dsc->uuid.u16.value == uint16_t(0x2803)) {
-                NIMBLE_LOGD(LOG_TAG,"Descriptor NOT found - end of Characteristic definintion");
-                rc = BLE_HS_EDONE;
-                break;
-            }
-            if(uuid_filter != nullptr) {
-                if(ble_uuid_cmp(&uuid_filter->getNative()->u, &dsc->uuid.u) != 0) {
+            if (uuid_filter != nullptr) {
+                if (ble_uuid_cmp(&uuid_filter->getNative()->u, &dsc->uuid.u) != 0) {
                     return 0;
                 } else {
-                    NIMBLE_LOGD(LOG_TAG,"Descriptor Found");
                     rc = BLE_HS_EDONE;
                 }
             }
@@ -180,11 +172,10 @@ int NimBLERemoteCharacteristic::descriptorDiscCB(uint16_t conn_handle,
             break;
         }
         default:
-            rc = error->status;
             break;
     }
 
-    /** If rc == BLE_HS_EDONE, resume the task with a success error code and stop the discovery process.
+    /*  If rc == BLE_HS_EDONE, resume the task with a success error code and stop the discovery process.
      *  Else if rc == 0, just return 0 to continue the discovery until we get BLE_HS_EDONE.
      *  If we get any other error code tell the application to abort by returning non-zero in the rc.
      */
@@ -203,41 +194,104 @@ int NimBLERemoteCharacteristic::descriptorDiscCB(uint16_t conn_handle,
 
 
 /**
+ * @brief callback from NimBLE when the next characteristic of the service is discovered.
+ */
+int NimBLERemoteCharacteristic::nextCharCB(uint16_t conn_handle,
+                                           const struct ble_gatt_error *error,
+                                           const struct ble_gatt_chr *chr, void *arg)
+{
+    int rc = error->status;
+    NIMBLE_LOGD(LOG_TAG, "Next Characteristic >> status: %d handle: %d",
+                         rc, (rc == 0) ? chr->val_handle : -1);
+
+    ble_task_data_t *pTaskData = (ble_task_data_t*)arg;
+    NimBLERemoteCharacteristic *pChar = (NimBLERemoteCharacteristic*)pTaskData->pATT;
+
+    if (pChar->getRemoteService()->getClient()->getConnId() != conn_handle) {
+        return 0;
+    }
+
+    if (rc == 0) {
+        pChar->m_endHandle = chr->def_handle - 1;
+        rc = BLE_HS_EDONE;
+    } else if (rc == BLE_HS_EDONE) {
+        pChar->m_endHandle = pChar->getRemoteService()->getEndHandle();
+    } else {
+        pTaskData->rc = rc;
+    }
+
+    xTaskNotifyGive(pTaskData->task);
+    return rc;
+}
+
+
+/**
  * @brief Populate the descriptors (if any) for this characteristic.
  * @param [in] the end handle of the characteristic, or the service, whichever comes first.
  */
 bool NimBLERemoteCharacteristic::retrieveDescriptors(const NimBLEUUID *uuid_filter) {
     NIMBLE_LOGD(LOG_TAG, ">> retrieveDescriptors() for characteristic: %s", getUUID().toString().c_str());
 
-    uint16_t endHandle = getRemoteService()->getEndHandle(this);
-    if(m_handle >= endHandle) {
-        return false;
+    // If this is the last handle then there are no descriptors
+    if (m_handle == getRemoteService()->getEndHandle()) {
+        return true;
     }
 
     int rc = 0;
-    ble_task_data_t taskData = {this, xTaskGetCurrentTaskHandle(), 0, nullptr};
+    TaskHandle_t cur_task = xTaskGetCurrentTaskHandle();
+    ble_task_data_t taskData = {this, cur_task, 0, nullptr};
+
+    // If we don't know the end handle of this characteristic retrieve the next one in the service
+    // The end handle is the next characteristic definition handle -1.
+    if (m_endHandle == 0) {
+        rc = ble_gattc_disc_all_chrs(getRemoteService()->getClient()->getConnId(),
+                                     m_handle,
+                                     getRemoteService()->getEndHandle(),
+                                     NimBLERemoteCharacteristic::nextCharCB,
+                                     &taskData);
+        if (rc != 0) {
+            NIMBLE_LOGE(LOG_TAG, "Error getting end handle rc=%d", rc);
+            return false;
+        }
+
+#ifdef ulTaskNotifyValueClear
+        // Clear the task notification value to ensure we block
+        ulTaskNotifyValueClear(cur_task, ULONG_MAX);
+#endif
+        ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+
+        if (taskData.rc != 0) {
+            NIMBLE_LOGE(LOG_TAG, "Could not retrieve end handle rc=%d", taskData.rc);
+            return false;
+        }
+    }
+
     desc_filter_t filter = {uuid_filter, &taskData};
 
     rc = ble_gattc_disc_all_dscs(getRemoteService()->getClient()->getConnId(),
                                  m_handle,
-                                 endHandle,
+                                 m_endHandle,
                                  NimBLERemoteCharacteristic::descriptorDiscCB,
                                  &filter);
 
     if (rc != 0) {
-        NIMBLE_LOGE(LOG_TAG, "ble_gattc_disc_all_chrs: rc=%d %s", rc, NimBLEUtils::returnCodeToString(rc));
+        NIMBLE_LOGE(LOG_TAG, "ble_gattc_disc_all_dscs: rc=%d %s", rc, NimBLEUtils::returnCodeToString(rc));
         return false;
     }
 
+#ifdef ulTaskNotifyValueClear
+    // Clear the task notification value to ensure we block
+    ulTaskNotifyValueClear(cur_task, ULONG_MAX);
+#endif
     ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
 
-    if(taskData.rc != 0) {
-        NIMBLE_LOGE(LOG_TAG, "ble_gattc_disc_all_chrs: startHandle:%d endHandle:%d taskData.rc=%d %s", m_handle, endHandle, taskData.rc, NimBLEUtils::returnCodeToString(0x0100+taskData.rc));
-        return false;
+    if (taskData.rc != 0) {
+        NIMBLE_LOGE(LOG_TAG, "Failed to retrieve descriptors; startHandle:%d endHandle:%d taskData.rc=%d",
+                             m_handle, m_endHandle, taskData.rc);
     }
 
-    return true;
     NIMBLE_LOGD(LOG_TAG, "<< retrieveDescriptors(): Found %d descriptors.", m_descriptorVector.size());
+    return (taskData.rc == 0);
 } // retrieveDescriptors
 
 
@@ -262,7 +316,7 @@ NimBLERemoteDescriptor* NimBLERemoteCharacteristic::getDescriptor(const NimBLEUU
             return m_descriptorVector.back();
         }
 
-        // If the request was successful but 16/32 bit descriptor not found
+        // If the request was successful but 16/32 bit uuid not found
         // try again with the 128 bit uuid.
         if(uuid.bitSize() == BLE_UUID_TYPE_16 ||
            uuid.bitSize() == BLE_UUID_TYPE_32)
@@ -270,6 +324,15 @@ NimBLERemoteDescriptor* NimBLERemoteCharacteristic::getDescriptor(const NimBLEUU
             NimBLEUUID uuid128(uuid);
             uuid128.to128();
             return getDescriptor(uuid128);
+        } else {
+            // If the request was successful but the 128 bit uuid not found
+            // try again with the 16 bit uuid.
+            NimBLEUUID uuid16(uuid);
+            uuid16.to16();
+            // if the uuid was 128 bit but not of the BLE base type this check will fail
+            if (uuid16.bitSize() == BLE_UUID_TYPE_16) {
+                return getDescriptor(uuid16);
+            }
         }
     }
 
@@ -359,15 +422,12 @@ NimBLEUUID NimBLERemoteCharacteristic::getUUID() {
  * @param [in] timestamp A pointer to a time_t struct to store the time the value was read.
  * @return The value of the remote characteristic.
  */
-std::string NimBLERemoteCharacteristic::getValue(time_t *timestamp) {
-    portENTER_CRITICAL(&m_valMux);
-    std::string value = m_value;
+NimBLEAttValue NimBLERemoteCharacteristic::getValue(time_t *timestamp) {
     if(timestamp != nullptr) {
-        *timestamp = m_timestamp;
+        *timestamp = m_value.getTimeStamp();
     }
-    portEXIT_CRITICAL(&m_valMux);
 
-    return value;
+    return m_value;
 }
 
 
@@ -415,12 +475,12 @@ float NimBLERemoteCharacteristic::readFloat() {
  * @param [in] timestamp A pointer to a time_t struct to store the time the value was read.
  * @return The value of the remote characteristic.
  */
-std::string NimBLERemoteCharacteristic::readValue(time_t *timestamp) {
+NimBLEAttValue NimBLERemoteCharacteristic::readValue(time_t *timestamp) {
     NIMBLE_LOGD(LOG_TAG, ">> readValue(): uuid: %s, handle: %d 0x%.2x",
                          getUUID().toString().c_str(), getHandle(), getHandle());
 
     NimBLEClient* pClient = getRemoteService()->getClient();
-    std::string value;
+    NimBLEAttValue value;
 
     if (!pClient->isConnected()) {
         NIMBLE_LOGE(LOG_TAG, "Disconnected");
@@ -429,7 +489,8 @@ std::string NimBLERemoteCharacteristic::readValue(time_t *timestamp) {
 
     int rc = 0;
     int retryCount = 1;
-    ble_task_data_t taskData = {this, xTaskGetCurrentTaskHandle(),0, &value};
+    TaskHandle_t cur_task = xTaskGetCurrentTaskHandle();
+    ble_task_data_t taskData = {this, cur_task, 0, &value};
 
     do {
         rc = ble_gattc_read_long(pClient->getConnId(), m_handle, 0,
@@ -441,6 +502,10 @@ std::string NimBLERemoteCharacteristic::readValue(time_t *timestamp) {
             return value;
         }
 
+#ifdef ulTaskNotifyValueClear
+        // Clear the task notification value to ensure we block
+        ulTaskNotifyValueClear(cur_task, ULONG_MAX);
+#endif
         ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
         rc = taskData.rc;
 
@@ -466,14 +531,11 @@ std::string NimBLERemoteCharacteristic::readValue(time_t *timestamp) {
         }
     } while(rc != 0 && retryCount--);
 
-    time_t t = time(nullptr);
-    portENTER_CRITICAL(&m_valMux);
+    value.setTimeStamp();
     m_value = value;
-    m_timestamp = t;
     if(timestamp != nullptr) {
-        *timestamp = m_timestamp;
+        *timestamp = value.getTimeStamp();
     }
-    portEXIT_CRITICAL(&m_valMux);
 
     NIMBLE_LOGD(LOG_TAG, "<< readValue length: %d rc=%d", value.length(), rc);
     return value;
@@ -498,16 +560,17 @@ int NimBLERemoteCharacteristic::onReadCB(uint16_t conn_handle,
 
     NIMBLE_LOGI(LOG_TAG, "Read complete; status=%d conn_handle=%d", error->status, conn_handle);
 
-    std::string *strBuf = (std::string*)pTaskData->buf;
+    NimBLEAttValue *valBuf = (NimBLEAttValue*)pTaskData->buf;
     int rc = error->status;
 
     if(rc == 0) {
         if(attr) {
-            if(((*strBuf).length() + attr->om->om_len) > BLE_ATT_ATTR_MAX_LEN) {
+            uint16_t data_len = OS_MBUF_PKTLEN(attr->om);
+            if((valBuf->size() + data_len) > BLE_ATT_ATTR_MAX_LEN) {
                 rc = BLE_ATT_ERR_INVALID_ATTR_VALUE_LEN;
             } else {
-                NIMBLE_LOGD(LOG_TAG, "Got %d bytes", attr->om->om_len);
-                (*strBuf) += std::string((char*) attr->om->om_data, attr->om->om_len);
+                NIMBLE_LOGD(LOG_TAG, "Got %u bytes", data_len);
+                valBuf->append(attr->om->om_data, data_len);
                 return 0;
             }
         }
@@ -658,22 +721,33 @@ std::string NimBLERemoteCharacteristic::toString() {
 
 
 /**
- * @brief Write the new value for the characteristic.
- * @param [in] newValue The new value to write.
- * @param [in] response Do we expect a response?
- * @return false if not connected or cant perform write for some reason.
+ * @brief Write a new value to the remote characteristic from a std::vector<uint8_t>.
+ * @param [in] vec A std::vector<uint8_t> value to write to the remote characteristic.
+ * @param [in] response Whether we require a response from the write.
+ * @return false if not connected or otherwise cannot perform write.
  */
-bool NimBLERemoteCharacteristic::writeValue(const std::string &newValue, bool response) {
-    return writeValue((uint8_t*)newValue.c_str(), strlen(newValue.c_str()), response);
+bool NimBLERemoteCharacteristic::writeValue(const std::vector<uint8_t>& vec, bool response) {
+    return writeValue((uint8_t*)&vec[0], vec.size(), response);
 } // writeValue
 
 
 /**
- * @brief Write the new value for the characteristic from a data buffer.
+ * @brief Write a new value to the remote characteristic from a const char*.
+ * @param [in] char_s A character string to write to the remote characteristic.
+ * @param [in] response Whether we require a response from the write.
+ * @return false if not connected or otherwise cannot perform write.
+ */
+bool NimBLERemoteCharacteristic::writeValue(const char* char_s, bool response) {
+    return writeValue((uint8_t*)char_s, strlen(char_s), response);
+} // writeValue
+
+
+/**
+ * @brief Write a new value to the remote characteristic from a data buffer.
  * @param [in] data A pointer to a data buffer.
  * @param [in] length The length of the data in the data buffer.
  * @param [in] response Whether we require a response from the write.
- * @return false if not connected or cant perform write for some reason.
+ * @return false if not connected or otherwise cannot perform write.
  */
 bool NimBLERemoteCharacteristic::writeValue(const uint8_t* data, size_t length, bool response) {
 
@@ -697,7 +771,8 @@ bool NimBLERemoteCharacteristic::writeValue(const uint8_t* data, size_t length, 
         return (rc==0);
     }
 
-    ble_task_data_t taskData = {this, xTaskGetCurrentTaskHandle(), 0, nullptr};
+    TaskHandle_t cur_task = xTaskGetCurrentTaskHandle();
+    ble_task_data_t taskData = {this, cur_task, 0, nullptr};
 
     do {
         if(length > mtu) {
@@ -717,6 +792,10 @@ bool NimBLERemoteCharacteristic::writeValue(const uint8_t* data, size_t length, 
             return false;
         }
 
+#ifdef ulTaskNotifyValueClear
+        // Clear the task notification value to ensure we block
+        ulTaskNotifyValueClear(cur_task, ULONG_MAX);
+#endif
         ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
         rc = taskData.rc;
 
@@ -771,6 +850,4 @@ int NimBLERemoteCharacteristic::onWriteCB(uint16_t conn_handle,
     return 0;
 }
 
-
-#endif // #if defined( CONFIG_BT_NIMBLE_ROLE_CENTRAL)
-#endif /* CONFIG_BT_ENABLED */
+#endif /* CONFIG_BT_ENABLED && CONFIG_BT_NIMBLE_ROLE_CENTRAL */

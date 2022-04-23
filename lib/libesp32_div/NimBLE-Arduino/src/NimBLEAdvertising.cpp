@@ -13,13 +13,14 @@
  *      Author: kolban
  *
  */
-#include "sdkconfig.h"
-#if defined(CONFIG_BT_ENABLED)
-
 #include "nimconfig.h"
-#if defined(CONFIG_BT_NIMBLE_ROLE_BROADCASTER)
+#if defined(CONFIG_BT_ENABLED) && defined(CONFIG_BT_NIMBLE_ROLE_BROADCASTER)
 
+#if defined(CONFIG_NIMBLE_CPP_IDF)
 #include "services/gap/ble_svc_gap.h"
+#else
+#include "nimble/nimble/host/services/gap/include/services/gap/ble_svc_gap.h"
+#endif
 #include "NimBLEAdvertising.h"
 #include "NimBLEDevice.h"
 #include "NimBLEServer.h"
@@ -68,6 +69,7 @@ void NimBLEAdvertising::reset() {
     m_advDataSet                     = false;
     // Set this to non-zero to prevent auto start if host reset before started by app.
     m_duration                       = BLE_HS_FOREVER;
+    m_advCompCB                      = nullptr;
 } // reset
 
 
@@ -383,6 +385,7 @@ void NimBLEAdvertising::setScanResponseData(NimBLEAdvertisementData& advertiseme
  * @brief Start advertising.
  * @param [in] duration The duration, in seconds, to advertise, 0 == advertise forever.
  * @param [in] advCompleteCB A pointer to a callback to be invoked when advertising ends.
+ * @return True if advertising started successfully.
  */
 bool NimBLEAdvertising::start(uint32_t duration, void (*advCompleteCB)(NimBLEAdvertising *pAdv)) {
     NIMBLE_LOGD(LOG_TAG, ">> Advertising start: customAdvData: %d, customScanResponseData: %d",
@@ -471,16 +474,14 @@ bool NimBLEAdvertising::start(uint32_t duration, void (*advCompleteCB)(NimBLEAdv
                 }
                 payloadLen += add;
 
-                if(nullptr == (m_advData.uuids16 = (ble_uuid16_t*)realloc(m_advData.uuids16,
+                if(nullptr == (m_advData.uuids16 = (ble_uuid16_t*)realloc((void*)m_advData.uuids16,
                                                    (m_advData.num_uuids16 + 1) * sizeof(ble_uuid16_t))))
                 {
                     NIMBLE_LOGC(LOG_TAG, "Error, no mem");
                     abort();
                 }
-                memcpy(&m_advData.uuids16[m_advData.num_uuids16].value,
-                       &it.getNative()->u16.value, 2);
-
-                m_advData.uuids16[m_advData.num_uuids16].u.type = BLE_UUID_TYPE_16;
+                memcpy((void*)&m_advData.uuids16[m_advData.num_uuids16],
+                       &it.getNative()->u16, sizeof(ble_uuid16_t));
                 m_advData.uuids16_is_complete = 1;
                 m_advData.num_uuids16++;
             }
@@ -492,16 +493,14 @@ bool NimBLEAdvertising::start(uint32_t duration, void (*advCompleteCB)(NimBLEAdv
                 }
                 payloadLen += add;
 
-                if(nullptr == (m_advData.uuids32 = (ble_uuid32_t*)realloc(m_advData.uuids32,
+                if(nullptr == (m_advData.uuids32 = (ble_uuid32_t*)realloc((void*)m_advData.uuids32,
                                                    (m_advData.num_uuids32 + 1) * sizeof(ble_uuid32_t))))
                 {
                     NIMBLE_LOGC(LOG_TAG, "Error, no mem");
                     abort();
                 }
-                memcpy(&m_advData.uuids32[m_advData.num_uuids32].value,
-                       &it.getNative()->u32.value, 4);
-
-                m_advData.uuids32[m_advData.num_uuids32].u.type = BLE_UUID_TYPE_32;
+                memcpy((void*)&m_advData.uuids32[m_advData.num_uuids32],
+                       &it.getNative()->u32, sizeof(ble_uuid32_t));
                 m_advData.uuids32_is_complete = 1;
                 m_advData.num_uuids32++;
             }
@@ -513,16 +512,14 @@ bool NimBLEAdvertising::start(uint32_t duration, void (*advCompleteCB)(NimBLEAdv
                 }
                 payloadLen += add;
 
-                if(nullptr == (m_advData.uuids128 = (ble_uuid128_t*)realloc(m_advData.uuids128,
+                if(nullptr == (m_advData.uuids128 = (ble_uuid128_t*)realloc((void*)m_advData.uuids128,
                               (m_advData.num_uuids128 + 1) * sizeof(ble_uuid128_t))))
                 {
                     NIMBLE_LOGC(LOG_TAG, "Error, no mem");
                     abort();
                 }
-                memcpy(&m_advData.uuids128[m_advData.num_uuids128].value,
-                       &it.getNative()->u128.value, 16);
-
-                m_advData.uuids128[m_advData.num_uuids128].u.type = BLE_UUID_TYPE_128;
+                memcpy((void*)&m_advData.uuids128[m_advData.num_uuids128],
+                       &it.getNative()->u128, sizeof(ble_uuid128_t));
                 m_advData.uuids128_is_complete = 1;
                 m_advData.num_uuids128++;
             }
@@ -599,19 +596,19 @@ bool NimBLEAdvertising::start(uint32_t duration, void (*advCompleteCB)(NimBLEAdv
         }
 
         if(m_advData.num_uuids128 > 0) {
-            free(m_advData.uuids128);
+            free((void*)m_advData.uuids128);
             m_advData.uuids128 = nullptr;
             m_advData.num_uuids128 = 0;
         }
 
         if(m_advData.num_uuids32 > 0) {
-            free(m_advData.uuids32);
+            free((void*)m_advData.uuids32);
             m_advData.uuids32 = nullptr;
             m_advData.num_uuids32 = 0;
         }
 
         if(m_advData.num_uuids16 > 0) {
-            free(m_advData.uuids16);
+            free((void*)m_advData.uuids16);
             m_advData.uuids16 = nullptr;
             m_advData.num_uuids16 = 0;
         }
@@ -658,12 +655,8 @@ bool NimBLEAdvertising::start(uint32_t duration, void (*advCompleteCB)(NimBLEAdv
             break;
     }
 
-    if(rc != 0) {
-        return false;
-    }
-
     NIMBLE_LOGD(LOG_TAG, "<< Advertising start");
-    return true;
+    return (rc == 0);
 } // start
 
 
@@ -1033,5 +1026,4 @@ std::string NimBLEAdvertisementData::getPayload() {
     return m_payload;
 } // getPayload
 
-#endif // #if defined(CONFIG_BT_NIMBLE_ROLE_PERIPHERAL)
-#endif /* CONFIG_BT_ENABLED */
+#endif /* CONFIG_BT_ENABLED && CONFIG_BT_NIMBLE_ROLE_BROADCASTER */

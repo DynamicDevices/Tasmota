@@ -55,17 +55,18 @@ void Core2DisplayDim(uint8_t dim);
 #ifndef DISP_DESC_FILE
 //#define DISP_DESC_FILE "/dispdesc.txt"
 #define DISP_DESC_FILE "/display.ini"
-#endif
+#endif // DISP_DESC_FILE
 
 /*********************************************************************************************/
 #ifdef DSP_ROM_DESC
-const char DSP_SAMPLE_DESC[] PROGMEM = DSP_ROM_DESC
+const char DSP_SAMPLE_DESC[] PROGMEM = DSP_ROM_DESC;
 #endif // DSP_ROM_DESC
 /*********************************************************************************************/
-Renderer *Init_uDisplay(const char *desc, int8_t cs) {
+Renderer *Init_uDisplay(const char *desc) {
 char *ddesc = 0;
 char *fbuff;
 uDisplay *udisp;
+int8_t cs;
 
   if (TasmotaGlobal.gpio_optiona.udisplay_driver || desc) {
 
@@ -78,7 +79,7 @@ uDisplay *udisp;
     if (desc) {
       memcpy_P(fbuff, desc, DISPDESC_SIZE - 1);
       ddesc = fbuff;
-      AddLog(LOG_LEVEL_INFO, PSTR("DSP: const char descriptor used"));
+      AddLog(LOG_LEVEL_DEBUG, PSTR("DSP: const char descriptor used"));
     }
 
 
@@ -91,10 +92,10 @@ uDisplay *udisp;
         fp.read((uint8_t*)fbuff, size);
         fp.close();
         ddesc = fbuff;
-        AddLog(LOG_LEVEL_INFO, PSTR("DSP: File descriptor used"));
+        AddLog(LOG_LEVEL_DEBUG, PSTR("DSP: File descriptor used"));
       }
     }
-#endif
+#endif // USE_UFILESYS
 
 
 #ifdef USE_SCRIPT
@@ -105,7 +106,7 @@ uDisplay *udisp;
         while (*lp != '\n') lp++;
         memcpy(fbuff, lp + 1, DISPDESC_SIZE - 1);
         ddesc = fbuff;
-        AddLog(LOG_LEVEL_INFO, PSTR("DSP: Script descriptor used"));
+        AddLog(LOG_LEVEL_DEBUG, PSTR("DSP: Script descriptor used"));
       }
     }
 #endif // USE_SCRIPT
@@ -122,7 +123,7 @@ uDisplay *udisp;
           if (fbuff[cnt] == ' ') fbuff[cnt] = '\n';
         }
         ddesc = fbuff;
-        AddLog(LOG_LEVEL_INFO, PSTR("DSP: Rule 3 descriptor used"));
+        AddLog(LOG_LEVEL_DEBUG, PSTR("DSP: Rule 3 descriptor used"));
       }
 
     }
@@ -133,12 +134,12 @@ uDisplay *udisp;
     if (!ddesc) {
       memcpy_P(fbuff, DSP_SAMPLE_DESC, sizeof(DSP_SAMPLE_DESC));
       ddesc = fbuff;
-      AddLog(LOG_LEVEL_INFO, PSTR("DSP: Flash descriptor used"));
+      AddLog(LOG_LEVEL_DEBUG, PSTR("DSP: Flash descriptor used"));
     }
 #endif // DSP_ROM_DESC
 
     if (!ddesc) {
-      AddLog(LOG_LEVEL_INFO, PSTR("DSP: No valid descriptor found"));
+      AddLog(LOG_LEVEL_DEBUG, PSTR("DSP: No valid descriptor found"));
       if (fbuff) free(fbuff);
       return 0;
     }
@@ -161,11 +162,11 @@ uDisplay *udisp;
       replacepin(&cp, Pin(GPIO_OLED_RESET));
 
       if (wire_n == 1) {
-        Wire.begin(sda, scl);
+        I2cBegin(sda, scl);
       }
 #ifdef ESP32
       if (wire_n == 2) {
-        Wire1.begin(sda, scl);
+        I2c2Begin(sda, scl);
       }
       if (I2cSetDevice(i2caddr, wire_n - 1)) {
         I2cSetActiveFound(i2caddr, "DSP-I2C", wire_n - 1);
@@ -185,18 +186,16 @@ uDisplay *udisp;
       cp += 4;
       //; 7 params nr,cs,sclk,mosi,dc,bl,reset,miso
       //SPI,*,*,*,*,*,*,*
-      if (cs < 0) {
-        switch (*cp) {
-          case '1':
-            cs = Pin(GPIO_SPI_CS);
-            break;
-          case '2':
-            cs = Pin(GPIO_SPI_CS, 1);
-            break;
-          default:
-            cs = Pin(GPIO_SSPI_CS);
-            break;
-        }
+      switch (*cp) {
+        case '1':
+          cs = Pin(GPIO_SPI_CS);
+          break;
+        case '2':
+          cs = Pin(GPIO_SPI_CS, 1);
+          break;
+        default:
+          cs = Pin(GPIO_SSPI_CS);
+          break;
       }
       if (*cp == '1') {
         cp+=2;
@@ -213,8 +212,8 @@ uDisplay *udisp;
         replacepin(&cp, Pin(GPIO_SPI_CLK, 1));
         replacepin(&cp, Pin(GPIO_SPI_MOSI, 1));
         replacepin(&cp, Pin(GPIO_SPI_DC, 1));
-        replacepin(&cp, Pin(GPIO_BACKLIGHT, 1));
-        replacepin(&cp, Pin(GPIO_OLED_RESET, 1));
+        replacepin(&cp, Pin(GPIO_BACKLIGHT));
+        replacepin(&cp, Pin(GPIO_OLED_RESET));
         replacepin(&cp, Pin(GPIO_SPI_MISO, 1));
       } else {
         // soft spi pins
@@ -239,7 +238,7 @@ uDisplay *udisp;
     // init renderer
     if (renderer) {
       delete renderer;
-      AddLog(LOG_LEVEL_INFO, PSTR("DSP: reinit"));
+      AddLog(LOG_LEVEL_DEBUG, PSTR("DSP: reinit"));
     }
     udisp  = new uDisplay(ddesc);
 
@@ -257,11 +256,11 @@ uDisplay *udisp;
       scl = replacepin(&cp, Pin(GPIO_I2C_SCL, wire_n));
       sda = replacepin(&cp, Pin(GPIO_I2C_SDA, wire_n));
       if (wire_n == 0) {
-        Wire.begin(sda, scl);
+        I2cBegin(sda, scl);
       }
 #ifdef ESP32
       if (wire_n == 1) {
-        Wire1.begin(sda, scl, 400000);
+        I2c2Begin(sda, scl, 400000);
       }
       if (I2cSetDevice(i2caddr, wire_n)) {
         I2cSetActiveFound(i2caddr, "FT5206", wire_n);
@@ -281,9 +280,9 @@ uDisplay *udisp;
       else FT5206_Touch_Init(Wire1);
 #else
       if (!wire_n) FT5206_Touch_Init(Wire);
-#endif
+#endif // ESP32
     }
-#endif
+#endif // USE_FT5206
 
 #ifdef USE_XPT2046
     cp = strstr(ddesc, ":TS,");
@@ -292,7 +291,15 @@ uDisplay *udisp;
       uint8_t touch_cs = replacepin(&cp, Pin(GPIO_XPT2046_CS));
 	    XPT2046_Touch_Init(touch_cs);
     }
-#endif
+#endif // USE_XPT2046
+
+    uint8_t inirot = Settings->display_rotate;
+
+    cp = strstr(ddesc, ":r,");
+    if (cp) {
+      cp+=3;
+      inirot = strtol(cp, &cp, 10);
+    }
 
     // release desc buffer
     if (fbuff) free(fbuff);
@@ -300,8 +307,6 @@ uDisplay *udisp;
     renderer = udisp->Init();
     if (!renderer) return 0;
 
-    Settings->display_width = renderer->width();
-    Settings->display_height = renderer->height();
     fg_color = renderer->fgcol();
     bg_color = renderer->bgcol();
     color_type = renderer->color_type();
@@ -309,17 +314,23 @@ uDisplay *udisp;
 #ifdef USE_M5STACK_CORE2
     renderer->SetPwrCB(Core2DisplayPower);
     renderer->SetDimCB(Core2DisplayDim);
-#endif
+#endif // USE_M5STACK_CORE2
 
-    renderer->DisplayInit(DISPLAY_INIT_MODE, Settings->display_size, Settings->display_rotate, Settings->display_font);
-    renderer->dim(Settings->display_dimmer);
+    renderer->DisplayInit(DISPLAY_INIT_MODE, Settings->display_size, inirot, Settings->display_font);
+
+    Settings->display_width = renderer->width();
+    Settings->display_height = renderer->height();
+
+    ApplyDisplayDimmer();
 
 #ifdef SHOW_SPLASH
-    renderer->Splash();
-#endif
+    if (!Settings->flag5.display_no_splash) {
+      renderer->Splash();
+    }
+#endif // SHOW_SPLASH
 
     udisp_init_done = true;
-    AddLog(LOG_LEVEL_INFO, PSTR("DSP: %s!"), renderer->devname());
+    AddLog(LOG_LEVEL_INFO, PSTR("DSP: Configured display '%s'"), renderer->devname());
 
     return renderer;
   }
@@ -423,7 +434,7 @@ bool Xdsp17(uint8_t function) {
   bool result = false;
 
   if (FUNC_DISPLAY_INIT_DRIVER == function) {
-    Init_uDisplay(0, -1);
+    Init_uDisplay(nullptr);
   }
   else if (udisp_init_done && (XDSP_17 == Settings->display_model)) {
     switch (function) {

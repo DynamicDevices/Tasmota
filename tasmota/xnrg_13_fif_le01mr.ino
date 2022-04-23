@@ -181,7 +181,8 @@ void FifLEEvery250ms(void)
           break;
 
         case 7:
-          Le01mr.total_active = value_buff * 0.01f; // [kWh]
+          Energy.import_active[0] = value_buff * 0.01f; // [kWh]
+          Le01mr.total_active = Energy.import_active[0];  // Useless
           break;
 
         case 8:
@@ -193,7 +194,7 @@ void FifLEEvery250ms(void)
       if (Le01mr.read_state == Le01mr.start_address_count) {
         Le01mr.read_state = 0;
 
-        EnergyUpdateTotal(Le01mr.total_active, true);
+        EnergyUpdateTotal();
       }
     }
   } // end data ready
@@ -242,8 +243,8 @@ const char HTTP_ENERGY_LE01MR[] PROGMEM =
   ;
 #endif  // USE_WEBSERVER
 
-void FifLEShow(bool json)
-{
+/*
+void FifLEShow(bool json) {
   char total_reactive_chr[FLOATSZ];
   dtostrfd(Le01mr.total_reactive, Settings->flag2.energy_resolution, total_reactive_chr);
   char total_active_chr[FLOATSZ];
@@ -255,6 +256,24 @@ void FifLEShow(bool json)
 #ifdef USE_WEBSERVER
   } else {
     WSContentSend_PD(HTTP_ENERGY_LE01MR, total_active_chr, total_reactive_chr);
+#endif  // USE_WEBSERVER
+  }
+}
+*/
+
+void FifLEShow(bool json) {
+  char value_chr[TOPSZ];
+  char value2_chr[TOPSZ];
+
+  if (json) {
+    ResponseAppend_P(PSTR(",\"" D_JSON_TOTAL_ACTIVE "\":%s,\"" D_JSON_TOTAL_REACTIVE "\":%s"),
+      EnergyFormat(value_chr, &Le01mr.total_active, Settings->flag2.energy_resolution),
+      EnergyFormat(value2_chr, &Le01mr.total_reactive, Settings->flag2.energy_resolution));
+#ifdef USE_WEBSERVER
+  } else {
+    WSContentSend_PD(HTTP_ENERGY_LE01MR, WebEnergyFormat(value_chr, &Le01mr.total_active, Settings->flag2.energy_resolution),
+                                         WebEnergyFormat(value2_chr, &Le01mr.total_reactive, Settings->flag2.energy_resolution));
+
 #endif  // USE_WEBSERVER
   }
 }
@@ -275,7 +294,11 @@ bool Xnrg13(uint8_t function)
       FifLEShow(1);
       break;
 #ifdef USE_WEBSERVER
+#ifdef USE_ENERGY_COLUMN_GUI
+    case FUNC_WEB_COL_SENSOR:
+#else   // not USE_ENERGY_COLUMN_GUI
     case FUNC_WEB_SENSOR:
+#endif  // USE_ENERGY_COLUMN_GUI
       FifLEShow(0);
       break;
 #endif  // USE_WEBSERVER

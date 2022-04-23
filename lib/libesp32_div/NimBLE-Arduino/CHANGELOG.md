@@ -1,6 +1,90 @@
 # Changelog
 
-All notable changes to this project will be documented in this file.  
+All notable changes to this project will be documented in this file.
+
+## [1.3.6] - 2022-01-18
+
+### Changed
+- When retrieving attributes from a server fails with a 128bit UUID containing the ble base UUID another attempt will be made with the 16bit version of the UUID.
+
+### Fixed
+- Memory leak when services are changed on server devices.
+- Rare crashing that occurs when BLE commands are sent from ISR context using IPC.
+- Crashing caused by uninitialized disconnect timer in client.
+- Potential crash due to unintialized advertising callback pointer.
+
+## [1.3.5] - 2022-01-14
+
+### Added
+- CONFIG_NIMBLE_CPP_DEBUG_LEVEL macro in nimconfig.h to allow setting the log level separately from the Arduino core log level.
+
+### Fixed
+- Memory leak when initializing/deinitializing the BLE stack caused by new FreeRTOS timers be created on each initialization.
+
+## [1.3.4] - 2022-01-09
+
+### Fixed
+- Workaround for latest Arduino-esp32 core that causes tasks not to block when required, which caused functions to return prematurely resulting in exceptions/crashing.
+- The wrong length value was being used to set the values read from peer attributes. This has been corrected to use the proper value size.
+
+## [1.3.3] - 2021-11-24
+
+### Fixed
+- Workaround added for FreeRTOS bug that affected timers, causing scan and advertising timer expirations to not correctly trigger callbacks.
+
+## [1.3.2] - 2021-11-20
+
+### Fixed
+- Added missing macros for scan filter.
+
+### Added
+- `NimBLEClient::getLastError` : Gets the error code of the last function call that produces a return code from the stack.
+
+## [1.3.1] - 2021-08-04
+
+### Fixed
+- Corrected a compiler/linker error when an application or a library uses bluetooth classic due to the redefinition of `btInUse`.
+
+## [1.3.0] - 2021-08-02
+
+### Added
+- `NimBLECharacteristic::removeDescriptor`: Dynamically remove a descriptor from a characterisic. Takes effect after all connections are closed and sends a service changed indication.
+- `NimBLEService::removeCharacteristic`: Dynamically remove a characteristic from a service. Takes effect after all connections are closed and sends a service changed indication
+- `NimBLEServerCallbacks::onMTUChange`: This is callback is called when the MTU is updated after connection with a client.
+- ESP32C3 support
+
+- Whitelist API:
+  - `NimBLEDevice::whiteListAdd`: Add a device to the whitelist.
+  - `NimBLEDevice::whiteListRemove`: Remove a device from the whitelist.
+  - `NimBLEDevice::onWhiteList`: Check if the device is on the whitelist.
+  - `NimBLEDevice::getWhiteListCount`: Gets the size of the whitelist
+  - `NimBLEDevice::getWhiteListAddress`: Get the address of a device on the whitelist by index value.
+
+- Bond management API:
+  - `NimBLEDevice::getNumBonds`: Gets the number of bonds stored.
+  - `NimBLEDevice::isBonded`: Checks if the device is bonded.
+  - `NimBLEDevice::deleteAllBonds`: Deletes all bonds.
+  - `NimBLEDevice::getBondedAddress`: Gets the address of a bonded device by the index value.
+
+- `NimBLECharacteristic::getCallbacks` to retrieve the current callback handler.
+- Connection Information class: `NimBLEConnInfo`.
+- `NimBLEScan::clearDuplicateCache`: This can be used to reset the cache of advertised devices so they will be immediately discovered again.
+
+### Changed
+- FreeRTOS files have been removed as they are not used by the library.
+- Services, characteristics and descriptors can now be created statically and added after.
+- Excess logging and some asserts removed.
+- Use ESP_LOGx macros to enable using local log level filtering.
+
+### Fixed
+- `NimBLECharacteristicCallbacks::onSubscribe` Is now called after the connection is added to the vector.
+- Corrected bonding failure when reinitializing the BLE stack.
+- Writing to a characterisic with a std::string value now correctly writes values with null characters.
+- Retrieving remote descriptors now uses the characterisic end handle correctly.
+- Missing data in long writes to remote descriptors.
+- Hanging on task notification when sending an indication from the characteristic callback.
+- BLE controller memory could be released when using Arduino as a component.
+- Complile errors with NimBLE release 1.3.0.
 
 ## [1.2.0] - 2021-02-08
 

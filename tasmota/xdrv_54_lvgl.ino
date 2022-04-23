@@ -32,10 +32,6 @@
 
 #include "Adafruit_LvGL_Glue.h"
 
-#ifdef USE_LVGL_PNG_DECODER
-  #include "lv_png.h"
-#endif // USE_LVGL_PNG_DECODER
-
 Adafruit_LvGL_Glue * glue;
 
 // **************************************************
@@ -43,11 +39,9 @@ Adafruit_LvGL_Glue * glue;
 // **************************************************
 #if LV_USE_LOG
 #ifdef USE_BERRY
-static void lvbe_debug(lv_log_level_t level, const char *file, uint32_t line, const char *fname, const char *msg);
-static void lvbe_debug(lv_log_level_t level, const char *file, uint32_t line, const char *fname, const char *msg) {
+static void lvbe_debug(const char *msg);
+static void lvbe_debug(const char *msg) {
   be_writebuffer("LVG: ", sizeof("LVG: "));
-  be_writebuffer(fname, strlen(fname));
-  be_writebuffer(" -> ", sizeof(" -> "));
   be_writebuffer(msg, strlen(msg));
   be_writebuffer("\n", sizeof("\n"));
 }
@@ -77,11 +71,13 @@ void lv_flush_callback(lv_disp_drv_t *disp, const lv_area_t *area, lv_color_t *c
       uint16_t * pix = (uint16_t*) color_p;
       for (uint32_t i = 0; i < btw / 2; i++) (pix[i] = pix[i] << 8 | pix[i] >> 8);
 #endif
-      int32_t ret = glue->getScreenshotFile()->write((const uint8_t*) color_p, btw);
-      if (ret >= 0) {
-        btw -= ret;
-      } else {
-        btw = 0;  // abort
+      if (btw > 0) {    // if we had a previous error (ex disk full) don't try to write anymore
+        int32_t ret = glue->getScreenshotFile()->write((const uint8_t*) color_p, btw);
+        if (ret >= 0) {
+          btw -= ret;
+        } else {
+          btw = 0;  // abort
+        }
       }
     }
     lv_disp_flush_ready(disp);
@@ -119,6 +115,12 @@ void lv_flush_callback(lv_disp_drv_t *disp, const lv_area_t *area, lv_color_t *c
  ************************************************************/
 
 #ifdef USE_UFILESYS
+
+#include <FS.h>
+#include "ZipReadFS.h"
+extern FS *ffsp;
+FS lv_zip_ufsp(ZipReadFSImplPtr(new ZipReadFSImpl(&ffsp)));
+
 extern "C" {
 
   typedef void lvbe_FILE;
@@ -130,7 +132,7 @@ extern "C" {
     String file_path = "/";
     file_path += filename;
 
-    File f = dfsp->open(file_path, mode);
+    File f = lv_zip_ufsp.open(file_path, mode);
     // AddLog(LOG_LEVEL_INFO, "LVG: lvbe_fopen(%s) -> %i", file_path.c_str(), (int32_t)f);
     // AddLog(LOG_LEVEL_INFO, "LVG: F=%*_H", sizeof(f), &f);
     if (f) {
@@ -195,50 +197,27 @@ extern "C" {
  ************************************************************/
 
 #ifdef USE_UFILESYS
-static lv_fs_res_t lvbe_fs_open(lv_fs_drv_t * drv, void * file_p, const char * path, lv_fs_mode_t mode);
-static lv_fs_res_t lvbe_fs_open(lv_fs_drv_t * drv, void * file_p, const char * path, lv_fs_mode_t mode) {
+static void * lvbe_fs_open(lv_fs_drv_t * drv, const char * path, lv_fs_mode_t mode);
+static void * lvbe_fs_open(lv_fs_drv_t * drv, const char * path, lv_fs_mode_t mode) {
   // AddLog(LOG_LEVEL_INFO, "LVG: lvbe_fs_open(%p, %p, %s, %i) %i", drv, file_p, path, mode, sizeof(File));
   const char * modes = nullptr;
   switch (mode) {
-    case LV_FS_MODE_WR:
-      modes = "w";
-      break;
-    case LV_FS_MODE_RD:
-      modes = "r";
-      break;
-    case LV_FS_MODE_WR | LV_FS_MODE_RD:
-      modes = "rw";
-      break;
+    case LV_FS_MODE_WR:                   modes = "w";    break;
+    case LV_FS_MODE_RD:                   modes = "r";    break;
+    case LV_FS_MODE_WR | LV_FS_MODE_RD:   modes = "rw";   break;
   }
 
   if (modes == nullptr) {
     AddLog(LOG_LEVEL_INFO, "LVG: fs_open, unsupported mode %d", mode);
-    return LV_FS_RES_INV_PARAM;
+    return nullptr;
   }
 
-  // Add "/" prefix
-  String file_path = "/";
-  file_path += path;
-
-  File f = dfsp->open(file_path.c_str(), modes);
-  // AddLog(LOG_LEVEL_INFO, "LVG: lvbe_fs_open(%s) -> %i", file_path.c_str(), (int32_t)f);
-  // AddLog(LOG_LEVEL_INFO, "LVG: F=%*_H", sizeof(f), &f);
-  if (f) {
-    File * f_ptr = new File(f);                 // copy to dynamic object
-    *((File**)file_p) = f_ptr;
-    return LV_FS_RES_OK;
-  } else {
-    return LV_FS_RES_NOT_EX;
-  }
+  return (void*) lvbe_fopen(path, modes);
 }
 
 static lv_fs_res_t lvbe_fs_close(lv_fs_drv_t * drv, void * file_p);
 static lv_fs_res_t lvbe_fs_close(lv_fs_drv_t * drv, void * file_p) {
-  // AddLog(LOG_LEVEL_INFO, "LVG: lvbe_fs_close(%p, %p)", drv, file_p);
-  File * f_ptr = (File*) file_p;
-  f_ptr->close();
-  delete f_ptr;
-  return LV_FS_RES_OK;
+  return lvbe_fclose((void*)file_p);
 }
 
 static lv_fs_res_t lvbe_fs_read(lv_fs_drv_t * drv, void * file_p, void * buf, uint32_t btr, uint32_t * br);
@@ -277,11 +256,19 @@ static lv_fs_res_t lvbe_fs_tell(lv_fs_drv_t * drv, void * file_p, uint32_t * pos
   return LV_FS_RES_OK;
 }
 
-static lv_fs_res_t lvbe_fs_seek(lv_fs_drv_t * drv, void * file_p, uint32_t pos);
-static lv_fs_res_t lvbe_fs_seek(lv_fs_drv_t * drv, void * file_p, uint32_t pos) {
+static lv_fs_res_t lvbe_fs_seek(lv_fs_drv_t * drv, void * file_p, uint32_t pos, lv_fs_whence_t whence);
+static lv_fs_res_t lvbe_fs_seek(lv_fs_drv_t * drv, void * file_p, uint32_t pos, lv_fs_whence_t whence) {
   // AddLog(LOG_LEVEL_INFO, "LVG: lvbe_fs_seek(%p, %p, %i)", drv, file_p, pos);
   File * f_ptr = (File*) file_p;
-  if (f_ptr->seek(pos)) {
+  SeekMode seek;
+  switch (whence) {
+    case LV_FS_SEEK_SET: seek = SeekSet; break;
+    case LV_FS_SEEK_CUR: seek = SeekCur; break;
+    case LV_FS_SEEK_END: seek = SeekEnd; break;
+    default: return LV_FS_RES_UNKNOWN;
+  }
+
+  if (f_ptr->seek(pos, seek)) {
     return LV_FS_RES_OK;
   } else {
     return LV_FS_RES_UNKNOWN;
@@ -293,13 +280,6 @@ static lv_fs_res_t lvbe_fs_size(lv_fs_drv_t * drv, void * file_p, uint32_t * siz
   // AddLog(LOG_LEVEL_INFO, "LVG: lvbe_fs_size(%p, %p, %p)", drv, file_p, size_p);
   File * f_ptr = (File*) file_p;
   *size_p = f_ptr->size();
-  return LV_FS_RES_OK;
-}
-
-static lv_fs_res_t lvbe_fs_remove(lv_fs_drv_t * drv, const char *path);
-static lv_fs_res_t lvbe_fs_remove(lv_fs_drv_t * drv, const char *path) {
-  // AddLog(LOG_LEVEL_INFO, "LVG: lvbe_fs_remove(%p, %s)", drv, path);
-  dfsp->remove(path);
   return LV_FS_RES_OK;
 }
 #endif // USE_UFILESYS
@@ -361,21 +341,20 @@ extern "C" {
  * We use Adafruit_LvGL_Glue to leverage the Adafruit
  * display ecosystem.
  ************************************************************/
-
-Renderer *Init_uDisplay(const char *desc, int8_t cs);
+extern Renderer *Init_uDisplay(const char *desc);
 
 
 void start_lvgl(const char * uconfig);
 void start_lvgl(const char * uconfig) {
 
   if (glue != nullptr) {
-    AddLog(LOG_LEVEL_INFO, D_LOG_LVGL " LVGL was already initialized");
+    AddLog(LOG_LEVEL_DEBUG, D_LOG_LVGL "LVGL was already initialized");
     return;
   }
 
   if (!renderer || uconfig) {
 #ifdef USE_UNIVERSAL_DISPLAY    // TODO - we will probably support only UNIV_DISPLAY
-    renderer  = Init_uDisplay((char*)uconfig, -1);
+    renderer  = Init_uDisplay((char*)uconfig);
     if (!renderer) return;
 #else
     return;
@@ -399,8 +378,11 @@ void start_lvgl(const char * uconfig) {
   // Set the default background color of the display
   // This is normally overriden by an opaque screen on top
 #ifdef USE_BERRY
-  lv_obj_set_style_local_bg_color(lv_scr_act(), LV_OBJ_PART_MAIN, LV_STATE_DEFAULT, lv_color_from_uint32(USE_LVGL_BG_DEFAULT));
-  lv_obj_set_style_local_bg_opa(lv_scr_act(), LV_OBJ_PART_MAIN, LV_STATE_DEFAULT, LV_OPA_COVER);
+  // By default set the display color to black and opacity to 100%
+  lv_disp_set_bg_color(NULL, lv_color_from_uint32(USE_LVGL_BG_DEFAULT));
+  lv_disp_set_bg_opa(NULL, LV_OPA_COVER);
+  lv_obj_set_style_bg_color(lv_scr_act(), lv_color_from_uint32(USE_LVGL_BG_DEFAULT), LV_PART_MAIN | LV_STATE_DEFAULT);
+  lv_obj_set_style_bg_opa(lv_scr_act(), LV_OPA_COVER, LV_PART_MAIN | LV_STATE_DEFAULT);
 
 #if LV_USE_LOG
   lv_log_register_print_cb(lvbe_debug);
@@ -409,12 +391,10 @@ void start_lvgl(const char * uconfig) {
 
 #ifdef USE_UFILESYS
   // Add file system mapping
-  lv_fs_drv_t drv;      // can be on heap, LVGL creates a copy
+  static lv_fs_drv_t drv;      // LVGL8, needs to be static and not on stack
   lv_fs_drv_init(&drv);                     /*Basic initialization*/
 
   drv.letter = 'A';                         /*An uppercase letter to identify the drive */
-  drv.file_size = 0;           /*Size required to store a file object*/
-  drv.rddir_size = 0;           /*Size required to store a directory object (used by dir_open/close/read)*/
   drv.ready_cb = nullptr;               /*Callback to tell if the drive is ready to use */
   drv.open_cb = &lvbe_fs_open;                 /*Callback to open a file */
   drv.close_cb = &lvbe_fs_close;               /*Callback to close a file */
@@ -422,16 +402,10 @@ void start_lvgl(const char * uconfig) {
   drv.write_cb = &lvbe_fs_write;               /*Callback to write a file */
   drv.seek_cb = &lvbe_fs_seek;                 /*Callback to seek in a file (Move cursor) */
   drv.tell_cb = &lvbe_fs_tell;                 /*Callback to tell the cursor position  */
-  drv.trunc_cb = nullptr;               /*Callback to delete a file */
-  drv.size_cb = &lvbe_fs_size;                 /*Callback to tell a file's size */
-  drv.rename_cb = nullptr;             /*Callback to rename a file */
-  drv.remove_cb = &lvbe_fs_remove;             /*Callback to remove a file */
 
   drv.dir_open_cb = nullptr;         /*Callback to open directory to read its content */
   drv.dir_read_cb = nullptr;         /*Callback to read a directory's content */
   drv.dir_close_cb = nullptr;       /*Callback to close a directory */
-
-  drv.free_space_cb = nullptr;     /*Callback to tell free space on the drive */
   // drv.user_data = nullptr;             /*Any custom data if required*/
 
   lv_fs_drv_register(&drv);                 /*Finally register the drive*/

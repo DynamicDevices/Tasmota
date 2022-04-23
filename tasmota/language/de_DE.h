@@ -28,7 +28,7 @@
  * Use online command StateText to translate ON, OFF, HOLD and TOGGLE.
  * Use online command Prefix to translate cmnd, stat and tele.
  *
- * Updated until v9.5.0.3
+ * Updated until v10.0.0.1
 \*********************************************************************/
 
 //#define LANGUAGE_MODULE_NAME         // Enable to display "Module Generic" (ie Spanish), Disable to display "Generic Module" (ie English)
@@ -76,7 +76,8 @@
 #define D_COUNT "Anzahl"             // used as a noun throughout
 #define D_COUNTER "Zähler"
 #define D_CT_POWER "CT Power"
-#define D_CURRENT "Strom"          // As in Voltage and Current
+#define D_CURRENT "Strom"            // As in Voltage and Current
+#define D_CURRENT_NEUTRAL "Current Neutral"
 #define D_DATA "Daten"
 #define D_DARKLIGHT "dunkel"
 #define D_DEBUG "debug"
@@ -137,6 +138,7 @@
 #define D_ORP "ORP"
 #define D_PASSWORD "Passwort"
 #define D_PH "pH"
+#define D_MQ "MQ"
 #define D_PORT "Port"
 #define D_POWER_FACTOR "Leistungsfaktor"
 #define D_POWERUSAGE "Leistung"
@@ -234,8 +236,8 @@
 #define D_SYSLOG_HOST_NOT_FOUND "Syslog-Host nicht gefunden"
 
 // settings.ino
-#define D_SAVED_TO_FLASH_AT "in Flash gespeichert am"
-#define D_LOADED_FROM_FLASH_AT "aus Flash geladen am"
+#define D_SAVED_TO_FLASH_AT "in Flash gespeichert an"
+#define D_LOADED_FROM_FLASH_AT "aus Flash geladen von"
 #define D_USE_DEFAULTS "Standard verwenden"
 #define D_ERASED_SECTOR "gelöschter Sektor"
 
@@ -328,7 +330,9 @@
 #define D_WEB_ADMIN_PASSWORD "Passwort für Web Oberfläche"
 #define D_MQTT_ENABLE "MQTT aktivieren"
 #define D_MQTT_TLS_ENABLE "MQTT TLS"
-#define D_FRIENDLY_NAME "Name [friendly name]"
+#define D_HTTP_API "HTTP API"
+#define D_HTTP_API_ENABLE "HTTP API aktivieren"
+#define D_FRIENDLY_NAME "Name [Friendly Name]"
 #define D_BELKIN_WEMO "Belkin WeMo"
 #define D_HUE_BRIDGE "Hue Bridge"
 #define D_SINGLE_DEVICE "Einzelnes Gerät"
@@ -491,19 +495,19 @@
 #define D_ZIGBEE_UNKNWON_ATTRIBUTE "Unbekannter Attribut Name (ignoriert): %s"
 #define D_ZIGBEE_TOO_MANY_CLUSTERS "Nur eine Cluster id pro Kommando"
 #define D_ZIGBEE_WRONG_DELIMITER "Falscher Delimeter für Payload"
-#define D_ZIGBEE_UNRECOGNIZED_COMMAND "Unerkanntes zigbee Kommando: %s"
+#define D_ZIGBEE_UNRECOGNIZED_COMMAND "Unerkanntes Zigbee Kommando: %s"
 #define D_ZIGBEE_TOO_MANY_COMMANDS "Nur 1 Kommando zulässig (%d)"
 #define D_ZIGBEE_NO_ATTRIBUTE "Kein Attribut in der Liste"
 #define D_ZIGBEE_UNSUPPORTED_ATTRIBUTE_TYPE "Nicht unterstützter Attribut Typ"
 #define D_ZIGBEE_JSON_REQUIRED "Konfiguration muss JSON basiert sein"
 #define D_ZIGBEE_RESET_1_OR_2 "1 oder 2 für Reset"
-#define D_ZIGBEE_EEPROM_FOUND_AT_ADDRESS "ZBBridge EEPROM gefunden auf Adresse"
+#define D_ZIGBEE_EEPROM_FOUND_AT_ADDRESS "ZBBridge EEPROM gefunden an Adresse"
 #define D_ZIGBEE_RANDOMIZING_ZBCONFIG "Zufällige Zigbee Parameter erstellt, Überprüfung mit 'ZbConfig'"
 
 // xdrv_03_energy.ino
 #define D_ENERGY_TODAY "Energie heute"
 #define D_ENERGY_YESTERDAY "Energie gestern"
-#define D_ENERGY_TOTAL "Energie insgesamt"
+#define D_ENERGY_TOTAL "Energie gesamt"
 
 // xdrv_27_shutter.ino
 #define D_OPEN "Öffnen"
@@ -531,7 +535,7 @@
 #define D_CHECKSUM_FAILURE "Prüfsummen-Fehler"
 
 // xsns_07_sht1x.ino
-#define D_SENSOR_DID_NOT_ACK_COMMAND "Sensor hat ACK-Befehl nicht ausgeführt"
+#define D_SENSOR_DID_NOT_ACK_COMMAND "Sensor hat Befehl nicht ausgeführt"
 #define D_SHT1X_FOUND "SHT1X gefunden"
 
 // xsns_18_pms5003.ino
@@ -611,6 +615,7 @@
 #define D_SENSOR_DHT11         "DHT11"
 #define D_SENSOR_AM2301        "AM2301"
 #define D_SENSOR_SI7021        "SI7021"
+#define D_SENSOR_MS01          "MS01"
 #define D_SENSOR_DS18X20       "DS18x20"
 #define D_SENSOR_I2C_SCL       "I2C SCL"
 #define D_SENSOR_I2C_SDA       "I2C SDA"
@@ -661,6 +666,8 @@
 #define D_SENSOR_SDM72_RX      "SDM72 Rx"
 #define D_SENSOR_SDM120_TX     "SDMx20 Tx"
 #define D_SENSOR_SDM120_RX     "SDMx20 Rx"
+#define D_SENSOR_SDM230_TX     "SDM230 Tx"
+#define D_SENSOR_SDM230_RX     "SDM230 Rx"
 #define D_SENSOR_SDM630_TX     "SDM630 Tx"
 #define D_SENSOR_SDM630_RX     "SDM630 Rx"
 #define D_SENSOR_WE517_TX      "WE517 Tx"
@@ -708,6 +715,9 @@
 #define D_SENSOR_CSE7761_RX    "CSE7761 Rx"
 #define D_SENSOR_CSE7766_TX    "CSE7766 Tx"
 #define D_SENSOR_CSE7766_RX    "CSE7766 Rx"
+#define D_SENSOR_BL0939_RX     "BL0939 Rx"
+#define D_SENSOR_BL0942_RX     "BL0942 Rx"
+#define D_SENSOR_HM330X_SET    "HM330X SET"
 #define D_SENSOR_PN532_TX      "PN532 Tx"
 #define D_SENSOR_PN532_RX      "PN532 Rx"
 #define D_SENSOR_SM16716_CLK   "SM16716 CLK"
@@ -724,6 +734,7 @@
 #define D_SENSOR_ROTARY        "Rotary"     // Suffix "1A"
 #define D_SENSOR_HRE_CLOCK     "HRE Clock"
 #define D_SENSOR_HRE_DATA      "HRE Data"
+#define D_SENSOR_ADE7880_IRQ   "ADE7880 IRQ"
 #define D_SENSOR_ADE7953_IRQ   "ADE7953 IRQ"
 #define D_SENSOR_BUZZER        "Buzzer"
 #define D_SENSOR_DISP_RESET    "Display Rst"
@@ -732,6 +743,7 @@
 #define D_SENSOR_ZIGBEE_RST    "Zigbee Rst"
 #define D_SENSOR_SOLAXX1_TX    "SolaxX1 Tx"
 #define D_SENSOR_SOLAXX1_RX    "SolaxX1 Rx"
+#define D_SENSOR_SOLAXX1_RTS   "SolaxX1 RTS"
 #define D_SENSOR_IBEACON_TX    "iBeacon TX"
 #define D_SENSOR_IBEACON_RX    "iBeacon RX"
 #define D_SENSOR_RDM6300_RX    "RDM6300 RX"
@@ -780,6 +792,7 @@
 #define D_SENSOR_ADC_CT_POWER  "ADC CT Power"
 #define D_SENSOR_ADC_JOYSTICK  "ADC Joystick"
 #define D_SENSOR_ADC_PH        "ADC pH"
+#define D_SENSOR_ADC_MQ        "ADC MQ"
 #define D_GPIO_WEBCAM_PWDN     "CAM_PWDN"
 #define D_GPIO_WEBCAM_RESET    "CAM_RESET"
 #define D_GPIO_WEBCAM_XCLK     "CAM_XCLK"
@@ -827,13 +840,26 @@
 #define D_SENSOR_WIEGAND_D1    "Wiegand D1"
 #define D_SENSOR_NEOPOOL_TX    "NeoPool Tx"
 #define D_SENSOR_NEOPOOL_RX    "NeoPool Rx"
-#define D_SENSOR_VL53L0X_XSHUT "VL53L0X XSHUT"
+#define D_SENSOR_VL53LXX_XSHUT "VL53LXX XSHUT"
 #define D_SENSOR_TFMINIPLUS_TX "TFmini+ TX"
 #define D_SENSOR_TFMINIPLUS_RX "TFmini+ RX"
 #define D_SENSOR_ZEROCROSS     "ZC Puls"
 #define D_SENSOR_HALLEFFECT    "HallEffect"
 #define D_SENSOR_EPD_DATA      "EPD Data"
 #define D_SENSOR_MCP2515_CS    "MCP2515 CS"
+#define D_SENSOR_HRG15_RX      "HRG15 Rx"
+#define D_SENSOR_HRG15_TX      "HRG15 Tx"
+#define D_SENSOR_VINDRIKTNING_RX "VINDRIKTNING"
+#define D_SENSOR_BL6523_TX "BL6523 Tx"
+#define D_SENSOR_BL6523_RX "BL6523 Rx"
+#define D_SENSOR_HEARTBEAT     "Herzschlag"
+#define D_SENSOR_RESET         "Reset"
+#define D_GPIO_SHIFT595_SRCLK  "74x595 SRCLK"
+#define D_GPIO_SHIFT595_RCLK   "74x595 RCLK"
+#define D_GPIO_SHIFT595_OE     "74x595 OE"
+#define D_GPIO_SHIFT595_SER    "74x595 SER"
+#define D_SENSOR_CM11_TX       "CM110x TX" 
+#define D_SENSOR_CM11_RX       "CM110x RX" 
 
 // Units
 #define D_UNIT_AMPERE "A"
@@ -881,11 +907,11 @@
 #define D_UNIT_WATTHOUR "Wh"
 #define D_UNIT_WATT_METER_QUADRAT "W/m²"
 
-#define D_NEW_ADDRESS          "Neue Adresse"
-#define D_OUT_OF_RANGE         "Außerhalb Bereich"
-#define D_SENSOR_DETECTED      "erkannt"
+#define D_NEW_ADDRESS      "Neue Adresse"
+#define D_OUT_OF_RANGE     "Außerhalb Bereich"
+#define D_SENSOR_DETECTED  "erkannt"
 
-//SDM220, SDM120, SDM72, LE01MR
+//SDM220, SDM120, SDM72, LE01MR, SDM230
 #define D_EXPORT_POWER    "Exportiere Leistung"
 #define D_IMPORT_POWER 	  "Importiere Leistung"
 #define D_PHASE_ANGLE     "Phasenwinkel"
@@ -897,6 +923,7 @@
 #define D_UNIT_KWARH      "kVArh"
 #define D_UNIT_ANGLE      "Grad"
 #define D_TOTAL_ACTIVE    "Total Wirk"
+#define D_RESETTABLE_TOTAL_ACTIVE    "Total Wirk (RST)"
 
 //SOLAXX1
 #define D_PV1_VOLTAGE     "PV1 Spannung"
@@ -905,19 +932,22 @@
 #define D_PV2_VOLTAGE     "PV2 Spannung"
 #define D_PV2_CURRENT     "PV2 Strom"
 #define D_PV2_POWER       "PV2 Leistung"
-#define D_SOLAR_POWER     "solare Leistung"
-#define D_INVERTER_POWER  "Inverter Leistung"
+#define D_SOLAR_POWER     "PV Gesamtleistung"
+#define D_INVERTER_POWER  "Ausgangsleistung"
 #define D_STATUS          "Status"
-#define D_WAITING         "warten"
-#define D_CHECKING        "prüfen"
-#define D_WORKING         "arbeitet"
-#define D_FAILURE         "Fehler"
-#define D_SOLAX_ERROR_0   "Kein Fehler Code"
-#define D_SOLAX_ERROR_1   "Fehler im Solarstromnetz"
-#define D_SOLAX_ERROR_2   "Spannungsfehler im Solarstromnetz"
-#define D_SOLAX_ERROR_3   "Frequenzfehler im Solarstromnetz"
-#define D_SOLAX_ERROR_4   "Pv Spannungsfehler"
-#define D_SOLAX_ERROR_5   "Isolationsfehler"
+#define D_SOLAX_MODE_0    "warten"
+#define D_SOLAX_MODE_1    "prüfen"
+#define D_SOLAX_MODE_2    "arbeitet"
+#define D_SOLAX_MODE_3    "Fehler"
+#define D_SOLAX_MODE_4    "Dauerhafter Fehler"
+#define D_SOLAX_MODE_5    "Software Update"
+#define D_SOLAX_MODE_6    "Selbsttest"
+#define D_SOLAX_ERROR_0   "Kein Fehler"
+#define D_SOLAX_ERROR_1   "Keine Netzspannung vorhanden"
+#define D_SOLAX_ERROR_2   "Netzspannung unzulässig"
+#define D_SOLAX_ERROR_3   "Netzfrequenz unzulässig"
+#define D_SOLAX_ERROR_4   "PV-Spannung zu hoch"
+#define D_SOLAX_ERROR_5   "PV-Isolationsfehler"
 #define D_SOLAX_ERROR_6   "Übertemperatur"
 #define D_SOLAX_ERROR_7   "Lüfterfehler"
 #define D_SOLAX_ERROR_8   "sonstiger Fehler"
@@ -940,9 +970,10 @@
 #define D_FS_SIZE              "Größe"
 #define D_FS_FREE              "Frei"
 #define D_NEW_FILE             "neue-datei.txt"
-#define D_CREATE_NEW_FILE      "Neue Datei erstellen und bearbeiten"
+#define D_CREATE_NEW_FILE      "Datei erstellen und bearbeiten"
 #define D_EDIT_FILE            "Datei bearbeiten"
-#define D_CONFIRM_FILE_DEL     "Löschen der Datei bestätigen"
+#define D_CONFIRM_FILE_DEL     "Datei löschen bestätigen"
+#define D_SHOW_HIDDEN_FILES    "Zeige versteckte Datei(en)"
 
 //xsns_67_as3935.ino
 #define D_AS3935_GAIN "Umgebung:"
@@ -1012,19 +1043,19 @@
 #define D_FP_INVALIDIMAGE "Abbild ungültig"             // 0x15 Failed to generate image because of lac of valid primary image
 #define D_FP_FLASHERR "Flash Schreibfehler"             // 0x18 Error when writing flash
 #define D_FP_INVALIDREG "Ungültige ID-Nummer"           // 0x1A Invalid register number
-#define D_FP_ADDRCODE "Addresse"                        // 0x20 Address code
+#define D_FP_ADDRCODE "Adresse"                         // 0x20 Address code
 #define D_FP_PASSVERIFY "Übereinstimmung"               // 0x21 Verify the fingerprint passed
 #define D_FP_UNKNOWNERROR "Fehler"                      // Any other error
 
 // xsns_83_neopool.ino
 #define D_NEOPOOL_MACH_NONE               "NeoPool"           // Machine names
-#define D_NEOPOOL_MACH_HIDROLIFE          "Hidrolife (Gelb)"
-#define D_NEOPOOL_MACH_AQUASCENIC         "Aquascenic (Blau)"
-#define D_NEOPOOL_MACH_OXILIFE            "Oxilife (Grün)"
-#define D_NEOPOOL_MACH_BIONET             "Bionet (Hellblau)"
-#define D_NEOPOOL_MACH_HIDRONISER         "Hidroniser (Rot)"
-#define D_NEOPOOL_MACH_UVSCENIC           "UVScenic (Lila)"
-#define D_NEOPOOL_MACH_STATION            "Station (Orange)"
+#define D_NEOPOOL_MACH_HIDROLIFE          "Hidrolife"
+#define D_NEOPOOL_MACH_AQUASCENIC         "Aquascenic"
+#define D_NEOPOOL_MACH_OXILIFE            "Oxilife"
+#define D_NEOPOOL_MACH_BIONET             "Bionet"
+#define D_NEOPOOL_MACH_HIDRONISER         "Hidroniser"
+#define D_NEOPOOL_MACH_UVSCENIC           "UVScenic"
+#define D_NEOPOOL_MACH_STATION            "Station"
 #define D_NEOPOOL_MACH_BRILIX             "Brilix"
 #define D_NEOPOOL_MACH_GENERIC            "Generic"
 #define D_NEOPOOL_MACH_BAYROL             "Bayrol"
@@ -1046,15 +1077,20 @@
 #define D_NEOPOOL_IONIZATION              "Ionisierung"
 #define D_NEOPOOL_HYDROLYSIS              "Hydrolyse"
 #define D_NEOPOOL_RELAY                   "Relais"
-#define D_NEOPOOL_RELAY_FILTRATION        "Filtration"
+#define D_NEOPOOL_RELAY_FILTRATION        "Filtration"        // Relay assignment
 #define D_NEOPOOL_RELAY_LIGHT             "Licht"
 #define D_NEOPOOL_RELAY_PH_ACID           "Säurepumpe"
 #define D_NEOPOOL_RELAY_PH_BASE           "Laugenpumpe"
 #define D_NEOPOOL_RELAY_RX                "Redox Pegel"
 #define D_NEOPOOL_RELAY_CL                "Chlorpumpe"
-#define D_NEOPOOL_RELAY_CD                "Salzwasserpumpe"
+#define D_NEOPOOL_RELAY_CD                "Konduktivität"
+#define D_NEOPOOL_RELAY_HEATING           "Heizung"
+#define D_NEOPOOL_RELAY_UV                "UV"
+#define D_NEOPOOL_RELAY_VALVE             "Ventil"
+#define D_NEOPOOL_RELAY_AUX               "Aux"
 #define D_NEOPOOL_TIME                    "Zeit"
-#define D_NEOPOOL_FILT_MODE               "Filtration"
+#define D_NEOPOOL_FILT_MODE               "Filtration mode"
+#define D_NEOPOOL_CELL_RUNTIME            "Laufzeit Zelle"
 #define D_NEOPOOL_POLARIZATION            "Pol"               // Sensor status
 #define D_NEOPOOL_PR_OFF                  "PrAus"
 #define D_NEOPOOL_SETPOINT_OK             "Ok"

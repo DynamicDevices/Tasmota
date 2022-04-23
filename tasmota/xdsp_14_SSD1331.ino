@@ -73,15 +73,17 @@ void SSD1331_InitDriver() {
     renderer = ssd1331;
     // Rotation is currently broken, https://github.com/adafruit/Adafruit-SSD1331-OLED-Driver-Library-for-Arduino/issues/26
     renderer->DisplayInit(DISPLAY_INIT_MODE, Settings->display_size, Settings->display_rotate, Settings->display_font);
-    renderer->dim(Settings->display_dimmer);
+    renderer->dim(GetDisplayDimmer16());
 
 #ifdef SHOW_SPLASH
-    // Welcome text
-    renderer->clearDisplay();
-    renderer->setTextFont(1);
-    renderer->DrawStringAt(24, 27, "SSD1331", SSD1331_RED, 0);
-    delay(1000);
-    renderer->clearDisplay();
+    if (!Settings->flag5.display_no_splash) {
+      // Welcome text
+      renderer->clearDisplay();
+      renderer->setTextFont(1);
+      renderer->DrawStringAt(24, 27, "SSD1331", SSD1331_RED, 0);
+      delay(1000);
+      renderer->clearDisplay();
+    }
 #endif
 
     color_type = COLOR_COLOR;

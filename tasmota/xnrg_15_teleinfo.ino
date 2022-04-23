@@ -45,7 +45,7 @@
 // Json Command
 //const char S_JSON_TELEINFO_COMMAND_STRING[] PROGMEM = "{\"" D_NAME_TELEINFO "\":{\"%s\":%s}}";
 //const char S_JSON_TELEINFO_COMMAND_NVALUE[] PROGMEM = "{\"" D_NAME_TELEINFO "\":{\"%s\":%d}}";
-const char TELEINFO_COMMAND_SETTINGS[] PROGMEM = "TIC: Settings Mode:%s, Raw:%s, Skip:%d, Limit:%d";
+const char TELEINFO_COMMAND_SETTINGS[] PROGMEM = "TIC: Settings Mode:%s, RX:%s, EN:%s, Raw:%s, Skip:%d, Limit:%d";
 
 #define MAX_TINFO_COMMAND_NAME 16+1 // Change this if one of the following kTInfo_Commands is higher then 16 char
 const char kTInfo_Commands[] PROGMEM  = "historique|standard|noraw|full|changed|skip|limit";
@@ -113,7 +113,7 @@ const char kTarifName[] PROGMEM =
 // tariff values for standard mode
 #define TELEINFO_STD_TARIFF_BASE    PSTR("BASE")
 #define TELEINFO_STD_TARIFF_HC      PSTR("HEURE CREUSE")
-#define TELEINFO_STD_TARIFF_HP      PSTR("HEURE PLEINE") 
+#define TELEINFO_STD_TARIFF_HP      PSTR("HEURE PLEINE")
 
 
 // Label used to do some post processing and/or calculation
@@ -122,7 +122,7 @@ enum TInfoLabel{
     LABEL_ADCO, LABEL_ADSC,
     LABEL_HCHC, LABEL_HCHP, LABEL_EAST, LABEL_EASF01, LABEL_EASF02,
     LABEL_OPTARIF, LABEL_NGTF, LABEL_ISOUSC, LABEL_PREF, LABEL_PTEC, LABEL_LTARF, LABEL_NTARF,
-    LABEL_PAPP, LABEL_SINSTS, LABEL_IINST, LABEL_IINST1, LABEL_IINST2, LABEL_IINST3, LABEL_IRMS1, LABEL_IRMS2, LABEL_IRMS3,  
+    LABEL_PAPP, LABEL_SINSTS, LABEL_IINST, LABEL_IINST1, LABEL_IINST2, LABEL_IINST3, LABEL_IRMS1, LABEL_IRMS2, LABEL_IRMS3,
     LABEL_TENSION, LABEL_URMS1, LABEL_URMS2, LABEL_URMS3,
     LABEL_IMAX, LABEL_IMAX1, LABEL_IMAX2, LABEL_IMAX3, LABEL_PMAX, LABEL_SMAXSN,
     LABEL_DEMAIN,
@@ -139,12 +139,12 @@ const char kLabel[] PROGMEM =
     "|DEMAIN"
     ;
 
-// Blacklisted label from telemetry 
+// Blacklisted label from telemetry
 // Each label shoud be enclosed by pipe
-const char kLabelBlacklist[] 
+const char kLabelBlacklist[]
 // declared as progmem for ESP8266 just crash and reset on strstr()
 #ifndef ESP8266
-PROGMEM 
+PROGMEM
 #endif
     =
     "|PJOURF+1"
@@ -246,7 +246,7 @@ void DataCallback(struct _ValueList * me, uint8_t  flags)
             float volt = (float) atoi(me->value);
             AddLog(LOG_LEVEL_DEBUG, PSTR("TIC: Voltage %s=%s, now %d"), me->name, me->value, (int) volt);
 
-            if ( ilabel == LABEL_URMS2) {  
+            if ( ilabel == LABEL_URMS2) {
                 Energy.voltage[1] = volt;
             } else if ( ilabel == LABEL_URMS3) {
                 Energy.voltage[2] = volt;
@@ -256,7 +256,7 @@ void DataCallback(struct _ValueList * me, uint8_t  flags)
         }
 
         // Current I phase 1 to 3
-        else if (ilabel == LABEL_IINST 
+        else if (ilabel == LABEL_IINST
                     || ilabel == LABEL_IINST1 || ilabel == LABEL_IRMS1
                     || ilabel == LABEL_IINST2 || ilabel == LABEL_IRMS2
                     || ilabel == LABEL_IINST3 || ilabel == LABEL_IRMS3  )
@@ -333,52 +333,55 @@ void DataCallback(struct _ValueList * me, uint8_t  flags)
 
                 // Base, un seul index
                 if (ilabel == LABEL_BASE) {
-                    total = atoi(me->value);
-                    AddLog(LOG_LEVEL_DEBUG, PSTR("TIC: Base:%u"), total);
+                    total = atol(me->value);
+                    AddLog(LOG_LEVEL_DEBUG, PSTR("TIC: Base:%ld"), total);
                 // Heures creuses/pleines calculer total
                 } else {
                     // Heures creuses get heures pleines
                     if (ilabel == LABEL_HCHC) {
-                        hc = atoi(me->value);
+                        hc = atol(me->value);
                         if ( getValueFromLabelIndex(LABEL_HCHP, value) ) {
-                            hp = atoi(value);
+                            hp = atol(value) ;
                         }
 
                     // Heures pleines, get heures creuses
                     } else if (ilabel == LABEL_HCHP) {
-                        hp = atoi(me->value);
+                        hp = atol(me->value);
                         if ( getValueFromLabelIndex(LABEL_HCHC, value) ) {
-                            hc = atoi(value);
+                            hc = atol(value) ;
                         }
                     }
-                    total = hc + hp;
-                    AddLog(LOG_LEVEL_DEBUG, PSTR("TIC: HC:%u  HP:%u  Total:%u"), hc, hp, total);
+                    if (hc>0 && hp>0) {
+                        total = hc + hp;
+                    }
+                    AddLog(LOG_LEVEL_DEBUG, PSTR("TIC: HC:%ld  HP:%ld  Total:%ld"), hc, hp, total);
                 }
 
-                EnergyUpdateTotal(total/1000.0f, true);
+                AddLog (LOG_LEVEL_INFO, PSTR ("TIC: Total counter updated to %ld Wh"), total);
+                if (total>0) {
+                    Energy.import_active[0] = (float)total/1000.0f;
+                    EnergyUpdateTotal();
+                    AddLog (LOG_LEVEL_DEBUG_MORE, PSTR ("TIC: import_active[0]=%.3fKWh"), Energy.import_active[0] );
+                }
             }
 
-            // Wh total index (standard)
+            // Wh total index (all contract)
             else if ( ilabel == LABEL_EAST)
             {
-                uint32_t total = atoi(me->value);
-                if (contrat != CONTRAT_BAS) {
-                    EnergyUpdateTotal(total/1000.0f, true);
-                    AddLog(LOG_LEVEL_DEBUG, PSTR("TIC: Total:%uWh"), total);
-                }
+                uint32_t total = atol(me->value);
+                Energy.import_active[0] = (float)total/1000.0f;
+                EnergyUpdateTotal();
+                AddLog(LOG_LEVEL_DEBUG, PSTR("TIC: Total:%ldWh"), total);
             }
 
             // Wh indexes (standard)
             else if ( ilabel == LABEL_EASF01)
             {
-                if (contrat == CONTRAT_BAS) {
-                    EnergyUpdateTotal(atoi(me->value)/1000.0f, true);
-                }
-                AddLog(LOG_LEVEL_DEBUG, PSTR("TIC: HC:%u"),  atoi(me->value));
+                AddLog(LOG_LEVEL_DEBUG, PSTR("TIC: HC:%ld"), atol(me->value));
             }
             else if ( ilabel == LABEL_EASF02)
             {
-                AddLog(LOG_LEVEL_DEBUG, PSTR("TIC: HP:%u"),  atoi(me->value));
+                AddLog(LOG_LEVEL_DEBUG, PSTR("TIC: HP:%ld"), atol(me->value));
             }
 
             // Contract subscribed (legacy)
@@ -500,7 +503,7 @@ bool ResponseAppendTInfo(char sep, bool all)
                     if (!isNumber) {
                         ResponseAppend_P( PSTR("\"%s\""), me->value );
                     } else {
-                        ResponseAppend_P( PSTR("%d"), atoi(me->value));
+                        ResponseAppend_P( PSTR("%ld"), atol(me->value));
                     }
 
                     // Now JSON separator is needed
@@ -534,7 +537,7 @@ void NewFrameCallback(struct _ValueList * me)
             // send teleinfo full frame or only changed data
             bool hasData = ResponseAppendTInfo(' ', Settings->teleinfo.raw_report_changed ? false : true );
             ResponseJsonEndEnd();
-            
+
             // Publish adding ADCO serial number into the topic
             // Need setOption4 to be enabled
             // No need to send empty payload
@@ -562,21 +565,12 @@ void TInfoDrvInit(void) {
     // If one TInfo RX pin declared use it
     if (PinUsed(GPIO_TELEINFO_RX)) {
         tic_rx_pin = Pin(GPIO_TELEINFO_RX);
-    } else {
-        // Case we are on denky V4 board without any TInfo RX pin selected 
-        #ifdef ARDUINO_DENKY_PICOV3
-            tic_rx_pin = 8;
-            AddLog(LOG_LEVEL_INFO, PSTR("TIC: Denky D4 board, RX on GPIO%d"), tic_rx_pin);
-        #endif
-    }
-
-    // Enable teleinfo
-    if (tic_rx_pin != NOT_A_PIN) {
         TasmotaGlobal.energy_driver = XNRG_15;
         Energy.voltage_available = false;
         Energy.phase_count = 1;
-    } else {
-        AddLog(LOG_LEVEL_ERROR, PSTR("TIC: Device has no RX pin"));
+        // init hardware energy counters
+        Settings->flag3.hardware_energy_total = true;
+        Settings->energy_kWhtotal = 0;
     }
 }
 
@@ -589,6 +583,7 @@ Comments: -
 ====================================================================== */
 void TInfoInit(void)
 {
+    if (!PinUsed(GPIO_TELEINFO_RX)) { return; }       // ignore if pin not set
     int baudrate;
 
     // Deprecated SetOption102 - Set Baud rate for Teleinfo serial communication (0 = 1200 or 1 = 9600)
@@ -611,26 +606,26 @@ void TInfoInit(void)
         pinMode(en_pin, OUTPUT);
         digitalWrite(en_pin, HIGH);
         AddLog(LOG_LEVEL_INFO, PSTR("TIC: Enable with GPIO%d"), en_pin);
-    } else  {
-        AddLog(LOG_LEVEL_INFO, PSTR("TIC: always enabled"));
     }
 
 #ifdef ESP8266
     // Allow GPIO3 AND GPIO13 with hardware fallback to 2
     // Set buffer to nnn char to support 250ms loop at 9600 baud
-    TInfoSerial = new TasmotaSerial(tic_rx_pin, -1, 2, 0, serial_buffer_size);
+    // In case of "on-the-fly" re-init, serial is already there, don't re-allocate
+    if (!TInfoSerial) {
+        TInfoSerial = new TasmotaSerial(tic_rx_pin, -1, 2, 0, serial_buffer_size);
+    }
     //pinMode(rx_pin, INPUT_PULLUP);
 #endif  // ESP8266
 #ifdef ESP32
     // Set buffer to nnn char to support 250ms loop at 9600 baud
-    TInfoSerial = new TasmotaSerial(tic_rx_pin, -1, 1, 0, serial_buffer_size);
+    // In case of "on-the-fly" re-init, serial is already there, don't re-allocate
+    if (!TInfoSerial) {
+        TInfoSerial = new TasmotaSerial(tic_rx_pin, -1, 1, 0, serial_buffer_size);
+    }
 #endif  // ESP32
 
-    // Trick here even using SERIAL_7E1 or TS_SERIAL_7E1
-    // this is not working, need to call SetSerialConfig after
-    if (TInfoSerial->begin(baudrate)) {
-
-
+    if (TInfoSerial && TInfoSerial->begin(baudrate, SERIAL_7E1)) {
 #ifdef ESP8266
         if (TInfoSerial->hardwareSerial() ) {
             ClaimSerial();
@@ -648,9 +643,8 @@ void TInfoInit(void)
         }
 #endif  // ESP8266
 #ifdef ESP32
-        SetSerialConfig(TS_SERIAL_7E1);
-        AddLog(LOG_LEVEL_INFO, PSTR("TIC: using ESP32 hardware serial"));
-#endif  // ESP32
+        AddLog(LOG_LEVEL_DEBUG, PSTR("TIC: using hardserial %d"), TInfoSerial->getUart());
+#endif
         // Init teleinfo
         tinfo.init(tinfo_mode);
         // Attach needed callbacks
@@ -664,9 +658,10 @@ void TInfoInit(void)
             AddLog(LOG_LEVEL_INFO, PSTR("TIC: Raw mode enabled"));
             if (raw_skip) {
                 AddLog(LOG_LEVEL_INFO, PSTR("TIC: Sending only one frame over %d "), raw_skip+1);
-            } 
+            }
         }
-        AddLog(LOG_LEVEL_INFO, PSTR("TIC: Ready"));
+    } else {
+        AddLog(LOG_LEVEL_INFO, PSTR("TIC: failed init serial"));
     }
 }
 
@@ -689,25 +684,33 @@ bool TInfoCmd(void) {
         AddLog(LOG_LEVEL_DEBUG, PSTR("TIC: len %d, data '%s'"), XdrvMailbox.data_len, XdrvMailbox.data ? XdrvMailbox.data : "null" );
 
         // Just "EnergyConfig" no more parameter
-        // Show Teleinfo configuration        
+        // Show Teleinfo configuration
         if (XdrvMailbox.data_len == 0) {
-
             char mode_name[MAX_TINFO_COMMAND_NAME];
             char raw_name[MAX_TINFO_COMMAND_NAME];
+            char rx_pin[8] = "None";
+            char en_pin[8] = "None" ;
             int index_mode = Settings->teleinfo.mode_standard ? CMND_TELEINFO_STANDARD : CMND_TELEINFO_HISTORIQUE;
             int index_raw = Settings->teleinfo.raw_send ? CMND_TELEINFO_RAW_FULL : CMND_TELEINFO_RAW_DISABLE;
             if (Settings->teleinfo.raw_send && Settings->teleinfo.raw_report_changed) {
                 index_raw = CMND_TELEINFO_RAW_CHANGE;
-            } 
+            }
             // Get the mode and raw name
             GetTextIndexed(mode_name, MAX_TINFO_COMMAND_NAME, index_mode, kTInfo_Commands);
             GetTextIndexed(raw_name, MAX_TINFO_COMMAND_NAME, index_raw, kTInfo_Commands);
 
-            AddLog(LOG_LEVEL_INFO, TELEINFO_COMMAND_SETTINGS, mode_name, raw_name, Settings->teleinfo.raw_skip, Settings->teleinfo.raw_limit);
+            if (PinUsed(GPIO_TELEINFO_RX)) {
+                sprintf_P(rx_pin, PSTR("GPIO%d"), tic_rx_pin);
+            }
+            if (PinUsed(GPIO_TELEINFO_ENABLE)) {
+                sprintf_P(en_pin, PSTR("GPIO%d"), Pin(GPIO_TELEINFO_ENABLE));
+            }
+
+            AddLog(LOG_LEVEL_INFO, TELEINFO_COMMAND_SETTINGS, mode_name, rx_pin, en_pin, raw_name, Settings->teleinfo.raw_skip, Settings->teleinfo.raw_limit);
 
             serviced = true;
 
-        // At least "EnergyConfig xyz" plus one space and one (or more) char 
+        // At least "EnergyConfig xyz" plus one space and one (or more) char
         // so "EnergyConfig 0" or "EnergyConfig Teleinfo Standard"
         } else if (XdrvMailbox.data_len) {
             // Now point on parameter
@@ -743,35 +746,23 @@ bool TInfoCmd(void) {
                     // Only if current settings is different than previous
                     if ( (tinfo_mode==TINFO_MODE_STANDARD && command_code==CMND_TELEINFO_HISTORIQUE) ||
                          (tinfo_mode==TINFO_MODE_HISTORIQUE && command_code==CMND_TELEINFO_STANDARD) ) {
-
-                        // Cleanup Serial not sure it will works since 
-                        // there is no end() or close() on tasmotaserial class
-                        if (TInfoSerial) {
-                            TInfoSerial->flush();
-                            //TInfoSerial->end();
-                            free(TInfoSerial);
-                        }
-
-                        // Change mode 
+                        // Change mode
                         Settings->teleinfo.mode_standard = command_code == CMND_TELEINFO_STANDARD ? 1 : 0;
-
                         AddLog(LOG_LEVEL_INFO, PSTR("TIC: '%s' mode"), mode_name);
-
                         // Re init teleinfo (LibTeleinfo always free linked list on init)
                         TInfoInit();
 
                         serviced = true;
-
                     } else {
                         AddLog(LOG_LEVEL_INFO, PSTR("TIC: No change to '%s' mode"), mode_name);
                     }
                 }
                 break;
 
-                case CMND_TELEINFO_RAW_DISABLE: 
-                case CMND_TELEINFO_RAW_FULL: 
+                case CMND_TELEINFO_RAW_DISABLE:
+                case CMND_TELEINFO_RAW_FULL:
                 case CMND_TELEINFO_RAW_CHANGE: {
-            
+
                    // Enable all RAW frame send
                    char raw_name[MAX_TINFO_COMMAND_NAME];
 
@@ -921,7 +912,7 @@ void TInfoShow(bool json)
     else
     {
         char name[33];
-        char value[33]; 
+        char value[33];
         int percent;
 
         if (isousc) {
@@ -938,7 +929,7 @@ void TInfoShow(bool json)
                 // Hue from 128 (green) to 0 (red) so reversed from percent
                 hue = changeUIntScale(100-percent, 0, 100, 0, 128);
                 HsToRgb(hue, 128, &red, &green, &blue);
-                snprintf_P(phase_color, sizeof(phase_color), PSTR("#%02X%02X%02X"), red, green, blue);  
+                snprintf_P(phase_color, sizeof(phase_color), PSTR("#%02X%02X%02X"), red, green, blue);
                 WSContentSend_P(HTTP_ENERGY_LOAD_BAR, phase_color, percent, percent);
             }
         }
@@ -1029,27 +1020,27 @@ bool Xnrg15(uint8_t function)
     bool result = false;
     switch (function)
     {
-        case FUNC_EVERY_250_MSECOND:
-            TInfoProcess();
-            break;
-        case FUNC_COMMAND:
-            result = TInfoCmd();
-            break;
-
-        case FUNC_JSON_APPEND:
-            TInfoShow(1);
-            break;
-    #ifdef USE_WEBSERVER
-        case FUNC_WEB_SENSOR:
-            TInfoShow(0);
-            break;
-    #endif  // USE_WEBSERVER
         case FUNC_INIT:
             TInfoInit();
             break;
         case FUNC_PRE_INIT:
             TInfoDrvInit();
             break;
+        case FUNC_EVERY_250_MSECOND:
+            if (tinfo_found) { TInfoProcess(); }
+            break;
+        case FUNC_COMMAND:
+            if (tinfo_found) { result = TInfoCmd(); }
+            break;
+
+        case FUNC_JSON_APPEND:
+            if (tinfo_found) { TInfoShow(1); }
+            break;
+    #ifdef USE_WEBSERVER
+        case FUNC_WEB_SENSOR:
+            if (tinfo_found) { TInfoShow(0); }
+            break;
+    #endif  // USE_WEBSERVER
     }
     return result;
 }

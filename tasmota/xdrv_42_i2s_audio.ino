@@ -320,7 +320,11 @@ uint32_t SpeakerMic(uint8_t spkr) {
 
   i2s_driver_uninstall(Speak_I2S_NUMBER);
   if (spkr==MODE_SPK) {
-    out = new AudioOutputI2S();
+    #ifdef USE_I2S_NO_DAC
+      out = new AudioOutputI2SNoDAC();
+      #else
+      out = new AudioOutputI2S(0, 1);
+    #endif
     out->SetPinout(DAC_IIS_BCK, DAC_IIS_WS, DAC_IIS_DOUT);
     out->SetGain(((float)is2_volume/100.0)*4.0);
     out->stop();
@@ -587,6 +591,7 @@ void Cmd_MicRec(void) {
 }
 #endif  // USE_M5STACK_CORE2
 
+#ifdef USE_WEBSERVER
 const char HTTP_WEBRADIO[] PROGMEM =
    "{s}" "I2S_WR-Title" "{m}%s{e}";
 
@@ -595,6 +600,7 @@ void I2S_WR_Show(void) {
       WSContentSend_PD(HTTP_WEBRADIO,wr_title);
     }
 }
+#endif  // USE_WEBSERVER
 
 #endif  // USE_I2S_WEBRADIO
 

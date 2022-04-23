@@ -1,5 +1,6 @@
 #include "Adafruit_LvGL_Glue.h"
 #include <lvgl.h>
+#include "lv_berry.h"
 
 // ARCHITECTURE-SPECIFIC TIMER STUFF ---------------------------------------
 
@@ -12,29 +13,22 @@ static void lv_tick_handler(void) { lv_tick_inc(lv_tick_interval_ms); }
 
 // TOUCHSCREEN STUFF -------------------------------------------------------
 
-// STMPE610 calibration for raw touch data
-#define TS_MINX 100
-#define TS_MAXX 3800
-#define TS_MINY 100
-#define TS_MAXY 3750
 
-// Same, for ADC touchscreen
-#define ADC_XMIN 325
-#define ADC_XMAX 750
-#define ADC_YMIN 240
-#define ADC_YMAX 840
+uint32_t Touch_Status(int32_t sel);
 
-
-
-uint32_t Touch_Status(uint32_t sel);
-
-static bool touchscreen_read(struct _lv_indev_drv_t *indev_drv, lv_indev_data_t *data) {
-  //lv_coord_t last_x = 0, last_y = 0;
-  //static uint8_t release_count = 0;
+static void touchscreen_read(lv_indev_drv_t *indev_drv, lv_indev_data_t *data) {
   data->point.x = Touch_Status(1); // Last-pressed coordinates
   data->point.y = Touch_Status(2);
-  data->state = Touch_Status(0);
-  return false; /*No buffering now so no more data read*/
+  data->state = Touch_Status(0) ? LV_INDEV_STATE_PRESSED : LV_INDEV_STATE_RELEASED;
+  data->continue_reading = false; /*No buffering now so no more data read*/
+  // keep data for TS calibration
+  lv_ts_calibration.state = data->state;
+  if (data->state == LV_INDEV_STATE_PRESSED) {    // if not pressed, the data may be invalid
+    lv_ts_calibration.x = data->point.x;
+    lv_ts_calibration.y = data->point.y;
+    lv_ts_calibration.raw_x = Touch_Status(-1);
+    lv_ts_calibration.raw_y = Touch_Status(-2);
+  }
 }
 
 // OTHER LITTLEVGL VITALS --------------------------------------------------
@@ -231,7 +225,7 @@ LvGLStatus Adafruit_LvGL_Glue::begin(Renderer *tft, void *touch, bool debug) {
     //     LV_HOR_RES_MAX * LV_BUFFER_ROWS);
 
     // Initialize LvGL display buffers
-    lv_disp_buf_init(
+    lv_disp_draw_buf_init(
         &lv_disp_buf, lv_pixel_buf,                     // 1st half buf
         lv_pixel_buf2, // 2nd half buf
         lvgl_buffer_size);
@@ -241,16 +235,16 @@ LvGLStatus Adafruit_LvGL_Glue::begin(Renderer *tft, void *touch, bool debug) {
     lv_disp_drv.hor_res = tft->width();
     lv_disp_drv.ver_res = tft->height();
     lv_disp_drv.flush_cb = lv_flush_callback;
-    lv_disp_drv.buffer = &lv_disp_buf;
-    lv_disp_drv.user_data = (lv_disp_drv_user_data_t)this;
+    lv_disp_drv.draw_buf = &lv_disp_buf;
+    lv_disp_drv.user_data = (void*)this;
     lv_disp_drv_register(&lv_disp_drv);
 
     // Initialize LvGL input device (touchscreen already started)
-    if ((touch)) { // Can also pass NULL if passive widget display
+    if (touch) { // Can also pass NULL if passive widget display
       lv_indev_drv_init(&lv_indev_drv);          // Basic init
       lv_indev_drv.type = LV_INDEV_TYPE_POINTER; // Is pointer dev
       lv_indev_drv.read_cb = touchscreen_read;   // Read callback
-      lv_indev_drv.user_data = (lv_indev_drv_user_data_t)this;
+      lv_indev_drv.user_data = (void*)this;
       lv_input_dev_ptr = lv_indev_drv_register(&lv_indev_drv);
     }
 

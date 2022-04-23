@@ -52,7 +52,7 @@ a_on_off = ["OFF","ON "]
 a_setoption = [[
     "(Settings) Save power state (1) and use after restart",
     "(Button) Control button single press (1) or multipress (0)",
-    "(Not used) Add units to JSON status messages",
+    "(MQTT) Add global temperature/humidity/pressure info to JSON sensor message",
     "(MQTT) Enable (1)",
     "(MQTT) Switch between RESULT (0) or COMMAND (1)",
     "(MQTT) Retain on Power",
@@ -182,9 +182,16 @@ a_setoption = [[
     "(Zigbee) Hide bridge topic from zigbee topic (use with SetOption89) (1)",
     "(DS18x20) Enable arithmetic mean over teleperiod for JSON temperature (1)",
     "(Wifi) Keep wifi in no-sleep mode, prevents some occasional unresponsiveness",
-    "","",
-    "","","","",
-    "","","","",
+    "(Web) Allow access without referer check",
+    "(Energy) Show phase information",
+    "(Debug) Show heap with logging timestamp",
+    "(Tuya) Allow save dimmer = 0 receved by MCU",
+    "(TLS) Use fingerprint validation instead of CA based",
+    "(Shift595) Invert outputs of 74x595 shift registers",
+    "(PWM) force PWM lights to start at same phase, default is to spread phases to minimze overlap (also needed for H-bridge)",
+    "(Display & LVGL) force disabling default splash screen",
+    "(TuyaSNS) When ON disable publish single SNS value on Tuya Receive (keep Teleperiod)",
+    "(Tuya) When Set, avoid the (mqtt-) publish of Tuya MCU Heartbeat response if SetOption66 is active",
     "","","","",
     "","","",""
     ]]
@@ -201,8 +208,8 @@ a_features = [[
     ],[
     "USE_CONFIG_OVERRIDE","FIRMWARE_MINIMAL","FIRMWARE_SENSORS","FIRMWARE_CLASSIC",
     "FIRMWARE_KNX_NO_EMULATION","USE_DISPLAY_MODES1TO5","USE_DISPLAY_GRAPH","USE_DISPLAY_LCD",
-    "USE_DISPLAY_SSD1306","USE_DISPLAY_MATRIX","USE_DISPLAY_ILI9341","USE_DISPLAY_EPAPER",
-    "USE_DISPLAY_SH1106","USE_MP3_PLAYER","USE_PCA9685","USE_TUYA_DIMMER",
+    "USE_DISPLAY_SSD1306","USE_DISPLAY_MATRIX","USE_DISPLAY_ILI9341","USE_DISPLAY_EPAPER_29",
+    "USE_DISPLAY_SH1106","USE_MP3_PLAYER","USE_PCA9685","USE_TUYA_MCU",
     "USE_RC_SWITCH","USE_ARMTRONIX_DIMMERS","USE_SM16716","USE_SCRIPT",
     "USE_EMULATION_WEMO","USE_SONOFF_IFAN","USE_ZIGBEE","NO_EXTRA_4K_HEAP",
     "VTABLES_IN_IRAM","VTABLES_IN_DRAM","VTABLES_IN_FLASH","PIO_FRAMEWORK_ARDUINO_LWIP_HIGHER_BANDWIDTH",
@@ -210,7 +217,7 @@ a_features = [[
     ],[
     "USE_COUNTER","USE_ADC_VCC","USE_ENERGY_SENSOR","USE_PZEM004T",
     "USE_DS18B20","USE_DS18x20_LEGACY","USE_DS18x20","USE_DHT",
-    "USE_SHT","USE_HTU","USE_BMP","USE_BME680",
+    "USE_SHT","USE_HTU","USE_BMP","USE_BME68X",
     "USE_BH1750","USE_VEML6070","USE_ADS1115_I2CDEV","USE_ADS1115",
     "USE_INA219","USE_SHT3X","USE_MHZ19","USE_TSL2561",
     "USE_SENSEAIR","USE_PMS5003","USE_MGS","USE_NOVA_SDS",
@@ -222,7 +229,7 @@ a_features = [[
     "USE_MCP39F501","USE_PZEM_AC","USE_DS3231","USE_HX711",
     "USE_PZEM_DC","USE_TX20_WIND_SENSOR","USE_MGC3130","USE_RF_SENSOR",
     "USE_THEO_V2","USE_ALECTO_V2","USE_AZ7798","USE_MAX31855",
-    "USE_PN532_I2C","USE_MAX44009","USE_SCD30","USE_HRE",
+    "USE_PN532_HSU","USE_MAX44009","USE_SCD30","USE_HRE",
     "USE_ADE7953","USE_SPS30","USE_VL53L0X","USE_MLX90614",
     "USE_MAX31865","USE_CHIRP","USE_SOLAX_X1","USE_PAJ7620"
     ],[
@@ -230,7 +237,7 @@ a_features = [[
     "USE_INA226","USE_A4988_STEPPER","USE_DDS2382","USE_SM2135",
     "USE_SHUTTER","USE_PCF8574","USE_DDSU666","USE_DEEPSLEEP",
     "USE_SONOFF_SC","USE_SONOFF_RF","USE_SONOFF_L1","USE_EXS_DIMMER",
-    "USE_TASMOTA_SLAVE","USE_HIH6","USE_HPMA","USE_TSL2591",
+    "USE_TASMOTA_CLIENT","USE_HIH6","USE_HPMA","USE_TSL2591",
     "USE_DHT12","USE_DS1624","USE_GPS","USE_HOTPLUG",
     "USE_NRF24","USE_MIBLE","USE_HM10","USE_LE01MR",
     "USE_AHT1x","USE_WEMOS_MOTOR_V1","USE_DEVICE_GROUPS","USE_PWM_DIMMER"
@@ -238,7 +245,7 @@ a_features = [[
     "USE_KEELOQ","USE_HRXL","USE_SONOFF_D1","USE_HDC1080",
     "USE_IAQ","USE_DISPLAY_SEVENSEG","USE_AS3935","USE_PING",
     "USE_WINDMETER","USE_OPENTHERM","USE_THERMOSTAT","USE_VEML6075",
-    "USE_VEML7700","USE_MCP9808","USE_BL0940","USE_TELEGRAM",
+    "USE_VEML7700","USE_MCP9808","USE_BL09XX","USE_TELEGRAM",
     "USE_HP303B","USE_TCP_BRIDGE","USE_TELEINFO","USE_LMT01",
     "USE_PROMETHEUS","USE_IEM3000","USE_DYP","USE_I2S_AUDIO",
     "USE_MLX90640","USE_VL53L1X","USE_MIEL_HVAC","USE_WE517",
@@ -255,11 +262,11 @@ a_features = [[
     ],[
     "USE_MPU_ACCEL","USE_TFMINIPLUS","USE_CSE7761","USE_BERRY",
     "USE_BM8563","USE_ENERGY_DUMMY","USE_AM2320","USE_T67XX",
-    "USE_MCP2515","","","",
-    "","","","",
-    "","","","",
-    "","","","",
-    "","","","",
+    "USE_MCP2515","USE_TASMESH","USE_WIFI_RANGE_EXTENDER","USE_INFLUXDB",
+    "USE_HRG15","USE_VINDRIKTNING","USE_SCD40","USE_HM330X",
+    "USE_HDC2010","USE_LSC_MCSL","USE_SONOFF_SPM","USE_SHIFT595",
+    "USE_SDM230","USE_CM110x","USE_BL6523","USE_ADE7880",
+    "USE_PCF85363","USE_DS3502","USE_IMPROV","",
     "","","",""
     ]]
 
@@ -288,7 +295,7 @@ else:
         obj = json.load(fp)
 
 def StartDecode():
-    print ("\n*** decode-status.py v20210717 by Theo Arends and Jacek Ziolkowski ***")
+    print ("\n*** decode-status.py v11.0.0.5 by Theo Arends and Jacek Ziolkowski ***")
 
 #    print("Decoding\n{}".format(obj))
 

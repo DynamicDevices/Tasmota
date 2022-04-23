@@ -152,11 +152,7 @@ void ZigbeeInputLoop(void) {
       if (Settings->flag3.tuya_serial_mqtt_publish) {
         MqttPublishPrefixTopicRulesProcess_P(TELE, PSTR(D_RSLT_SENSOR));
       } else {
-#ifdef MQTT_DATA_STRING
-        AddLog(LOG_LEVEL_DEBUG, PSTR(D_LOG_ZIGBEE "%s"), TasmotaGlobal.mqtt_data.c_str());
-#else
-        AddLog(LOG_LEVEL_DEBUG, PSTR(D_LOG_ZIGBEE "%s"), TasmotaGlobal.mqtt_data);
-#endif        
+        AddLog(LOG_LEVEL_DEBUG, PSTR(D_LOG_ZIGBEE "%s"), ResponseData());
       }
 			// now process the message
       ZigbeeProcessInput(znp_buffer);
@@ -285,8 +281,18 @@ void ZigbeeInputLoop(void) {
 // Initialize internal structures
 void ZigbeeInitSerial(void)
 {
-// AddLog(LOG_LEVEL_INFO, PSTR("ZigbeeInit Mem1 = %d"), ESP_getFreeHeap());
   zigbee.active = false;
+
+  // always initialize reset pins for TCP serial server
+  if (PinUsed(GPIO_ZIGBEE_RST)) {
+    pinMode(Pin(GPIO_ZIGBEE_RST), OUTPUT);
+    digitalWrite(Pin(GPIO_ZIGBEE_RST), 1);
+  }
+  if (PinUsed(GPIO_ZIGBEE_RST, 1)) {
+    pinMode(Pin(GPIO_ZIGBEE_RST, 1), OUTPUT);
+    digitalWrite(Pin(GPIO_ZIGBEE_RST, 1), 1);
+  }
+
   if (PinUsed(GPIO_ZIGBEE_RX) && PinUsed(GPIO_ZIGBEE_TX)) {
 		AddLog(LOG_LEVEL_DEBUG_MORE, PSTR(D_LOG_ZIGBEE "GPIOs Rx:%d Tx:%d"), Pin(GPIO_ZIGBEE_RX), Pin(GPIO_ZIGBEE_TX));
     // if TasmotaGlobal.seriallog_level is 0, we allow GPIO 13/15 to switch to Hardware Serial
@@ -297,26 +303,14 @@ void ZigbeeInitSerial(void)
       uint32_t aligned_buffer = ((uint32_t)TasmotaGlobal.serial_in_buffer + 3) & ~3;
 			zigbee_buffer = new PreAllocatedSBuffer(sizeof(TasmotaGlobal.serial_in_buffer) - 3, (char*) aligned_buffer);
 		} else {
-// AddLog(LOG_LEVEL_INFO, PSTR("ZigbeeInit Mem2 = %d"), ESP_getFreeHeap());
 			zigbee_buffer = new SBuffer(ZIGBEE_BUFFER_SIZE);
-// AddLog(LOG_LEVEL_INFO, PSTR("ZigbeeInit Mem3 = %d"), ESP_getFreeHeap());
 		}
-
-    if (PinUsed(GPIO_ZIGBEE_RST)) {
-      pinMode(Pin(GPIO_ZIGBEE_RST), OUTPUT);
-      digitalWrite(Pin(GPIO_ZIGBEE_RST), 1);
-    }
-    if (PinUsed(GPIO_ZIGBEE_RST, 1)) {
-      pinMode(Pin(GPIO_ZIGBEE_RST, 1), OUTPUT);
-      digitalWrite(Pin(GPIO_ZIGBEE_RST, 1), 1);
-    }
 
     zigbee.active = true;
 		zigbee.init_phase = true;			// start the state machine
     zigbee.state_machine = true;      // start the state machine
     ZigbeeSerial->flush();
   }
-// AddLog(LOG_LEVEL_INFO, PSTR("ZigbeeInit Mem9 = %d"), ESP_getFreeHeap());
 }
 
 #ifdef USE_ZIGBEE_ZNP
@@ -601,11 +595,7 @@ void ZigbeeProcessInputEZSP(SBuffer &buf) {
         log_level = LOG_LEVEL_DEBUG;
         break;
     }
-#ifdef MQTT_DATA_STRING
-    AddLog(log_level, PSTR(D_LOG_ZIGBEE "%s"), TasmotaGlobal.mqtt_data.c_str());    // TODO move to LOG_LEVEL_DEBUG when stable
-#else
-    AddLog(log_level, PSTR(D_LOG_ZIGBEE "%s"), TasmotaGlobal.mqtt_data);    // TODO move to LOG_LEVEL_DEBUG when stable
-#endif    
+    AddLog(log_level, PSTR(D_LOG_ZIGBEE "%s"), ResponseData());    // TODO move to LOG_LEVEL_DEBUG when stable
   }
 
   // Pass message to state machine

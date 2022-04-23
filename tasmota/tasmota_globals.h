@@ -44,6 +44,9 @@ extern "C" void custom_crash_callback(struct rst_info * rst_info, uint32_t stack
 extern "C" void resetPins();
 extern "C" int startWaveformClockCycles(uint8_t pin, uint32_t highCcys, uint32_t lowCcys,
   uint32_t runTimeCcys, int8_t alignPhase, uint32_t phaseOffsetCcys, bool autoPwm);
+#ifdef USE_INFLUXDB
+void InfluxDbProcess(bool use_copy = false);
+#endif
 
 #ifdef ESP32
 #if CONFIG_IDF_TARGET_ESP32       // ESP32/PICO-D4
@@ -95,13 +98,42 @@ String EthernetMacAddress(void);
 #ifdef ESP32
 
 /*-------------------------------------------------------------------------------------------*\
+ * Start ESP32 specific parameters - disable features not present in ESP32
+\*-------------------------------------------------------------------------------------------*/
+
+#if CONFIG_IDF_TARGET_ESP32
+
+#else   // Disable features not present in other ESP32 like ESP32C3, ESP32S2, ESP32S3 etc.
+#ifdef USE_ETHERNET
+#undef USE_ETHERNET                                // All non-ESP32 do not support ethernet
+#endif
+#endif  // CONFIG_IDF_TARGET_ESP32
+
+/*-------------------------------------------------------------------------------------------*\
+ * End ESP32 specific parameters
+\*-------------------------------------------------------------------------------------------*/
+/*-------------------------------------------------------------------------------------------*\
+ * Start ESP32-C32 specific parameters - disable features not present in ESP32-C3
+\*-------------------------------------------------------------------------------------------*/
+
+#if CONFIG_IDF_TARGET_ESP32C3                      // ESP32-C3
+//#ifdef USE_ETHERNET
+//#undef USE_ETHERNET                                // ESP32-C3 does not support ethernet
+//#endif
+
+#endif  // CONFIG_IDF_TARGET_ESP32C3
+
+/*-------------------------------------------------------------------------------------------*\
+ * End ESP32-C3 specific parameters
+\*-------------------------------------------------------------------------------------------*/
+/*-------------------------------------------------------------------------------------------*\
  * Start ESP32-S2 specific parameters - disable features not present in ESP32-S2
 \*-------------------------------------------------------------------------------------------*/
 
 #if CONFIG_IDF_TARGET_ESP32S2                      // ESP32-S2
-#ifdef USE_ETHERNET
-#undef USE_ETHERNET                                // ESP32-S2 does not support ethernet
-#endif
+//#ifdef USE_ETHERNET
+//#undef USE_ETHERNET                                // ESP32-S2 does not support ethernet
+//#endif
 #ifdef USE_BLE_ESP32
 #undef USE_BLE_ESP32                               // ESP32-S2 does not support BLE
 #endif
@@ -130,11 +162,7 @@ String EthernetMacAddress(void);
 #define ARDUINO_CORE_RELEASE        ARDUINO_ESP32_RELEASE
 #endif  // ARDUINO_ESP32_RELEASE
 
-#undef FIRMWARE_MINIMAL                            // Minimal is not supported as not needed
-
 // Hardware has no ESP32
-#undef USE_TUYA_DIMMER
-#undef USE_PWM_DIMMER
 #undef USE_EXS_DIMMER
 #undef USE_ARMTRONIX_DIMMERS
 #undef USE_SONOFF_RF
@@ -146,9 +174,6 @@ String EthernetMacAddress(void);
 #undef USE_RF_FLASH
 
 // Not ported (yet)
-
-#undef USE_MY92X1
-#undef USE_TUYA_MCU
 #undef USE_PS_16_DZ
 
 #undef USE_HM10                     // Disable support for HM-10 as a BLE-bridge as an alternative is using the internal ESP32 BLE
@@ -156,7 +181,11 @@ String EthernetMacAddress(void);
 
 #endif  // ESP32
 
-#ifdef USE_PID
+/*********************************************************************************************\
+ * Fallback parameters
+\*********************************************************************************************/
+
+#if defined(USE_PID) && (!defined(PID_USE_TIMPROP) || (PID_USE_TIMPROP > 0))
 #define USE_TIMEPROP
 #endif
                                                // See https://github.com/esp8266/Arduino/pull/4889
@@ -309,6 +338,10 @@ String EthernetMacAddress(void);
 #define IR_RCV_MIN_UNKNOWN_SIZE     6          // Set the smallest sized "UNKNOWN" message packets we actually care about (default 6, max 255)
 #endif
 
+#ifndef IR_RCV_TOLERANCE
+#define IR_RCV_TOLERANCE            25         // Base tolerance percentage for matching incoming IR messages (default 25, max 100)
+#endif
+
 #ifndef ENERGY_OVERTEMP
 #define ENERGY_OVERTEMP             90         // Overtemp in Celsius
 #endif
@@ -338,6 +371,25 @@ String EthernetMacAddress(void);
 #endif
 #ifndef STARTING_OFFSET
 #define STARTING_OFFSET             30         // NOVA SDS parameter used in settings
+#endif
+
+#ifndef WIFI_RGX_STATE
+#define WIFI_RGX_STATE              0
+#endif
+#ifndef WIFI_RGX_NAPT
+#define WIFI_RGX_NAPT               0
+#endif
+#ifndef WIFI_RGX_SSID
+#define WIFI_RGX_SSID               ""
+#endif
+#ifndef WIFI_RGX_PASSWORD
+#define WIFI_RGX_PASSWORD           ""
+#endif
+#ifndef WIFI_RGX_IP_ADDRESS
+#define WIFI_RGX_IP_ADDRESS         "192.168.99.1"
+#endif
+#ifndef WIFI_RGX_SUBNETMASK
+#define WIFI_RGX_SUBNETMASK         "255.255.255.0"
 #endif
 
 /*********************************************************************************************\
@@ -471,6 +523,23 @@ bool first_device_group_is_local = true;
 #else
 #define SHOW_FREE_MEM(WHERE)
 #endif
+
+#ifndef USE_PROFILING
+#undef USE_PROFILE_DRIVER
+#undef USE_PROFILE_FUNCTION
+#endif
+
+#ifdef USE_PROFILE_DRIVER
+#define PROFILE_DRIVER(DRIVER, FUNCTION, START) AddLogDriver(DRIVER, FUNCTION, START)
+#else
+#define PROFILE_DRIVER(DRIVER, FUNCTION, START)
+#endif  // USE_PROFILE_DRIVER
+
+#ifdef USE_PROFILE_FUNCTION
+#define PROFILE_FUNCTION(DRIVER, INDEX, FUNCTION, START) AddLogFunction(DRIVER, INDEX, FUNCTION, START)
+#else
+#define PROFILE_FUNCTION(DRIVER, INDEX, FUNCTION, START)
+#endif  // USE_PROFILE_DRIVER
 
 /*********************************************************************************************\
  * Macro for SetOption synonyms

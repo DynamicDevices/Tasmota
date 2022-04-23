@@ -49,14 +49,15 @@ WiFiClient EspClient;                     // Wifi Client - non-TLS
 #endif  // USE_MQTT_AZURE_IOT
 
 const char kMqttCommands[] PROGMEM = "|"  // No prefix
+#ifndef FIRMWARE_MINIMAL
   // SetOption synonyms
   D_SO_MQTTJSONONLY "|"
 #ifdef USE_MQTT_TLS
-  D_SO_MQTTTLS "|"
+  D_SO_MQTTTLS "|" D_SO_MQTTTLS_FINGERPRINT "|"
 #endif
   D_SO_MQTTNORETAIN "|" D_SO_MQTTDETACHRELAY "|"
   // regular commands
-#if defined(USE_MQTT_TLS) && !defined(USE_MQTT_TLS_CA_CERT)
+#if defined(USE_MQTT_TLS)
   D_CMND_MQTTFINGERPRINT "|"
 #endif
   D_CMND_MQTTUSER "|" D_CMND_MQTTPASSWORD "|" D_CMND_MQTTKEEPALIVE "|" D_CMND_MQTTTIMEOUT "|" D_CMND_MQTTWIFITIMEOUT "|"
@@ -69,23 +70,21 @@ const char kMqttCommands[] PROGMEM = "|"  // No prefix
   D_CMND_MQTTHOST "|" D_CMND_MQTTPORT "|" D_CMND_MQTTRETRY "|" D_CMND_STATETEXT "|" D_CMND_MQTTCLIENT "|"
   D_CMND_FULLTOPIC "|" D_CMND_PREFIX "|" D_CMND_GROUPTOPIC "|" D_CMND_TOPIC "|" D_CMND_PUBLISH "|" D_CMND_MQTTLOG "|"
   D_CMND_BUTTONTOPIC "|" D_CMND_SWITCHTOPIC "|" D_CMND_BUTTONRETAIN "|" D_CMND_SWITCHRETAIN "|" D_CMND_POWERRETAIN "|"
-  D_CMND_SENSORRETAIN "|" D_CMND_INFORETAIN "|" D_CMND_STATERETAIN ;
+  D_CMND_SENSORRETAIN "|" D_CMND_INFORETAIN "|" D_CMND_STATERETAIN
+#endif  // FIRMWARE_MINIMAL
+  ;
 
 SO_SYNONYMS(kMqttSynonyms,
   90,
 #ifdef USE_MQTT_TLS
-  103,
+  103, 132,
 #endif
   104, 114
 );
 
-// const uint8_t kMqttSynonyms[] PROGMEM = {
-//   4,  // number of synonyms
-//   90, 103, 104, 114,
-// };
-
 void (* const MqttCommand[])(void) PROGMEM = {
-#if defined(USE_MQTT_TLS) && !defined(USE_MQTT_TLS_CA_CERT)
+#ifndef FIRMWARE_MINIMAL
+#if defined(USE_MQTT_TLS)
   &CmndMqttFingerprint,
 #endif
   &CmndMqttUser, &CmndMqttPassword, &CmndMqttKeepAlive, &CmndMqttTimeout, &CmndMqttWifiTimeout,
@@ -98,7 +97,9 @@ void (* const MqttCommand[])(void) PROGMEM = {
   &CmndMqttHost, &CmndMqttPort, &CmndMqttRetry, &CmndStateText, &CmndMqttClient,
   &CmndFullTopic, &CmndPrefix, &CmndGroupTopic, &CmndTopic, &CmndPublish, &CmndMqttlog,
   &CmndButtonTopic, &CmndSwitchTopic, &CmndButtonRetain, &CmndSwitchRetain, &CmndPowerRetain, &CmndSensorRetain,
-  &CmndInfoRetain, &CmndStateRetain };
+  &CmndInfoRetain, &CmndStateRetain
+#endif  // FIRMWARE_MINIMAL
+  };
 
 struct MQTT {
   uint16_t connect_count = 0;            // MQTT re-connect count
@@ -197,12 +198,16 @@ void MqttDisableLogging(bool state) {
 PubSubClient MqttClient;
 
 void MqttInit(void) {
+  // Force buffer size since the #define may not be visible from Arduino lib
+  MqttClient.setBufferSize(MQTT_MAX_PACKET_SIZE);
+
 #ifdef USE_MQTT_AZURE_IOT
   Settings->mqtt_port = 8883;
 #endif //USE_MQTT_AZURE_IOT
 #ifdef USE_MQTT_TLS
-  if ((8883 == Settings->mqtt_port) || (8884 == Settings->mqtt_port)) {
-    // Turn on TLS for port 8883 (TLS) and 8884 (TLS, client certificate)
+  bool aws_iot_host = false;
+  if ((8883 == Settings->mqtt_port) || (8884 == Settings->mqtt_port) || (443 == Settings->mqtt_port)) {
+    // Turn on TLS for port 8883 (TLS), 8884 (TLS, client certificate), 443 (TLS, user/password)
     Settings->flag4.mqtt_tls = true;
   }
   Mqtt.mqtt_tls = Settings->flag4.mqtt_tls;   // this flag should not change even if we change the SetOption (until reboot)
@@ -211,15 +216,24 @@ void MqttInit(void) {
   String host = String(SettingsText(SET_MQTT_HOST));
   if (host.indexOf(F(".iot.")) && host.endsWith(F(".amazonaws.com"))) {  // look for ".iot." and ".amazonaws.com" in the domain name
     Settings->flag4.mqtt_no_retain = true;
+    aws_iot_host = true;
   }
 
   if (Mqtt.mqtt_tls) {
 #ifdef ESP32
+  #if MQTT_MAX_PACKET_SIZE > 2000
+    tlsClient = new BearSSL::WiFiClientSecure_light(4096,4096);
+  #else
     tlsClient = new BearSSL::WiFiClientSecure_light(2048,2048);
+  #endif
 #else // ESP32 - ESP8266
     tlsClient = new BearSSL::WiFiClientSecure_light(1024,1024);
 #endif
 
+    if (443 == Settings->mqtt_port && aws_iot_host) {
+      static const char * alpn_mqtt = "mqtt";   // needs to be static
+      tlsClient->setALPN(&alpn_mqtt, 1);         // need to set alpn to 'mqtt' for AWS IoT
+    }
 #ifdef USE_MQTT_AWS_IOT
     loadTlsDir();   // load key and certificate data from Flash
     if ((nullptr != AWS_IoT_Private_Key) && (nullptr != AWS_IoT_Client_Certificate)) {
@@ -229,9 +243,9 @@ void MqttInit(void) {
     }
 #endif
 
-#ifdef USE_MQTT_TLS_CA_CERT
-    tlsClient->setTrustAnchor(Tasmota_TA, nitems(Tasmota_TA));
-#endif // USE_MQTT_TLS_CA_CERT
+    if (!Settings->flag5.tls_use_fingerprint) {
+      tlsClient->setTrustAnchor(Tasmota_TA, nitems(Tasmota_TA));
+    }
 
     MqttClient.setClient(*tlsClient);
   } else {
@@ -681,16 +695,12 @@ void MqttPublishPayload(const char* topic, const char* payload) {
 }
 
 void MqttPublish(const char* topic, bool retained) {
-  // Publish <topic> default TasmotaGlobal.mqtt_data string with optional retained
-#ifdef MQTT_DATA_STRING
-  MqttPublishPayload(topic, TasmotaGlobal.mqtt_data.c_str(), 0, retained);
-#else
-  MqttPublishPayload(topic, TasmotaGlobal.mqtt_data, 0, retained);
-#endif
+  // Publish <topic> default ResponseData string with optional retained
+  MqttPublishPayload(topic, ResponseData(), 0, retained);
 }
 
 void MqttPublish(const char* topic) {
-  // Publish <topic> default TasmotaGlobal.mqtt_data string no retained
+  // Publish <topic> default ResponseData string no retained
   MqttPublish(topic, false);
 }
 
@@ -761,41 +771,40 @@ void MqttPublishPayloadPrefixTopicRulesProcess_P(uint32_t prefix, const char* su
 }
 
 void MqttPublishPayloadPrefixTopicRulesProcess_P(uint32_t prefix, const char* subtopic, const char* payload) {
-  // Publish <prefix>/<device>/<RESULT or <subtopic>> default TasmotaGlobal.mqtt_data string no retained
+  // Publish <prefix>/<device>/<RESULT or <subtopic>> default ResponseData string no retained
   //   then process rules
   MqttPublishPayloadPrefixTopicRulesProcess_P(prefix, subtopic, payload, false);
 }
 
 void MqttPublishPrefixTopic_P(uint32_t prefix, const char* subtopic, bool retained) {
-  // Publish <prefix>/<device>/<RESULT or <subtopic>> default TasmotaGlobal.mqtt_data string with optional retained
-#ifdef MQTT_DATA_STRING
-  MqttPublishPayloadPrefixTopic_P(prefix, subtopic, TasmotaGlobal.mqtt_data.c_str(), 0, retained);
-#else
-  MqttPublishPayloadPrefixTopic_P(prefix, subtopic, TasmotaGlobal.mqtt_data, 0, retained);
-#endif
+  // Publish <prefix>/<device>/<RESULT or <subtopic>> default ResponseData string with optional retained
+  MqttPublishPayloadPrefixTopic_P(prefix, subtopic, ResponseData(), 0, retained);
 }
 
 void MqttPublishPrefixTopic_P(uint32_t prefix, const char* subtopic) {
-  // Publish <prefix>/<device>/<RESULT or <subtopic>> default TasmotaGlobal.mqtt_data string no retained
+  // Publish <prefix>/<device>/<RESULT or <subtopic>> default ResponseData string no retained
   MqttPublishPrefixTopic_P(prefix, subtopic, false);
 }
 
 void MqttPublishPrefixTopicRulesProcess_P(uint32_t prefix, const char* subtopic, bool retained) {
-  // Publish <prefix>/<device>/<RESULT or <subtopic>> default TasmotaGlobal.mqtt_data string with optional retained
+  // Publish <prefix>/<device>/<RESULT or <subtopic>> default ResponseData string with optional retained
   //   then process rules
   MqttPublishPrefixTopic_P(prefix, subtopic, retained);
   XdrvRulesProcess(0);
 }
 
 void MqttPublishPrefixTopicRulesProcess_P(uint32_t prefix, const char* subtopic) {
-  // Publish <prefix>/<device>/<RESULT or <subtopic>> default TasmotaGlobal.mqtt_data string no retained
+  // Publish <prefix>/<device>/<RESULT or <subtopic>> default ResponseData string no retained
   //   then process rules
   MqttPublishPrefixTopicRulesProcess_P(prefix, subtopic, false);
 }
 
 void MqttPublishTeleSensor(void) {
-  // Publish tele/<device>/SENSOR default TasmotaGlobal.mqtt_data string with optional retained
+  // Publish tele/<device>/SENSOR default ResponseData string with optional retained
   //   then process rules
+#ifdef USE_INFLUXDB
+  InfluxDbProcess(1);        // Use a copy of ResponseData
+#endif
   MqttPublishPrefixTopicRulesProcess_P(TELE, PSTR(D_RSLT_SENSOR), Settings->flag.mqtt_sensor_retain);  // CMND_SENSORRETAIN
 }
 
@@ -828,6 +837,11 @@ void MqttPublishPowerState(uint32_t device) {
       Response_P(GetStateText(bitRead(TasmotaGlobal.power, device -1)));
       MqttPublish(stopic, Settings->flag.mqtt_power_retain);  // CMND_POWERRETAIN
     }
+
+#ifdef USE_INFLUXDB
+    InfluxDbPublishPowerState(device);
+#endif
+
 #ifdef USE_SONOFF_IFAN
   }
 #endif  // USE_SONOFF_IFAN
@@ -869,8 +883,11 @@ void MqttDisconnected(int state) {
   }
 
   MqttClient.disconnect();
+  // Check if this solves intermittent MQTT re-connection failures when broker is restarted
+  EspClient.stop();
 
-  AddLog(LOG_LEVEL_INFO, PSTR(D_LOG_MQTT D_CONNECT_FAILED_TO " %s:%d, rc %d. " D_RETRY_IN " %d " D_UNIT_SECOND), SettingsText(SET_MQTT_HOST), Settings->mqtt_port, state, Mqtt.retry_counter);
+  AddLog(LOG_LEVEL_INFO, PSTR(D_LOG_MQTT D_CONNECT_FAILED_TO " %s:%d, rc %d. " D_RETRY_IN " %d " D_UNIT_SECOND),
+    SettingsText(SET_MQTT_HOST), Settings->mqtt_port, state, Mqtt.retry_counter);
   TasmotaGlobal.rules_flag.mqtt_disconnected = 1;
 }
 
@@ -926,13 +943,22 @@ void MqttConnected(void) {
       MqttPublishPrefixTopicRulesProcess_P(TELE, PSTR(D_RSLT_INFO "1"), Settings->flag5.mqtt_info_retain);
 #ifdef USE_WEBSERVER
       if (Settings->webserver) {
+        Response_P(PSTR("{\"Info2\":{\"" D_JSON_WEBSERVER_MODE "\":\"%s\""),
+          (2 == Settings->webserver) ? PSTR(D_ADMIN) : PSTR(D_USER));
+        if (static_cast<uint32_t>(WiFi.localIP()) != 0) {
+          ResponseAppend_P(PSTR(",\"" D_CMND_HOSTNAME "\":\"%s\",\"" D_CMND_IPADDRESS "\":\"%_I\""),
+            TasmotaGlobal.hostname, (uint32_t)WiFi.localIP());
 #if LWIP_IPV6
-        Response_P(PSTR("{\"Info2\":{\"" D_JSON_WEBSERVER_MODE "\":\"%s\",\"" D_CMND_HOSTNAME "\":\"%s\",\"" D_CMND_IPADDRESS "\":\"%s\",\"IPv6Address\":\"%s\"}}"),
-          (2 == Settings->webserver) ? PSTR(D_ADMIN) : PSTR(D_USER), NetworkHostname(), NetworkAddress().toString().c_str(), WifiGetIPv6().c_str(), Settings->flag5.mqtt_info_retain);
-#else
-        Response_P(PSTR("{\"Info2\":{\"" D_JSON_WEBSERVER_MODE "\":\"%s\",\"" D_CMND_HOSTNAME "\":\"%s\",\"" D_CMND_IPADDRESS "\":\"%s\"}}"),
-          (2 == Settings->webserver) ? PSTR(D_ADMIN) : PSTR(D_USER), NetworkHostname(), NetworkAddress().toString().c_str(), Settings->flag5.mqtt_info_retain);
-#endif // LWIP_IPV6 = 1
+          ResponseAppend_P(PSTR(",\"IPv6Address\":\"%s\""), WifiGetIPv6().c_str());
+#endif  // LWIP_IPV6 = 1
+        }
+#if defined(ESP32) && CONFIG_IDF_TARGET_ESP32 && defined(USE_ETHERNET)
+        if (static_cast<uint32_t>(EthernetLocalIP()) != 0) {
+          ResponseAppend_P(PSTR(",\"Ethernet\":{\"" D_CMND_HOSTNAME "\":\"%s\",\"" D_CMND_IPADDRESS "\":\"%_I\"}"),
+            EthernetHostname(), (uint32_t)EthernetLocalIP());
+        }
+#endif  // USE_ETHERNET
+        ResponseJsonEndEnd();
         MqttPublishPrefixTopicRulesProcess_P(TELE, PSTR(D_RSLT_INFO "2"), Settings->flag5.mqtt_info_retain);
       }
 #endif  // USE_WEBSERVER
@@ -942,7 +968,7 @@ void MqttConnected(void) {
       } else {
         ResponseAppend_P(PSTR("\"%s\""), GetResetReason().c_str());
       }
-      ResponseJsonEndEnd();
+      ResponseAppend_P(PSTR(",\"" D_JSON_BOOTCOUNT "\":%d}}"), Settings->bootcount +1);
       MqttPublishPrefixTopicRulesProcess_P(TELE, PSTR(D_RSLT_INFO "3"), Settings->flag5.mqtt_info_retain);
     }
 
@@ -964,7 +990,7 @@ void MqttConnected(void) {
 void MqttReconnect(void) {
   char stopic[TOPSZ];
 
-  Mqtt.allowed = Settings->flag.mqtt_enabled;  // SetOption3 - Enable MQTT
+  Mqtt.allowed = Settings->flag.mqtt_enabled && (TasmotaGlobal.restart_flag == 0);  // SetOption3 - Enable MQTT, and don't connect if restart in process
   if (Mqtt.allowed) {
 #if defined(USE_MQTT_AZURE_DPS_SCOPEID) && defined(USE_MQTT_AZURE_DPS_PRESHAREDKEY)
   ProvisionAzureDPS();
@@ -1054,11 +1080,11 @@ void MqttReconnect(void) {
   MqttClient.setServer(SettingsText(SET_MQTT_HOST), Settings->mqtt_port);
 
   uint32_t mqtt_connect_time = millis();
-#if defined(USE_MQTT_TLS) && !defined(USE_MQTT_TLS_CA_CERT)
-  bool allow_all_fingerprints;
-  bool learn_fingerprint1;
-  bool learn_fingerprint2;
-  if (Mqtt.mqtt_tls) {
+#if defined(USE_MQTT_TLS)
+  bool allow_all_fingerprints = false;
+  bool learn_fingerprint1 = false;
+  bool learn_fingerprint2 = false;
+  if (Mqtt.mqtt_tls && Settings->flag5.tls_use_fingerprint) {
     allow_all_fingerprints = false;
     learn_fingerprint1 = is_fingerprint_mono_value(Settings->mqtt_fingerprint[0], 0x00);
     learn_fingerprint2 = is_fingerprint_mono_value(Settings->mqtt_fingerprint[1], 0x00);
@@ -1093,22 +1119,15 @@ void MqttReconnect(void) {
   }
 
   String azureMqtt_userString = String(SettingsText(SET_MQTT_HOST)) + "/" + String(SettingsText(SET_MQTT_CLIENT)); + "/?api-version=2018-06-30";
-#ifdef MQTT_DATA_STRING
-  if (MqttClient.connect(TasmotaGlobal.mqtt_client, azureMqtt_userString.c_str(), azureMqtt_password.c_str(), stopic, 1, lwt_retain, TasmotaGlobal.mqtt_data.c_str(), MQTT_CLEAN_SESSION)) {
+  if (MqttClient.connect(TasmotaGlobal.mqtt_client, azureMqtt_userString.c_str(), azureMqtt_password.c_str(), stopic, 1, lwt_retain, ResponseData(), MQTT_CLEAN_SESSION)) {
 #else
-  if (MqttClient.connect(TasmotaGlobal.mqtt_client, azureMqtt_userString.c_str(), azureMqtt_password.c_str(), stopic, 1, lwt_retain, TasmotaGlobal.mqtt_data, MQTT_CLEAN_SESSION)) {
-#endif
-#else
+
 #if defined(USE_MQTT_WATSON_IOT) || defined(USE_MQTT_MOSQUITTO) // Watson doesn't support LWT
   if (MqttClient.connect(TasmotaGlobal.mqtt_client, mqtt_user, mqtt_pwd, NULL, 1, false, NULL, MQTT_CLEAN_SESSION)) {
 #else
-#ifdef MQTT_DATA_STRING
-  if (MqttClient.connect(TasmotaGlobal.mqtt_client, mqtt_user, mqtt_pwd, stopic, 1, lwt_retain, TasmotaGlobal.mqtt_data.c_str(), MQTT_CLEAN_SESSION)) {
-#else
-  if (MqttClient.connect(TasmotaGlobal.mqtt_client, mqtt_user, mqtt_pwd, stopic, 1, lwt_retain, TasmotaGlobal.mqtt_data, MQTT_CLEAN_SESSION)) {
-#endif
-#endif  // USE_MQTT_AZURE_IOT
+  if (MqttClient.connect(TasmotaGlobal.mqtt_client, mqtt_user, mqtt_pwd, stopic, 1, lwt_retain, ResponseData(), MQTT_CLEAN_SESSION)) {
 #endif // USE_MQTT_WATSON_IOT / USE_MQTT_MOSQUITTO
+#endif  // USE_MQTT_AZURE_IOT
 #ifdef USE_MQTT_TLS
     if (Mqtt.mqtt_tls) {
 #ifdef ESP8266
@@ -1121,45 +1140,153 @@ void MqttReconnect(void) {
       if (!tlsClient->getMFLNStatus()) {
         AddLog(LOG_LEVEL_INFO, PSTR(D_LOG_MQTT "MFLN not supported by TLS server"));
       }
-#ifndef USE_MQTT_TLS_CA_CERT  // don't bother with fingerprints if using CA validation
-      const uint8_t *recv_fingerprint = tlsClient->getRecvPubKeyFingerprint();
-      // create a printable version of the fingerprint received
-      char buf_fingerprint[64];
-      ToHex_P(recv_fingerprint, 20, buf_fingerprint, sizeof(buf_fingerprint), ' ');
-      AddLog(LOG_LEVEL_DEBUG, PSTR(D_LOG_MQTT "Server fingerprint: %s"), buf_fingerprint);
 
-      bool learned = false;
+      if (Settings->flag5.tls_use_fingerprint) {    // CA validation
+        const uint8_t *recv_fingerprint = tlsClient->getRecvPubKeyFingerprint();
+        // create a printable version of the fingerprint received
+        char buf_fingerprint[64];
+        ToHex_P(recv_fingerprint, 20, buf_fingerprint, sizeof(buf_fingerprint), ' ');
+        AddLog(LOG_LEVEL_DEBUG, PSTR(D_LOG_MQTT "Server fingerprint: %s"), buf_fingerprint);
 
-      // If the fingerprint slot is marked for update, we'll do so.
-      // Otherwise, if the fingerprint slot had the magic trust-on-first-use
-      // value, we will save the current fingerprint there, but only if the other fingerprint slot
-      // *didn't* match it.
-      if (recv_fingerprint[20] & 0x1 || (learn_fingerprint1 && 0 != memcmp(recv_fingerprint, Settings->mqtt_fingerprint[1], 20))) {
-        memcpy(Settings->mqtt_fingerprint[0], recv_fingerprint, 20);
-        learned = true;
+        bool learned = false;
+
+        // If the fingerprint slot is marked for update, we'll do so.
+        // Otherwise, if the fingerprint slot had the magic trust-on-first-use
+        // value, we will save the current fingerprint there, but only if the other fingerprint slot
+        // *didn't* match it.
+        if (recv_fingerprint[20] & 0x1 || (learn_fingerprint1 && 0 != memcmp(recv_fingerprint, Settings->mqtt_fingerprint[1], 20))) {
+          memcpy(Settings->mqtt_fingerprint[0], recv_fingerprint, 20);
+          learned = true;
+        }
+        // As above, but for the other slot.
+        if (recv_fingerprint[20] & 0x2 || (learn_fingerprint2 && 0 != memcmp(recv_fingerprint, Settings->mqtt_fingerprint[0], 20))) {
+          memcpy(Settings->mqtt_fingerprint[1], recv_fingerprint, 20);
+          learned = true;
+        }
+
+        if (learned) {
+          AddLog(LOG_LEVEL_INFO, PSTR(D_LOG_MQTT "Fingerprint learned: %s"), buf_fingerprint);
+
+          SettingsSaveAll();  // save settings
+        }
       }
-      // As above, but for the other slot.
-      if (recv_fingerprint[20] & 0x2 || (learn_fingerprint2 && 0 != memcmp(recv_fingerprint, Settings->mqtt_fingerprint[0], 20))) {
-        memcpy(Settings->mqtt_fingerprint[1], recv_fingerprint, 20);
-        learned = true;
-      }
 
-      if (learned) {
-        AddLog(LOG_LEVEL_INFO, PSTR(D_LOG_MQTT "Fingerprint learned: %s"), buf_fingerprint);
-
-        SettingsSaveAll();  // save settings
-      }
-#endif // !USE_MQTT_TLS_CA_CERT
     }
 #endif // USE_MQTT_TLS
     MqttConnected();
   } else {
 #ifdef USE_MQTT_TLS
     if (Mqtt.mqtt_tls) {
+/*
+      getLastError codes as documented in lib\lib_ssl\bearssl-esp8266\src\t_bearssl_ssl.h
+      SSL-level error codes
+      |    Receive Fatal Alert
+      |    |     Send Fatal Alert
+      |    |     |
+       0 : 256 : 512 : BR_ERR_OK
+       1 : 257 : 513 : BR_ERR_BAD_PARAM           - caller-provided parameter is incorrect
+       2 : 258 : 514 : BR_ERR_BAD_STATE           - operation requested by the caller cannot be applied with the current context state (e.g. reading data while outgoing data is waiting to be sent)
+       3 : 259 : 515 : BR_ERR_UNSUPPORTED_VERSION - incoming protocol or record version is unsupported
+       4 : 260 : 516 : BR_ERR_BAD_VERSION         - incoming record version does not match the expected version
+       5 : 261 : 517 : BR_ERR_BAD_LENGTH          - incoming record length is invalid
+       6 : 262 : 518 : BR_ERR_TOO_LARGE           - incoming record is too large to be processed, or buffer is too small for the handshake message to send
+       7 : 263 : 519 : BR_ERR_BAD_MAC             - decryption found an invalid padding, or the record MAC is not correct
+       8 : 264 : 520 : BR_ERR_NO_RANDOM           - no initial entropy was provided, and none can be obtained from the OS
+       9 : 265 : 521 : BR_ERR_UNKNOWN_TYPE        - incoming record type is unknown
+      10 : 266 : 522 : BR_ERR_UNEXPECTED          - incoming record or message has wrong type with regards to the current engine state
+      12 : 268 : 524 : BR_ERR_BAD_CCS             - ChangeCipherSpec message from the peer has invalid contents
+      13 : 269 : 525 : BR_ERR_BAD_ALERT           - alert message from the peer has invalid contents (odd length)
+      14 : 270 : 526 : BR_ERR_BAD_HANDSHAKE       - incoming handshake message decoding failed
+      15 : 271 : 527 : BR_ERR_OVERSIZED_ID        - ServerHello contains a session ID which is larger than 32 bytes
+      16 : 272 : 528 : BR_ERR_BAD_CIPHER_SUITE    - server wants to use a cipher suite that we did not claim to support. This is also reported if we tried to advertise a cipher suite that we do not support
+      17 : 273 : 529 : BR_ERR_BAD_COMPRESSION     - server wants to use a compression that we did not claim to support
+      18 : 274 : 530 : BR_ERR_BAD_FRAGLEN         - server's max fragment length does not match client's
+      19 : 275 : 531 : BR_ERR_BAD_SECRENEG        - secure renegotiation failed
+      20 : 276 : 532 : BR_ERR_EXTRA_EXTENSION     - server sent an extension type that we did not announce, or used the same extension type several times in a single ServerHello
+      21 : 277 : 533 : BR_ERR_BAD_SNI             - invalid Server Name Indication contents (when used by the server, this extension shall be empty)
+      22 : 278 : 534 : BR_ERR_BAD_HELLO_DONE      - invalid ServerHelloDone from the server (length is not 0)
+      23 : 279 : 535 : BR_ERR_LIMIT_EXCEEDED      - internal limit exceeded (e.g. server's public key is too large)
+      24 : 280 : 536 : BR_ERR_BAD_FINISHED        - Finished message from peer does not match the expected value
+      25 : 281 : 537 : BR_ERR_RESUME_MISMATCH     - session resumption attempt with distinct version or cipher suite
+      26 : 282 : 538 : BR_ERR_INVALID_ALGORITHM   - unsupported or invalid algorithm (ECDHE curve, signature algorithm, hash function)
+      27 : 283 : 539 : BR_ERR_BAD_SIGNATURE       - invalid signature (on ServerKeyExchange from server, or in CertificateVerify from client)
+      28 : 284 : 540 : BR_ERR_WRONG_KEY_USAGE     - peer's public key does not have the proper type or is not allowed for requested operation
+      29 : 285 : 541 : BR_ERR_NO_CLIENT_AUTH      - client did not send a certificate upon request, or the client certificate could not be validated
+      31 : 287 : 543 : BR_ERR_IO                  - I/O error or premature close on underlying transport stream. This error code is set only by the simplified I/O API ("br_sslio_*")
+
+      getLastError codes as documented in lib\lib_ssl\bearssl-esp8266\src\t_bearssl_x509.h
+      32 : BR_ERR_X509_OK                  - validation was successful; this is not actually an error
+      33 : BR_ERR_X509_INVALID_VALUE       - invalid value in an ASN.1 structure
+      34 : BR_ERR_X509_TRUNCATED           - truncated certificate
+      35 : BR_ERR_X509_EMPTY_CHAIN         - empty certificate chain (no certificate at all)
+      36 : BR_ERR_X509_INNER_TRUNC         - decoding error: inner element extends beyond outer element size
+      37 : BR_ERR_X509_BAD_TAG_CLASS       - decoding error: unsupported tag class (application or private)
+      38 : BR_ERR_X509_BAD_TAG_VALUE       - decoding error: unsupported tag value
+      39 : BR_ERR_X509_INDEFINITE_LENGTH   - decoding error: indefinite length
+      40 : BR_ERR_X509_EXTRA_ELEMENT       - decoding error: extraneous element
+      41 : BR_ERR_X509_UNEXPECTED          - decoding error: unexpected element
+      42 : BR_ERR_X509_NOT_CONSTRUCTED     - decoding error: expected constructed element, but is primitive
+      43 : BR_ERR_X509_NOT_PRIMITIVE       - decoding error: expected primitive element, but is constructed
+      44 : BR_ERR_X509_PARTIAL_BYTE        - decoding error: BIT STRING length is not multiple of 8
+      45 : BR_ERR_X509_BAD_BOOLEAN         - decoding error: BOOLEAN value has invalid length
+      46 : BR_ERR_X509_OVERFLOW            - decoding error: value is off-limits
+      47 : BR_ERR_X509_BAD_DN              - invalid distinguished name
+      48 : BR_ERR_X509_BAD_TIME            - invalid date/time representation
+      49 : BR_ERR_X509_UNSUPPORTED         - certificate contains unsupported features that cannot be ignored
+      50 : BR_ERR_X509_LIMIT_EXCEEDED      - key or signature size exceeds internal limits
+      51 : BR_ERR_X509_WRONG_KEY_TYPE      - key type does not match that which was expected
+      52 : BR_ERR_X509_BAD_SIGNATURE       - signature is invalid
+      53 : BR_ERR_X509_TIME_UNKNOWN        - validation time is unknown
+      54 : BR_ERR_X509_EXPIRED             - certificate is expired or not yet valid
+      55 : BR_ERR_X509_DN_MISMATCH         - issuer/subject DN mismatch in the chain
+      56 : BR_ERR_X509_BAD_SERVER_NAME     - expected server name was not found in the chain
+      57 : BR_ERR_X509_CRITICAL_EXTENSION  - unknown critical extension in certificate
+      58 : BR_ERR_X509_NOT_CA              - not a CA, or path length constraint violation
+      59 : BR_ERR_X509_FORBIDDEN_KEY_USAGE - Key Usage extension prohibits intended usage
+      60 : BR_ERR_X509_WEAK_PUBLIC_KEY     - public key found in certificate is too small
+      62 : BR_ERR_X509_NOT_TRUSTED         - chain could not be linked to a trust anchor
+
+      getLastError codes as documented in lib\lib_ssl\bearssl-esp8266\src\t_bearssl_ssl.h
+       10 : 266 : BR_ALERT_UNEXPECTED_MESSAGE
+       20 : 276 : BR_ALERT_BAD_RECORD_MAC
+       22 : 278 : BR_ALERT_RECORD_OVERFLOW
+       30 : 286 : BR_ALERT_DECOMPRESSION_FAILURE
+       40 : 296 : BR_ALERT_HANDSHAKE_FAILURE
+       42 : 298 : BR_ALERT_BAD_CERTIFICATE
+       43 : 299 : BR_ALERT_UNSUPPORTED_CERTIFICATE
+       44 : 300 : BR_ALERT_CERTIFICATE_REVOKED
+       45 : 301 : BR_ALERT_CERTIFICATE_EXPIRED
+       46 : 302 : BR_ALERT_CERTIFICATE_UNKNOWN
+       47 : 303 : BR_ALERT_ILLEGAL_PARAMETER
+       48 : 304 : BR_ALERT_UNKNOWN_CA
+       49 : 305 : BR_ALERT_ACCESS_DENIED
+       50 : 306 : BR_ALERT_DECODE_ERROR
+       51 : 307 : BR_ALERT_DECRYPT_ERROR
+       70 : 326 : BR_ALERT_PROTOCOL_VERSION
+       71 : 327 : BR_ALERT_INSUFFICIENT_SECURITY
+       80 : 336 : BR_ALERT_INTERNAL_ERROR
+       90 : 346 : BR_ALERT_USER_CANCELED
+      100 : 356 : BR_ALERT_NO_RENEGOTIATION
+      110 : 366 : BR_ALERT_UNSUPPORTED_EXTENSION
+      120 : 376 : BR_ALERT_NO_APPLICATION_PROTOCOL
+*/
       AddLog(LOG_LEVEL_INFO, PSTR(D_LOG_MQTT "TLS connection error: %d"), tlsClient->getLastError());
     }
 #endif
-    MqttDisconnected(MqttClient.state());  // status codes are documented here http://pubsubclient.knolleary.net/api.html#state
+/*
+    State codes as documented here http://pubsubclient.knolleary.net/api.html#state
+    -4 : MQTT_CONNECTION_TIMEOUT      - the server didn't respond within the keepalive time
+    -3 : MQTT_CONNECTION_LOST         - the network connection was broken
+    -2 : MQTT_CONNECT_FAILED          - the network connection failed
+    -1 : MQTT_DISCONNECTED            - the client is disconnected cleanly
+     0 : MQTT_CONNECTED               - the client is connected
+     1 : MQTT_CONNECT_BAD_PROTOCOL    - the server doesn't support the requested version of MQTT
+     2 : MQTT_CONNECT_BAD_CLIENT_ID   - the server rejected the client identifier
+     3 : MQTT_CONNECT_UNAVAILABLE     - the server was unable to accept the connection
+     4 : MQTT_CONNECT_BAD_CREDENTIALS - the username/password were rejected
+     5 : MQTT_CONNECT_UNAUTHORIZED    - the client was not authorized to connect
+*/
+    MqttDisconnected(MqttClient.state());
   }
 }
 
@@ -1196,7 +1323,7 @@ bool KeyTopicActive(uint32_t key) {
  * Commands
 \*********************************************************************************************/
 
-#if defined(USE_MQTT_TLS) && !defined(USE_MQTT_TLS_CA_CERT)
+#if defined(USE_MQTT_TLS)
 void CmndMqttFingerprint(void) {
   if ((XdrvMailbox.index > 0) && (XdrvMailbox.index <= 2)) {
     char fingerprint[60];
@@ -1331,7 +1458,6 @@ void CmndMqttClient(void) {
 void CmndFullTopic(void) {
   if (XdrvMailbox.data_len > 0) {
     MakeValidMqtt(1, XdrvMailbox.data);
-    if (!strcmp(XdrvMailbox.data, TasmotaGlobal.mqtt_client)) { SetShortcutDefault(); }
     char stemp1[TOPSZ];
     strlcpy(stemp1, (SC_DEFAULT == Shortcut()) ? MQTT_FULLTOPIC : XdrvMailbox.data, sizeof(stemp1));
     if (strcmp(stemp1, SettingsText(SET_MQTT_FULLTOPIC))) {
@@ -1386,7 +1512,10 @@ void CmndGroupTopic(void) {
     if (XdrvMailbox.data_len > 0) {
       uint32_t settings_text_index = (1 == XdrvMailbox.index) ? SET_MQTT_GRP_TOPIC : SET_MQTT_GRP_TOPIC2 + XdrvMailbox.index - 2;
       MakeValidMqtt(0, XdrvMailbox.data);
-      if (!strcmp(XdrvMailbox.data, TasmotaGlobal.mqtt_client)) { SetShortcutDefault(); }
+      if (!strcmp(XdrvMailbox.data, TasmotaGlobal.mqtt_topic)) {
+        AddLog(LOG_LEVEL_INFO, PSTR("MQT: Error: GroupTopic must differ from Topic"));
+        SetShortcutDefault();
+      }
       SettingsUpdateText(settings_text_index, (SC_CLEAR == Shortcut()) ? "" : (SC_DEFAULT == Shortcut()) ? PSTR(MQTT_GRPTOPIC) : XdrvMailbox.data);
 
       // Eliminate duplicates, have at least one and fill from index 1
@@ -1433,7 +1562,6 @@ void CmndGroupTopic(void) {
 void CmndTopic(void) {
   if (!XdrvMailbox.grpflg && (XdrvMailbox.data_len > 0)) {
     MakeValidMqtt(0, XdrvMailbox.data);
-    if (!strcmp(XdrvMailbox.data, TasmotaGlobal.mqtt_client)) { SetShortcutDefault(); }
     char stemp1[TOPSZ];
     strlcpy(stemp1, (SC_DEFAULT == Shortcut()) ? MQTT_TOPIC : XdrvMailbox.data, sizeof(stemp1));
     if (strcmp(stemp1, SettingsText(SET_MQTT_TOPIC))) {
@@ -1449,7 +1577,6 @@ void CmndTopic(void) {
 void CmndButtonTopic(void) {
   if (!XdrvMailbox.grpflg && (XdrvMailbox.data_len > 0)) {
     MakeValidMqtt(0, XdrvMailbox.data);
-    if (!strcmp(XdrvMailbox.data, TasmotaGlobal.mqtt_client)) { SetShortcutDefault(); }
     switch (Shortcut()) {
       case SC_CLEAR: SettingsUpdateText(SET_MQTT_BUTTON_TOPIC, ""); break;
       case SC_DEFAULT: SettingsUpdateText(SET_MQTT_BUTTON_TOPIC, TasmotaGlobal.mqtt_topic); break;
@@ -1463,7 +1590,6 @@ void CmndButtonTopic(void) {
 void CmndSwitchTopic(void) {
   if (!XdrvMailbox.grpflg && (XdrvMailbox.data_len > 0)) {
     MakeValidMqtt(0, XdrvMailbox.data);
-    if (!strcmp(XdrvMailbox.data, TasmotaGlobal.mqtt_client)) { SetShortcutDefault(); }
     switch (Shortcut()) {
       case SC_CLEAR: SettingsUpdateText(SET_MQTT_SWITCH_TOPIC, ""); break;
       case SC_DEFAULT: SettingsUpdateText(SET_MQTT_SWITCH_TOPIC, TasmotaGlobal.mqtt_topic); break;
@@ -1813,7 +1939,7 @@ void HandleMqttConfiguration(void)
     SettingsText(SET_MQTT_HOST),
     Settings->mqtt_port,
 #ifdef USE_MQTT_TLS
-    Mqtt.mqtt_tls ? PSTR(" checked") : "",      // SetOption102 - Enable MQTT TLS
+    Mqtt.mqtt_tls ? PSTR(" checked") : "",      // SetOption103 - Enable MQTT TLS
 #endif // USE_MQTT_TLS
     Format(str, PSTR(MQTT_CLIENT_ID), sizeof(str)), PSTR(MQTT_CLIENT_ID), SettingsText(SET_MQTT_CLIENT));
   WSContentSend_P(HTTP_FORM_MQTT2,
@@ -1835,8 +1961,8 @@ void MqttSaveSettings(void) {
   cmnd += AddWebCommand(PSTR(D_CMND_TOPIC), PSTR("mt"), PSTR("1"));
   cmnd += AddWebCommand(PSTR(D_CMND_FULLTOPIC), PSTR("mf"), PSTR("1"));
 #ifdef USE_MQTT_TLS
-  cmnd += F(";" D_CMND_SO "102 ");
-  cmnd += Webserver->hasArg(F("b3"));  // SetOption102 - Enable MQTT TLS
+  cmnd += F(";" D_CMND_SO "103 ");
+  cmnd += Webserver->hasArg(F("b3"));  // SetOption103 - Enable MQTT TLS
 #endif
   ExecuteWebCommand((char*)cmnd.c_str());
 }

@@ -744,7 +744,7 @@ void Z_Device::jsonLightState(Z_attribute_list & attr_list) const {
     if (validPower())        { attr_list.addAttributePMEM(PSTR("Power")).setUInt(getPower()); }
     int32_t light_mode = -1;
     const Z_Data_Light & light = data.find<Z_Data_Light>(0);
-    if (&light != nullptr) {
+    if (&light != &z_data_unk) {
       if (light.validConfig()) {
         light_mode = light.getConfig();
       }
@@ -796,7 +796,7 @@ String Z_Devices::dumpCoordinator(void) const {
 String Z_Devices::dumpDevice(uint32_t dump_mode, const Z_Device & device) const {
   JsonGeneratorArray json_arr;
 
-  if (&device == nullptr) {
+  if (&device == &device_unk) {
     if (dump_mode < 2) {
       // dump light mode for all devices
       for (const auto & device2 : _devices) {
@@ -912,12 +912,12 @@ void Z_Device::setPower(bool power_on, uint8_t ep) {
 
 bool Z_Device::validPower(uint8_t ep) const {
   const Z_Data_OnOff & onoff = data.find<Z_Data_OnOff>(ep);
-  return (&onoff != nullptr);
+  return (&onoff != &z_data_unk);
 }
 
 bool Z_Device::getPower(uint8_t ep) const {
   const Z_Data_OnOff & onoff = data.find<Z_Data_OnOff>(ep);
-  if (&onoff != nullptr)  return onoff.getPower();
+  if (&onoff != &z_data_unk)  return onoff.getPower();
   return false;
 }
 

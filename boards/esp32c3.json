@@ -4,6 +4,7 @@
       "ldscript": "esp32c3_out.ld"
     },
     "core": "esp32",
+    "extra_flags": "-DARDUINO_USB_MODE=1 -DARDUINO_USB_CDC_ON_BOOT=0 -DESP32_4M -DESP32C3",
     "f_cpu": "160000000L",
     "f_flash": "80000000L",
     "flash_mode": "dout",
@@ -14,10 +15,14 @@
   "connectivity": [
     "wifi"
   ],
+  "debug": {
+    "openocd_target": "esp32c3.cfg"
+  },
   "frameworks": [
-    "arduino"
+    "arduino",
+    "espidf"
   ],
-  "name": "Espressif Generic ESP32-C3 4M Flash, Tasmota 1856k Code/OTA, 320k SPIFFS",
+  "name": "Espressif Generic ESP32-C3 4M Flash, Tasmota 1856k Code/OTA, 320k FS",
   "upload": {
     "flash_size": "4MB",
     "maximum_ram_size": 327680,
@@ -25,6 +30,6 @@
     "require_upload_port": true,
     "speed": 460800
   },
-  "url": "https://docs.espressif.com/projects/esp-idf/en/latest",
+  "url": "https://docs.espressif.com/projects/esp-idf/en/latest/esp32c3/hw-reference/esp32c3/user-guide-devkitm-1.html",
   "vendor": "Espressif"
 }

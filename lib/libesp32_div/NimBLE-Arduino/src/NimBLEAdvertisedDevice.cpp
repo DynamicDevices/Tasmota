@@ -11,11 +11,9 @@
  *  Created on: Jul 3, 2017
  *      Author: kolban
  */
-#include "sdkconfig.h"
-#if defined(CONFIG_BT_ENABLED)
 
 #include "nimconfig.h"
-#if defined(CONFIG_BT_NIMBLE_ROLE_OBSERVER)
+#if defined(CONFIG_BT_ENABLED) && defined(CONFIG_BT_NIMBLE_ROLE_OBSERVER)
 
 #include "NimBLEDevice.h"
 #include "NimBLEAdvertisedDevice.h"
@@ -734,7 +732,7 @@ uint8_t* NimBLEAdvertisedDevice::getPayload() {
  * @param [in] length The length of the payload in bytes.
  * @param [in] append Indicates if the the data should be appended (scan response).
  */
-void NimBLEAdvertisedDevice::setPayload(uint8_t *payload, uint8_t length, bool append) {
+void NimBLEAdvertisedDevice::setPayload(const uint8_t *payload, uint8_t length, bool append) {
     if(!append) {
         m_advLength = length;
         m_payload.assign(payload, payload + length);
@@ -783,7 +781,5 @@ size_t NimBLEAdvertisedDevice::getPayloadLength() {
     return m_payload.size();
 } // getPayloadLength
 
-
-#endif // #if defined( CONFIG_BT_NIMBLE_ROLE_CENTRAL)
-#endif /* CONFIG_BT_ENABLED */
+#endif /* CONFIG_BT_ENABLED  && CONFIG_BT_NIMBLE_ROLE_CENTRAL */
 

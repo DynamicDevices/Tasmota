@@ -43,9 +43,12 @@
 #include <esp_hap_pair_verify.h>
 #include <hap_platform_os.h>
 #include <_esp_hap_config.h>
+#include <hap_platform_httpd.h>
+#include <esp_hap_ip_services.h>
 
 static QueueHandle_t xQueue;
 ESP_EVENT_DEFINE_BASE(HAP_EVENT);
+// static TaskHandle_t hap_loop_handle;
 
 const char * hap_get_version(void)
 {
@@ -81,7 +84,7 @@ static void hap_nw_configured_sm(hap_internal_event_t event, hap_state_t *state)
 
 static void hap_common_sm(hap_internal_event_t event)
 {
-    char *reboot_reason = HAP_REBOOT_REASON_UNKNOWN;
+    const char *reboot_reason = HAP_REBOOT_REASON_UNKNOWN;
     switch (event) {
         case HAP_INTERNAL_EVENT_RESET_PAIRINGS:
             ESP_MFI_DEBUG(ESP_MFI_DEBUG_INFO, "Resetting all Pairing Information");
@@ -149,7 +152,7 @@ static void hap_common_sm(hap_internal_event_t event)
 
     /* Wait for some time after peeforming the operations and then reboot */
     ESP_MFI_DEBUG(ESP_MFI_DEBUG_INFO, "Rebooting...");
-    hap_report_event(HAP_EVENT_ACC_REBOOTING, reboot_reason, strlen(reboot_reason) + 1);
+    hap_report_event(HAP_EVENT_ACC_REBOOTING, (void*)reboot_reason, strlen(reboot_reason) + 1);
     vTaskDelay(1000 / hap_platform_os_get_msec_per_tick());
     esp_restart();
 }
@@ -354,7 +357,11 @@ int hap_start(void)
 int hap_stop(void)
 {
     int ret = HAP_SUCCESS;
-    //todo
+    hap_mdns_deannounce();
+    hap_mdns_deinit();
+    httpd_handle_t _handle = hap_platform_httpd_get_handle();
+    if(_handle != NULL) hap_platform_httpd_stop(_handle);
+    ret = hap_loop_stop();
     return ret;
 }
 

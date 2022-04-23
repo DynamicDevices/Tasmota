@@ -103,6 +103,19 @@ String GetDeviceHardware(void) {
 
 #ifdef ESP32
 
+// ESP32_ARCH contains the name of the architecture (used by autoconf)
+#if CONFIG_IDF_TARGET_ESP32
+  #define ESP32_ARCH              "esp32"
+#elif CONFIG_IDF_TARGET_ESP32S2
+  #define ESP32_ARCH              "esp32s2"
+#elif CONFIG_IDF_TARGET_ESP32S3
+  #define ESP32_ARCH              "esp32s3"
+#elif CONFIG_IDF_TARGET_ESP32C3
+  #define ESP32_ARCH              "esp32c3"
+#else
+  #define ESP32_ARCH              ""
+#endif
+
 // Handle 20k of NVM
 
 #include <nvs.h>
@@ -113,6 +126,8 @@ String GetDeviceHardware(void) {
     #include "esp32/rom/rtc.h"
   #elif CONFIG_IDF_TARGET_ESP32S2  // ESP32-S2
     #include "esp32s2/rom/rtc.h"
+  #elif CONFIG_IDF_TARGET_ESP32S3  // ESP32-S3
+    #include "esp32s3/rom/rtc.h"
   #elif CONFIG_IDF_TARGET_ESP32C3  // ESP32-C3
     #include "esp32c3/rom/rtc.h"
   #else
@@ -122,36 +137,51 @@ String GetDeviceHardware(void) {
   #include "rom/rtc.h"
 #endif
 
+// Set the Stacksize for Arduino core. Default is 8192, some builds may need a bigger one
+size_t getArduinoLoopTaskStackSize(void) {
+    return SET_ESP32_STACK_SIZE;
+}
+
+
 #include <esp_phy_init.h>
 
-void NvmLoad(const char *sNvsName, const char *sName, void *pSettings, unsigned nSettingsLen) {
-  nvs_handle handle;
-  noInterrupts();
-  nvs_open(sNvsName, NVS_READONLY, &handle);
+bool NvmLoad(const char *sNvsName, const char *sName, void *pSettings, unsigned nSettingsLen) {
+  nvs_handle_t handle;
+  esp_err_t result = nvs_open(sNvsName, NVS_READONLY, &handle);
+  if (result != ESP_OK) {
+    AddLog(LOG_LEVEL_DEBUG, PSTR("NVS: Error %d"), result);
+    return false;
+  }
   size_t size = nSettingsLen;
   nvs_get_blob(handle, sName, pSettings, &size);
   nvs_close(handle);
-  interrupts();
+  return true;
 }
 
 void NvmSave(const char *sNvsName, const char *sName, const void *pSettings, unsigned nSettingsLen) {
-  nvs_handle handle;
-  noInterrupts();
-  nvs_open(sNvsName, NVS_READWRITE, &handle);
-  nvs_set_blob(handle, sName, pSettings, nSettingsLen);
-  nvs_commit(handle);
-  nvs_close(handle);
-  interrupts();
+#ifdef USE_WEBCAM
+  WcInterrupt(0);  // Stop stream if active to fix TG1WDT_SYS_RESET
+#endif
+  nvs_handle_t handle;
+  esp_err_t result = nvs_open(sNvsName, NVS_READWRITE, &handle);
+  if (result != ESP_OK) {
+    AddLog(LOG_LEVEL_DEBUG, PSTR("NVS: Error %d"), result);
+  } else {
+    nvs_set_blob(handle, sName, pSettings, nSettingsLen);
+    nvs_commit(handle);
+    nvs_close(handle);
+  }
+#ifdef USE_WEBCAM
+  WcInterrupt(1);
+#endif
 }
 
 int32_t NvmErase(const char *sNvsName) {
-  nvs_handle handle;
-  noInterrupts();
+  nvs_handle_t handle;
   int32_t result = nvs_open(sNvsName, NVS_READWRITE, &handle);
   if (ESP_OK == result) { result = nvs_erase_all(handle); }
   if (ESP_OK == result) { result = nvs_commit(handle); }
   nvs_close(handle);
-  interrupts();
   return result;
 }
 
@@ -195,16 +225,15 @@ void SettingsErase(uint8_t type) {
 }
 
 uint32_t SettingsRead(void *data, size_t size) {
-  uint32_t source = 1;
 #ifdef USE_UFILESYS
-  if (!TfsLoadFile(TASM_FILE_SETTINGS, (uint8_t*)data, size)) {
-#endif
-    source = 0;
-    NvmLoad("main", "Settings", data, size);
-#ifdef USE_UFILESYS
+  if (TfsLoadFile(TASM_FILE_SETTINGS, (uint8_t*)data, size)) {
+    return 2;
   }
 #endif
-  return source;
+  if (NvmLoad("main", "Settings", data, size)) {
+    return 1;
+  };
+  return 0;
 }
 
 void SettingsWrite(const void *pSettings, unsigned nSettingsLen) {
@@ -250,6 +279,8 @@ extern "C" {
     #include "esp32/rom/spi_flash.h"
   #elif CONFIG_IDF_TARGET_ESP32S2   // ESP32-S2
     #include "esp32s2/rom/spi_flash.h"
+  #elif CONFIG_IDF_TARGET_ESP32S3   // ESP32-S3
+    #include "esp32s3/rom/spi_flash.h"
   #elif CONFIG_IDF_TARGET_ESP32C3   // ESP32-C3
     #include "esp32c3/rom/spi_flash.h"
   #else
@@ -311,44 +342,6 @@ int32_t EspPartitionMmap(uint32_t action) {
 }
 
 */
-//
-// Crash stuff
-//
-
-void CrashDump(void) {
-}
-
-bool CrashFlag(void) {
-  return false;
-}
-
-void CrashDumpClear(void) {
-}
-
-void CmndCrash(void) {
-  /*
-  volatile uint32_t dummy;
-  dummy = *((uint32_t*) 0x00000000);
-*/
-}
-
-// Do an infinite loop to trigger WDT watchdog
-void CmndWDT(void) {
-  /*
-  volatile uint32_t dummy = 0;
-  while (1) {
-    dummy++;
-  }
-*/
-}
-// This will trigger the os watch after OSWATCH_RESET_TIME (=120) seconds
-void CmndBlockedLoop(void) {
-  /*
-  while (1) {
-    delay(1000);
-  }
-*/
-}
 
 //
 // ESP32 specific
@@ -389,6 +382,10 @@ String ESP32GetResetReason(uint32_t cpu_no) {
     case 17 : return F("Time Group1 reset CPU");                            // 17  -                 TG1WDT_CPU_RESET
     case 18 : return F("Super watchdog reset digital core and rtc module"); // 18  -                 SUPER_WDT_RESET
     case 19 : return F("Glitch reset digital core and rtc module");         // 19  -                 GLITCH_RTC_RESET
+    case 20 : return F("Efuse reset digital core");                         // 20                    EFUSE_RESET
+    case 21 : return F("Usb uart reset digital core");                      // 21                    USB_UART_CHIP_RESET
+    case 22 : return F("Usb jtag reset digital core");                      // 22                    USB_JTAG_CHIP_RESET
+    case 23 : return F("Power glitch reset digital core and rtc module");   // 23                    POWER_GLITCH_RESET
   }
 
   return F("No meaning");                                                   // 0 and undefined
@@ -425,14 +422,21 @@ uint32_t ESP_getSketchSize(void) {
 }
 
 uint32_t ESP_getFreeHeap(void) {
-  return ESP.getFreeHeap();
+  // ESP_getFreeHeap() returns also IRAM which we don't use
+  return heap_caps_get_free_size(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
 }
 
 uint32_t ESP_getMaxAllocHeap(void) {
-  // largest block of heap that can be allocated at once
-  uint32_t free_block_size = ESP.getMaxAllocHeap();
+  // arduino returns IRAM but we want only DRAM
+  uint32_t free_block_size = heap_caps_get_largest_free_block(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
   if (free_block_size > 100) { free_block_size -= 100; }
   return free_block_size;
+}
+
+int32_t ESP_getHeapFragmentation(void) {
+  int32_t free_maxmem = 100 - (int32_t)(ESP_getMaxAllocHeap() * 100 / ESP_getFreeHeap());
+  if (free_maxmem < 0) { free_maxmem = 0; }
+  return free_maxmem;
 }
 
 void ESP_Restart(void) {
@@ -464,10 +468,25 @@ uint8_t* FlashDirectAccess(void) {
   return data;
 }
 
+extern "C" {
+  bool esp_spiram_is_initialized(void);
+}
+
+// this function is a replacement for `psramFound()`.
+// `psramFound()` can return true even if no PSRAM is actually installed
+// This new version also checks `esp_spiram_is_initialized` to know if the PSRAM is initialized
+bool FoundPSRAM(void) {
+#if CONFIG_IDF_TARGET_ESP32C3
+  return psramFound();
+#else
+  return psramFound() && esp_spiram_is_initialized();
+#endif
+}
+
 // new function to check whether PSRAM is present and supported (i.e. required pacthes are present)
 bool UsePSRAM(void) {
   static bool can_use_psram = CanUsePSRAM();
-  return psramFound() && can_use_psram;
+  return FoundPSRAM() && can_use_psram;
 }
 
 void *special_malloc(uint32_t size) {
@@ -492,9 +511,66 @@ void *special_calloc(size_t num, size_t size) {
   }
 }
 
-float CpuTemperature(void) {
-  return (float)temperatureRead();  // In Celsius
+// Variants for IRAM heap, which need all accesses to be 32 bits aligned
+void *special_malloc32(uint32_t size) {
+  return heap_caps_malloc(size, MALLOC_CAP_32BIT);
 }
+
+float CpuTemperature(void) {
+#ifdef CONFIG_IDF_TARGET_ESP32
+  return (float)temperatureRead();  // In Celsius
+/*
+  // These jumps are not stable either. Sometimes it jumps to 77.3
+  float t = (float)temperatureRead();  // In Celsius
+  if (t > 81) { t = t - 27.2; }        // Fix temp jump observed on some ESP32 like DualR3
+  return t;
+*/
+#else
+  #ifndef CONFIG_IDF_TARGET_ESP32S3
+    // Currently (20210801) repeated calls to temperatureRead() on ESP32C3 and ESP32S2 result in IDF error messages
+    static float t = NAN;
+    if (isnan(t)) {
+      t = (float)temperatureRead();  // In Celsius
+    }
+    return t;
+  #else
+    return NAN;
+  #endif
+#endif
+}
+
+/*
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+uint8_t temprature_sens_read();
+
+#ifdef __cplusplus
+}
+#endif
+
+#ifdef CONFIG_IDF_TARGET_ESP32
+uint8_t temprature_sens_read();
+
+float CpuTemperature(void) {
+  uint8_t t = temprature_sens_read();
+
+  AddLog(LOG_LEVEL_DEBUG, PSTR("TMP: value %d"), t);
+
+  return (t - 32) / 1.8;
+}
+#else
+float CpuTemperature(void) {
+  // Currently (20210801) repeated calls to temperatureRead() on ESP32C3 and ESP32S2 result in IDF error messages
+  static float t = NAN;
+  if (isnan(t)) {
+    t = (float)temperatureRead();  // In Celsius
+  }
+  return t;
+}
+#endif
+*/
 
 /*
 #if CONFIG_IDF_TARGET_ESP32S2
@@ -506,6 +582,8 @@ float CpuTemperature(void) {
 #endif
 */
 
+// #include "esp_chip_info.h"
+
 String GetDeviceHardware(void) {
   // https://www.espressif.com/en/products/socs
 
@@ -513,10 +591,12 @@ String GetDeviceHardware(void) {
 Source: esp-idf esp_system.h and esptool
 
 typedef enum {
-    CHIP_ESP32   = 1,  //!< ESP32
-    CHIP_ESP32S2 = 2,  //!< ESP32-S2
-    CHIP_ESP32S3 = 4,  //!< ESP32-S3
-    CHIP_ESP32C3 = 5,  //!< ESP32-C3
+    CHIP_ESP32  = 1, //!< ESP32
+    CHIP_ESP32S2 = 2, //!< ESP32-S2
+    CHIP_ESP32S3 = 9, //!< ESP32-S3
+    CHIP_ESP32C3 = 5, //!< ESP32-C3
+    CHIP_ESP32H2 = 6, //!< ESP32-H2
+    CHIP_ESP32C2 = 12, //!< ESP32-C2
 } esp_chip_model_t;
 
 // Chip feature flags, used in esp_chip_info_t
@@ -524,6 +604,9 @@ typedef enum {
 #define CHIP_FEATURE_WIFI_BGN       BIT(1)      //!< Chip has 2.4GHz WiFi
 #define CHIP_FEATURE_BLE            BIT(4)      //!< Chip has Bluetooth LE
 #define CHIP_FEATURE_BT             BIT(5)      //!< Chip has Bluetooth Classic
+#define CHIP_FEATURE_IEEE802154     BIT(6)      //!< Chip has IEEE 802.15.4
+#define CHIP_FEATURE_EMB_PSRAM      BIT(7)      //!< Chip has embedded psram
+
 
 // The structure represents information about the chip
 typedef struct {
@@ -605,7 +688,10 @@ typedef struct {
 #endif  // CONFIG_IDF_TARGET_ESP32S2
     return F("ESP32-S2");
   }
-  else if (4 == chip_model) {  // ESP32-S3
+  else if (9 == chip_model) {  // ESP32-S3
+#ifdef CONFIG_IDF_TARGET_ESP32S3
+    // no variants for now
+#endif  // CONFIG_IDF_TARGET_ESP32S3
     return F("ESP32-S3");                                  // Max 240MHz, Dual core, QFN 7*7, ESP32-S3-WROOM-1, ESP32-S3-DevKitC-1
   }
   else if (5 == chip_model) {  // ESP32-C3
@@ -685,11 +771,12 @@ typedef struct {
  * ESP32 v1 and v2 needs some special patches to use PSRAM.
  * Standard Tasmota 32 do not include those patches.
  * If using ESP32 v1, please add: `-mfix-esp32-psram-cache-issue -lc-psram-workaround -lm-psram-workaround`
- * 
- * This function returns true if the chip supports PSRAM natively (v3) or if the 
+ *
+ * This function returns true if the chip supports PSRAM natively (v3) or if the
  * patches are present.
  */
 bool CanUsePSRAM(void) {
+  if (!FoundPSRAM()) return false;
 #ifdef HAS_PSRAM_FIX
   return true;
 #endif

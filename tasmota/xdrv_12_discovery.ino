@@ -34,10 +34,18 @@
 #define XDRV_12     12
 
 void TasDiscoverMessage(void) {
+  uint32_t ip_address = (uint32_t)WiFi.localIP();
+  char* hostname = TasmotaGlobal.hostname;
+#if defined(ESP32) && CONFIG_IDF_TARGET_ESP32 && defined(USE_ETHERNET)
+  if (static_cast<uint32_t>(EthernetLocalIP()) != 0) {
+    ip_address = (uint32_t)EthernetLocalIP();
+    hostname = EthernetHostname();
+  }
+#endif
   Response_P(PSTR("{\"ip\":\"%_I\","                           // IP Address
                    "\"dn\":\"%s\","                            // Device Name
                    "\"fn\":["),                                // Friendly Names (start)
-                   (uint32_t)WiFi.localIP(),
+                   ip_address,
                    SettingsText(SET_DEVICENAME));
 
   uint32_t maxfn = (TasmotaGlobal.devices_present > MAX_FRIENDLYNAMES) ? MAX_FRIENDLYNAMES : (!TasmotaGlobal.devices_present) ? 1 : TasmotaGlobal.devices_present;
@@ -48,10 +56,12 @@ void TasDiscoverMessage(void) {
   }
 
   bool TuyaMod = false;
+#ifdef USE_TUYA_MCU
+  TuyaMod = IsModuleTuya();
+#endif
   bool iFanMod = false;
 #ifdef ESP8266
-  if ((TUYA_DIMMER == TasmotaGlobal.module_type) || (SK03_TUYA == TasmotaGlobal.module_type)) { TuyaMod = true; };
-  if ((SONOFF_IFAN02 == TasmotaGlobal.module_type) || (SONOFF_IFAN03 == TasmotaGlobal.module_type)) { iFanMod = true; };
+  iFanMod = ((SONOFF_IFAN02 == TasmotaGlobal.module_type) || (SONOFF_IFAN03 == TasmotaGlobal.module_type));
 #endif  // ESP8266
 
   ResponseAppend_P(PSTR("],"                                   // Friendly Names (end)
@@ -67,7 +77,7 @@ void TasDiscoverMessage(void) {
                    "\"ft\":\"%s\","                            // Full Topic
                    "\"tp\":[\"%s\",\"%s\",\"%s\"],"            // Topics for command, stat and tele
                    "\"rl\":["),                                // Relays (start)
-                   TasmotaGlobal.hostname,
+                   hostname,
                    NetworkUniqueId().c_str(),
                    ModuleName().c_str(),
                    TuyaMod, iFanMod,
@@ -75,22 +85,28 @@ void TasDiscoverMessage(void) {
                    TasmotaGlobal.version,
                    TasmotaGlobal.mqtt_topic,
                    SettingsText(SET_MQTT_FULLTOPIC),
-                   PSTR(SUB_PREFIX),
-                   PSTR(PUB_PREFIX),
-                   PSTR(PUB_PREFIX2));
+                   SettingsText(SET_MQTTPREFIX1),
+                   SettingsText(SET_MQTTPREFIX2),
+                   SettingsText(SET_MQTTPREFIX3));
 
-  uint8_t lightidx = MAX_RELAYS + 1;                           // Will store the starting position of the lights
-  if (Light.subtype > LST_NONE) {
-    if (!light_controller.isCTRGBLinked()) {                   // One or two lights present
-      lightidx = TasmotaGlobal.devices_present - 2;
+  uint8_t light_idx = MAX_RELAYS + 1;                          // Will store the starting position of the lights
+  uint8_t light_subtype = 0;
+  bool light_controller_isCTRGBLinked = false;
+#ifdef USE_LIGHT
+  light_subtype = Light.subtype;
+  if (light_subtype > LST_NONE) {
+    light_controller_isCTRGBLinked = light_controller.isCTRGBLinked();
+    if (!light_controller_isCTRGBLinked) {                     // One or two lights present
+      light_idx = TasmotaGlobal.devices_present - 2;
     } else {
-      lightidx = TasmotaGlobal.devices_present - 1;
+      light_idx = TasmotaGlobal.devices_present - 1;
     }
   }
 
   if ((Light.device > 0) && Settings->flag3.pwm_multi_channels) {  // How many relays are light devices?
-    lightidx = TasmotaGlobal.devices_present - Light.subtype;
+    light_idx = TasmotaGlobal.devices_present - light_subtype;
   }
+#endif  // USE_LIGHT
 
   uint16_t Relay[MAX_RELAYS] = { 0 };                          // Base array to store the relay type
   uint16_t Shutter[MAX_RELAYS] = { 0 };                        // Array to store a temp list for shutters
@@ -100,12 +116,11 @@ void TasDiscoverMessage(void) {
 #ifdef USE_SHUTTER
       if (Settings->flag3.shutter_mode) {
         for (uint32_t k = 0; k < MAX_SHUTTERS; k++) {
-          if (0 == Settings->shutter_startrelay[k]) {
-            break;
+          if (Settings->shutter_startrelay[k] > 0) {
+            Shutter[Settings->shutter_startrelay[k]-1] = Shutter[Settings->shutter_startrelay[k]] = 1;
           } else {
-            if (Settings->shutter_startrelay[k] > 0 && Settings->shutter_startrelay[k] <= MAX_SHUTTER_RELAYS) {
-              Shutter[Settings->shutter_startrelay[k]-1] = Shutter[Settings->shutter_startrelay[k]] = 1;
-            }
+            // terminate loop at first INVALID Settings->shutter_startrelay[i].
+            break;
           }
         }
       }
@@ -114,7 +129,7 @@ void TasDiscoverMessage(void) {
       if (Shutter[i] != 0) {                                   // Check if there are shutters present
         Relay[i] = 3;                                          // Relay is a shutter
       } else {
-        if (i >= lightidx || (iFanMod && (0 == i))) {          // First relay on Ifan controls the light
+        if (i >= light_idx || (iFanMod && (0 == i))) {          // First relay on Ifan controls the light
           Relay[i] = 2;                                        // Relay is a light
         } else {
           if (!iFanMod) {                                      // Relays 2-4 for ifan are controlled by FANSPEED and don't need to be present if TasmotaGlobal.module_type = SONOFF_IFAN02 or SONOFF_IFAN03
@@ -182,8 +197,8 @@ void TasDiscoverMessage(void) {
                         Settings->flag4.alexa_ct_range,
                         Settings->flag5.mqtt_switches,
                         Settings->flag5.fade_fixed_duration,
-                        light_controller.isCTRGBLinked(),
-                        Light.subtype);
+                        light_controller_isCTRGBLinked,
+                        light_subtype);
 
   for (uint32_t i = 0; i < MAX_SHUTTERS; i++) {
 #ifdef USE_SHUTTER
@@ -210,7 +225,7 @@ void TasDiscovery(void) {
 
   if (!Settings->flag.hass_discovery) {                         // SetOption19 - Clear retained message
     Response_P(PSTR("{\"sn\":"));
-    MqttShowSensor();
+    MqttShowSensor(true);
     ResponseAppend_P(PSTR(",\"ver\":1}"));
   }
   snprintf_P(stopic, sizeof(stopic), PSTR("tasmota/discovery/%s/sensors"), NetworkUniqueId().c_str());

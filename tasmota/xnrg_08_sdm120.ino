@@ -29,7 +29,7 @@
 
 // can be user defined in my_user_config.h
 #ifndef SDM120_SPEED
-  #define SDM120_SPEED      2400    // default SDM120 Modbus address
+  #define SDM120_SPEED      2400    // default SDM120 Modbus baud rate
 #endif
 // can be user defined in my_user_config.h
 #ifndef SDM120_ADDR
@@ -161,7 +161,8 @@ void SDM120Every250ms(void)
             Sdm120.start_address_count = sdm120_table;  // No extended registers available
           }
         }
-        EnergyUpdateTotal(Sdm120.total_active, true);  // 484.708 kWh
+        Energy.import_active[0] = Sdm120.total_active;  // 484.708 kWh
+        EnergyUpdateTotal();  // 484.708 kWh
       }
     }
   } // end data ready
@@ -209,8 +210,8 @@ const char HTTP_ENERGY_SDM220[] PROGMEM =
   "{s}" D_PHASE_ANGLE "{m}%s " D_UNIT_ANGLE "{e}";
 #endif  // USE_WEBSERVER
 
-void Sdm220Show(bool json)
-{
+/*
+void Sdm220Show(bool json) {
   if (isnan(Sdm120.import_active)) { return; }
 
   char import_active_chr[FLOATSZ];
@@ -231,6 +232,30 @@ void Sdm220Show(bool json)
 #endif  // USE_WEBSERVER
   }
 }
+*/
+
+void Sdm220Show(bool json) {
+  if (isnan(Sdm120.import_active)) { return; }
+
+  char value_chr[TOPSZ];
+  char value2_chr[TOPSZ];
+  char value3_chr[TOPSZ];
+  char value4_chr[TOPSZ];
+
+  if (json) {
+    ResponseAppend_P(PSTR(",\"" D_JSON_IMPORT_ACTIVE "\":%s,\"" D_JSON_IMPORT_REACTIVE "\":%s,\"" D_JSON_EXPORT_REACTIVE "\":%s,\"" D_JSON_PHASE_ANGLE "\":%s"),
+      EnergyFormat(value_chr, &Sdm120.import_active, Settings->flag2.energy_resolution),
+      EnergyFormat(value2_chr, &Sdm120.import_reactive, Settings->flag2.energy_resolution),
+      EnergyFormat(value3_chr, &Sdm120.export_reactive, Settings->flag2.energy_resolution),
+      EnergyFormat(value4_chr, &Sdm120.phase_angle, 2));
+#ifdef USE_WEBSERVER
+  } else {
+    WSContentSend_PD(HTTP_ENERGY_SDM220, WebEnergyFormat(value_chr, &Sdm120.import_reactive, Settings->flag2.energy_resolution, 2),
+                                         WebEnergyFormat(value2_chr, &Sdm120.export_reactive, Settings->flag2.energy_resolution, 2),
+                                         WebEnergyFormat(value3_chr, &Sdm120.phase_angle, 2));
+#endif  // USE_WEBSERVER
+  }
+}
 
 /*********************************************************************************************\
  * Interface
@@ -248,7 +273,11 @@ bool Xnrg08(uint8_t function)
       Sdm220Show(1);
       break;
 #ifdef USE_WEBSERVER
+#ifdef USE_ENERGY_COLUMN_GUI
+    case FUNC_WEB_COL_SENSOR:
+#else   // not USE_ENERGY_COLUMN_GUI
     case FUNC_WEB_SENSOR:
+#endif  // USE_ENERGY_COLUMN_GUI
       Sdm220Show(0);
       break;
 #endif  // USE_WEBSERVER

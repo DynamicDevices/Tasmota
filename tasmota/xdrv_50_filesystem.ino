@@ -102,7 +102,7 @@ void UfsInitOnce(void) {
 #ifdef ESP8266
   ffsp = &LittleFS;
   if (!LittleFS.begin()) {
-    ffsp = 0;
+    ffsp = nullptr;
     return;
   }
 #endif  // ESP8266
@@ -114,6 +114,7 @@ void UfsInitOnce(void) {
     // ffat is second
     ffsp = &FFat;
     if (!FFat.begin(true)) {
+      ffsp = nullptr;
       return;
     }
     ffs_type = UFS_TFAT;
@@ -145,6 +146,7 @@ void UfsCheckSDCardInit(void) {
     if (PinUsed(GPIO_SDCARD_CS)) {
       cs = Pin(GPIO_SDCARD_CS);
     }
+
 
 #ifdef EPS8266
     SPI.begin();
@@ -259,7 +261,6 @@ uint8_t UfsReject(char *name) {
   }
 
   while (*name=='/') { name++; }
-  if (*name=='_') { return 1; }
   if (*name=='.') { return 1; }
 
   if (!strncasecmp(name, "SPOTLI~1", REJCMPL)) { return 1; }
@@ -286,16 +287,40 @@ bool TfsFileExists(const char *fname){
 
 bool TfsSaveFile(const char *fname, const uint8_t *buf, uint32_t len) {
   if (!ffs_type) { return false; }
-
+#ifdef USE_WEBCAM
+  WcInterrupt(0);  // Stop stream if active to fix TG1WDT_SYS_RESET
+#endif
+  bool result = false;
   File file = ffsp->open(fname, "w");
   if (!file) {
     AddLog(LOG_LEVEL_INFO, PSTR("TFS: Save failed"));
-    return false;
+  } else {
+    // This will timeout on ESP32-webcam
+    // But now solved with WcInterrupt(0) in support_esp.ino
+    file.write(buf, len);
+  /*
+    // This will still timeout on ESP32-webcam when wcresolution 10
+    uint32_t count = len / 512;
+    uint32_t chunk = len / count;
+    for (uint32_t i = 0; i < count; i++) {
+      file.write(buf + (i * chunk), chunk);
+      // do actually wait a little to allow ESP32 tasks to tick
+      // fixes task timeout in ESP32Solo1 style unicore code and webcam.
+      delay(10);
+      OsWatchLoop();
+    }
+    uint32_t left = len % count;
+    if (left) {
+      file.write(buf + (count * chunk), left);
+    }
+  */
+    file.close();
+    result = true;
   }
-
-  file.write(buf, len);
-  file.close();
-  return true;
+#ifdef USE_WEBCAM
+  WcInterrupt(1);
+#endif
+  return result;
 }
 
 bool TfsInitFile(const char *fname, uint32_t len, uint8_t init_value) {
@@ -322,6 +347,11 @@ bool TfsLoadFile(const char *fname, uint8_t *buf, uint32_t len) {
   if (!file) {
     AddLog(LOG_LEVEL_INFO, PSTR("TFS: File '%s' not found"), fname +1);  // Skip leading slash
     return false;
+  }
+
+  size_t flen = file.size();
+  if (len > flen){
+    len = flen;
   }
 
   file.read(buf, len);
@@ -560,24 +590,30 @@ const char UFS_FORM_SDC_DIRa[] PROGMEM =
 const char UFS_FORM_SDC_DIRc[] PROGMEM =
   "</div>";
 const char UFS_FORM_FILE_UPGb[] PROGMEM =
-#ifdef GUI_EDIT_FILE
   "<form method='get' action='ufse'><input type='hidden' file='" D_NEW_FILE "'>"
-  "<button type='submit'>" D_CREATE_NEW_FILE "</button></form>"
-#endif
+  "<button type='submit'>" D_CREATE_NEW_FILE "</button></form>";
+const char UFS_FORM_FILE_UPGb1[] PROGMEM =
+  "<input type='checkbox' id='shf' onclick='sf(eb(\"shf\").checked);' name='shf'>" D_SHOW_HIDDEN_FILES "</input>";
+
+const char UFS_FORM_FILE_UPGb2[] PROGMEM =
   "</fieldset>"
   "</div>"
   "<div id='f2' name='f2' style='display:none;text-align:center;'><b>" D_UPLOAD_STARTED " ...</b></div>";
+const char UFS_FORM_SDC_DIR_NORMAL[] PROGMEM =
+  "";
+const char UFS_FORM_SDC_DIR_HIDDABLE[] PROGMEM =
+  " class='hf'";
 const char UFS_FORM_SDC_DIRd[] PROGMEM =
   "<pre><a href='%s' file='%s'>%s</a></pre>";
 const char UFS_FORM_SDC_DIRb[] PROGMEM =
-  "<pre><a href='%s' file='%s'>%s</a> %s %8d %s %s</pre>";
+  "<pre%s><a href='%s' file='%s'>%s</a> %s %8d %s %s</pre>";
 const char UFS_FORM_SDC_HREF[] PROGMEM =
   "ufsd?download=%s/%s";
 
 #ifdef GUI_TRASH_FILE
 const char UFS_FORM_SDC_HREFdel[] PROGMEM =
   //"<a href=ufsd?delete=%s/%s>&#128465;</a>"; // 🗑️
-  "<a href=ufsd?delete=%s/%s onclick=\"return confirm('" D_CONFIRM_FILE_DEL "')\">&#128293;</a>"; // 🔥
+  "<a href='ufsd?delete=%s/%s' onclick=\"return confirm('" D_CONFIRM_FILE_DEL "')\">&#128293;</a>"; // 🔥
 #endif // GUI_TRASH_FILE
 
 #ifdef GUI_EDIT_FILE
@@ -585,13 +621,13 @@ const char UFS_FORM_SDC_HREFdel[] PROGMEM =
 #define FILE_BUFFER_SIZE  1024
 
 const char UFS_FORM_SDC_HREFedit[] PROGMEM =
-  "<a href=ufse?file=%s/%s>&#x1F4DD;</a>"; // 📝
+  "<a href='ufse?file=%s/%s'>&#x1F4DD;</a>"; // 📝
 
 const char HTTP_EDITOR_FORM_START[] PROGMEM =
   "<fieldset><legend><b>&nbsp;" D_EDIT_FILE "&nbsp;</b></legend>"
   "<form>"
   "<label for='name'>" D_FILE ":</label><input type='text' id='name' name='name' value='%s'><br><hr width='98%%'>"
-  "<textarea id='content' name='content' rows='8' cols='80' style='font-size: 12pt'>";
+  "<textarea id='content' name='content' wrap='off' rows='8' cols='80' style='font-size: 12pt'>";
 
 const char HTTP_EDITOR_FORM_END[] PROGMEM =
   "</textarea>"
@@ -660,15 +696,33 @@ void UfsDirectory(void) {
     UfsListDir(ufs_path, depth);
   }
   WSContentSend_P(UFS_FORM_SDC_DIRc);
+#ifdef GUI_EDIT_FILE
   WSContentSend_P(UFS_FORM_FILE_UPGb);
+#endif
+  if (!isSDC()) {
+    WSContentSend_P(UFS_FORM_FILE_UPGb1);
+  }
+  WSContentSend_P(UFS_FORM_FILE_UPGb2);
+
   WSContentSpaceButton(BUTTON_MANAGEMENT);
   WSContentStop();
 
   Web.upload_file_type = UPL_UFSFILE;
 }
 
+// return true if SDC
+bool isSDC(void) {
+#ifndef SDC_HIDE_INVISIBLES
+  return false;
+#else
+  if (((uint32_t)ufsp != (uint32_t)ffsp) && ((uint32_t)ffsp == (uint32_t)dfsp)) return false;
+  if (((uint32_t)ufsp == (uint32_t)ffsp) && (ufs_type != UFS_TSDC)) return false;
+  return true;
+#endif
+}
+
 void UfsListDir(char *path, uint8_t depth) {
-  char name[32];
+  char name[48];
   char npath[128];
   char format[12];
   sprintf(format, PSTR("%%-%ds"), 24 - depth);
@@ -711,44 +765,48 @@ void UfsListDir(char *path, uint8_t depth) {
       if (!*(pp + 1)) { pp++; }
       char *cp = name;
       // osx formatted disks contain a lot of stuff we dont want
-      if (!UfsReject((char*)ep)) {
+      bool hiddable = UfsReject((char*)ep);
 
-        for (uint8_t cnt = 0; cnt<depth; cnt++) {
-          *cp++ = '-';
+      if (!hiddable || !isSDC() ) {
+
+      for (uint8_t cnt = 0; cnt<depth; cnt++) {
+        *cp++ = '-';
+      }
+
+      sprintf(cp, format, ep);
+      if (entry.isDirectory()) {
+        ext_snprintf_P(npath, sizeof(npath), UFS_FORM_SDC_HREF, pp, ep);
+        WSContentSend_P(UFS_FORM_SDC_DIRd, npath, ep, name);
+        uint8_t plen = strlen(path);
+        if (plen > 1) {
+          strcat(path, "/");
         }
-
-        sprintf(cp, format, ep);
-        if (entry.isDirectory()) {
-          ext_snprintf_P(npath, sizeof(npath), UFS_FORM_SDC_HREF, pp, ep);
-          WSContentSend_P(UFS_FORM_SDC_DIRd, npath, ep, name);
-          uint8_t plen = strlen(path);
-          if (plen > 1) {
-            strcat(path, "/");
-          }
-          strcat(path, ep);
-          UfsListDir(path, depth + 4);
-          path[plen] = 0;
-        } else {
+        strcat(path, ep);
+        UfsListDir(path, depth + 4);
+        path[plen] = 0;
+      } else {
 #ifdef GUI_TRASH_FILE
-          char delpath[128];
-          ext_snprintf_P(delpath, sizeof(delpath), UFS_FORM_SDC_HREFdel, pp, ep);
+        char delpath[128];
+        ext_snprintf_P(delpath, sizeof(delpath), UFS_FORM_SDC_HREFdel, pp, ep);
 #else
-          char delpath[2];
-          delpath[0]=0;
+        char delpath[2];
+        delpath[0]=0;
 #endif // GUI_TRASH_FILE
 #ifdef GUI_EDIT_FILE
-          char editpath[128];
-          ext_snprintf_P(editpath, sizeof(editpath), UFS_FORM_SDC_HREFedit, pp, ep);
+        char editpath[128];
+        ext_snprintf_P(editpath, sizeof(editpath), UFS_FORM_SDC_HREFedit, pp, ep);
 #else
-          char editpath[2];
-          editpath[0]=0;
+        char editpath[2];
+        editpath[0]=0;
 #endif // GUI_TRASH_FILE
-          ext_snprintf_P(npath, sizeof(npath), UFS_FORM_SDC_HREF, pp, ep);
-          WSContentSend_P(UFS_FORM_SDC_DIRb, npath, ep, name, tstr.c_str(), entry.size(), delpath, editpath);
-        }
+        ext_snprintf_P(npath, sizeof(npath), UFS_FORM_SDC_HREF, pp, ep);
+        WSContentSend_P(UFS_FORM_SDC_DIRb, hiddable ? UFS_FORM_SDC_DIR_HIDDABLE : UFS_FORM_SDC_DIR_NORMAL, npath, ep, name, tstr.c_str(), entry.size(), delpath, editpath);
       }
       entry.close();
     }
+
+  }
+
     dir.close();
   }
 }
@@ -830,7 +888,10 @@ uint8_t UfsDownloadFile(char *file) {
   UfsData.download_busy = true;
   char *path = (char*)malloc(128);
   strcpy(path,file);
-  xTaskCreatePinnedToCore(donload_task, "DT", 6000, (void*)path, 3, NULL, 1);
+  BaseType_t ret = xTaskCreatePinnedToCore(donload_task, "DT", 6000, (void*)path, 3, nullptr, 1);
+  if (ret != pdPASS)
+    AddLog(LOG_LEVEL_INFO, PSTR("UFS: Download task failed with %d"), ret);
+  yield();
 #endif // ESP32_DOWNLOAD_TASK
 
   return 0;
@@ -925,15 +986,15 @@ void UfsEditor(void) {
   char fname[UFS_FILENAME_SIZE];
   UfsFilename(fname, fname_input);                  // Trim spaces and add slash
 
-  AddLog(LOG_LEVEL_DEBUG, PSTR("UFS: UfsEditor: file=%s, ffs_type=%d, TfsFileExist=%d"), fname, ffs_type, TfsFileExists(fname));
+  AddLog(LOG_LEVEL_DEBUG, PSTR("UFS: UfsEditor: file=%s, ffs_type=%d, TfsFileExist=%d"), fname, ffs_type, dfsp->exists(fname));
 
   WSContentStart_P(PSTR(D_EDIT_FILE));
   WSContentSendStyle();
   char *bfname = fname +1;
   WSContentSend_P(HTTP_EDITOR_FORM_START, bfname);  // Skip leading slash
 
-  if (ffs_type && TfsFileExists(fname)) {
-    File fp = ffsp->open(fname, "r");
+  if (ffs_type && dfsp->exists(fname)) {
+    File fp = dfsp->open(fname, "r");
     if (!fp) {
       AddLog(LOG_LEVEL_DEBUG, PSTR("UFS: UfsEditor: file open failed"));
       WSContentSend_P(D_NEW_FILE);
@@ -986,14 +1047,14 @@ void UfsEditorUpload(void) {
   }
   String content = Webserver->arg("content");
 
-  if (!ffsp) {
+  if (!dfsp) {
     Web.upload_error = 1;
     AddLog(LOG_LEVEL_ERROR, PSTR("UFS: UfsEditor: 507: no storage available"));
     WSSend(507, CT_PLAIN, F("507: no storage available"));
     return;
   }
 
-  File fp = ffsp->open(fname, "w");
+  File fp = dfsp->open(fname, "w");
   if (!fp) {
     Web.upload_error = 1;
     AddLog(LOG_LEVEL_ERROR, PSTR("UFS: UfsEditor: 400: invalid file name '%s'"), fname);

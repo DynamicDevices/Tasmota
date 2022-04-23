@@ -38,7 +38,12 @@
 // An IR detector/demodulator is connected to GPIO pin 14
 // e.g. D5 on a NodeMCU board.
 // Note: GPIO 16 won't work on the ESP8266 as it does not have interrupts.
+// Note: GPIO 14 won't work on the ESP32-C3 as it causes the board to reboot.
+#ifdef ARDUINO_ESP32C3_DEV
+const uint16_t kRecvPin = 10;  // 14 on a ESP32-C3 causes a boot loop.
+#else  // ARDUINO_ESP32C3_DEV
 const uint16_t kRecvPin = 14;
+#endif  // ARDUINO_ESP32C3_DEV
 
 // The Serial connection baud rate.
 // i.e. Status message will be sent to the PC at this baud rate.
@@ -154,7 +159,7 @@ void loop() {
     if (results.overflow)
       Serial.printf(D_WARN_BUFFERFULL "\n", kCaptureBufferSize);
     // Display the library version the message was captured with.
-    Serial.println(D_STR_LIBRARY "   : v" _IRREMOTEESP8266_VERSION_ "\n");
+    Serial.println(D_STR_LIBRARY "   : v" _IRREMOTEESP8266_VERSION_STR "\n");
     // Display the tolerance percentage if it has been change from the default.
     if (kTolerancePercentage != kTolerance)
       Serial.printf(D_STR_TOLERANCE " : %d%%\n", kTolerancePercentage);

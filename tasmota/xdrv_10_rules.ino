@@ -49,6 +49,7 @@
  *   on switch1#state do power2 %value% endon
  *   on analog#a0div10 do publish cmnd/ring2/dimmer %value% endon
  *   on loadavg<50 do power 2 endon
+ *   on Time#Initialized do Backlog var1 0;event checktime=%time% endon on event#checktime>%timer1% do var1 1 endon on event#checktime>=%timer2%  do var1 0 endon * on event#checktime do Power1 %var1% endon
  *
  * Notes:
  *   Spaces after <on>, around <do> and before <endon> are mandatory
@@ -129,6 +130,13 @@ const char kCompareOperators[] PROGMEM = "=\0>\0<\0|\0==!=>=<=$>$<$|$!$^";
   #define IF_BLOCK_ELSE           2
   #define IF_BLOCK_ENDIF          3
 #endif  // USE_EXPRESSION
+
+// Define to indicate that rules are always enabled
+#ifdef USE_BERRY
+  #define BERRY_RULES     1
+#else
+  #define BERRY_RULES     0
+#endif
 
 const char kRulesCommands[] PROGMEM = "|"  // No prefix
   D_CMND_RULE "|" D_CMND_RULETIMER "|" D_CMND_EVENT "|" D_CMND_VAR "|" D_CMND_MEM "|"
@@ -464,14 +472,31 @@ bool RulesRuleMatch(uint8_t rule_set, String &event, String &rule, bool stop_all
     if (rule_param.startsWith(F("%TIMESTAMP%"))) {
       rule_param = GetDateAndTime(DT_LOCAL).c_str();
     }
-#if defined(USE_TIMERS) && defined(USE_SUNRISE)
+#if defined(USE_TIMERS)
+    if (rule_param.startsWith(F("%TIMER"))) {
+      uint32_t index = rule_param.substring(6).toInt();
+      if ((index > 0) && (index <= MAX_TIMERS)) {
+        snprintf_P(stemp, sizeof(stemp), PSTR("%%TIMER%d%%"), index);
+        if (rule_param.startsWith(stemp)) {
+          rule_param = String(TimerGetTimeOfDay(index -1));
+        }
+      }
+    }
+#if defined(USE_SUNRISE)
     if (rule_param.startsWith(F("%SUNRISE%"))) {
       rule_param = String(SunMinutes(0));
     }
     if (rule_param.startsWith(F("%SUNSET%"))) {
       rule_param = String(SunMinutes(1));
     }
-#endif  // USE_TIMERS and USE_SUNRISE
+#endif  // USE_SUNRISE
+#endif  // USE_TIMERS
+#if defined(USE_LIGHT)
+    char scolor[LIGHT_COLOR_SIZE];
+    if (rule_param.startsWith(F("%COLOR%"))) {
+      rule_param = LightGetColor(scolor);
+    }
+#endif
 // #ifdef USE_ZIGBEE
 //     if (rule_param.startsWith(F("%ZBDEVICE%"))) {
 //       snprintf_P(stemp, sizeof(stemp), PSTR("0x%04X"), Z_GetLastDevice());
@@ -697,7 +722,9 @@ bool RuleSetProcess(uint8_t rule_set, String &event_saved)
 
   delay(0);                                               // Prohibit possible loop software watchdog
 
-//AddLog(LOG_LEVEL_DEBUG, PSTR("RUL-RP1: Event = %s, Rule = %s"), event_saved.c_str(), Settings->rules[rule_set]);
+#ifdef DEBUG_RULES
+  AddLog(LOG_LEVEL_DEBUG, PSTR("RUL-RP1: Event = %s, Rule = %s"), event_saved.c_str(), Settings->rules[rule_set]);
+#endif
 
   String rules = GetRule(rule_set);
 
@@ -717,6 +744,7 @@ bool RuleSetProcess(uint8_t rule_set, String &event_saved)
     int pevt = rule.indexOf(F(" DO "));
     if (pevt == -1) { return serviced; }                  // Bad syntax - Nothing to do
     String event_trigger = rule.substring(3, pevt);       // "INA219#CURRENT>0.100"
+    event_trigger.trim();
 
     plen = rule.indexOf(F(" ENDON"));
     plen2 = rule.indexOf(F(" BREAK"));
@@ -731,10 +759,10 @@ bool RuleSetProcess(uint8_t rule_set, String &event_saved)
     String event = event_saved;
 
 #ifdef DEBUG_RULES
-//    AddLog(LOG_LEVEL_DEBUG, PSTR("RUL-RP2: Event |%s|, Rule |%s|, Command(s) |%s|"), event.c_str(), event_trigger.c_str(), commands.c_str());
+    AddLog(LOG_LEVEL_DEBUG, PSTR("RUL-RP2: Event |%s|, Rule |%s|, Command(s) |%s|"), event.c_str(), event_trigger.c_str(), commands.c_str());
 #endif
 
-    if (RulesRuleMatch(rule_set, event, event_trigger, stop_all_rules)) {
+    if (!event_trigger.startsWith(F("FILE#")) && RulesRuleMatch(rule_set, event, event_trigger, stop_all_rules)) {
       if (Rules.no_execute) return true;
       if (plen == plen2) { stop_all_rules = true; }       // If BREAK was used on a triggered rule, Stop execution of this rule set
       commands.trim();
@@ -766,10 +794,20 @@ bool RuleSetProcess(uint8_t rule_set, String &event_saved)
       snprintf_P(stemp, sizeof(stemp), PSTR("%06X"), ESP_getChipId());
       RulesVarReplace(commands, F("%DEVICEID%"), stemp);
       RulesVarReplace(commands, F("%MACADDR%"), NetworkUniqueId());
-#if defined(USE_TIMERS) && defined(USE_SUNRISE)
+#if defined(USE_TIMERS)
+      for (uint32_t i = 0; i < MAX_TIMERS; i++) {
+        snprintf_P(stemp, sizeof(stemp), PSTR("%%TIMER%d%%"), i +1);
+        RulesVarReplace(commands, stemp, String(TimerGetTimeOfDay(i)));
+      }
+#if defined(USE_SUNRISE)
       RulesVarReplace(commands, F("%SUNRISE%"), String(SunMinutes(0)));
       RulesVarReplace(commands, F("%SUNSET%"), String(SunMinutes(1)));
-#endif  // USE_TIMERS and USE_SUNRISE
+#endif  // USE_SUNRISE
+#endif  // USE_TIMERS
+#if defined(USE_LIGHT)
+      char scolor[LIGHT_COLOR_SIZE];
+      RulesVarReplace(commands, F("%COLOR%"), LightGetColor(scolor));
+#endif
 #ifdef USE_ZIGBEE
       snprintf_P(stemp, sizeof(stemp), PSTR("0x%04X"), Z_GetLastDevice());
       RulesVarReplace(commands, F("%ZBDEVICE%"), String(stemp));
@@ -800,8 +838,43 @@ bool RuleSetProcess(uint8_t rule_set, String &event_saved)
 
 /*******************************************************************************************/
 
+String RuleLoadFile(const char* fname) {
+  /* Read a string from rule space data between 'ON FILE#<fname> DO ' and ' ENDON' like:
+       rule3 on file#calib.dat do {"rms":{"current_a":3166385,"voltage_a":-767262},"freq":0} endon
+     NOTE: String may not contain word 'ENDON'!!
+  */
+  String filename = F("ON FILE#");
+  filename += fname;
+  filename += F(" DO ");
+//  filename.toUpperCase();
+
+  for (uint32_t i = 0; i < MAX_RULE_SETS; i++) {
+    if (!GetRuleLen(i)) { continue; }
+
+    String rules = GetRule(i);
+    rules.toUpperCase();
+    int start = rules.indexOf(filename);
+    if (start == -1) { continue; }
+    start += filename.length();
+    int end = rules.indexOf(F(" ENDON"), start);
+    if (end == -1) { continue; }
+
+    rules = GetRule(i);
+    return rules.substring(start, end);  // {"rms":{"current_a":3166385,"voltage_a":-767262},"freq":0}
+  }
+//  AddLog(LOG_LEVEL_DEBUG, PSTR("RUL: File '%s' not found or empty"), fname);
+  return "";
+}
+
+/*******************************************************************************************/
+
 bool RulesProcessEvent(const char *json_event)
 {
+#ifdef USE_BERRY
+  // events are passed to Berry before Rules engine
+  callBerryRule(json_event, Rules.teleperiod);
+#endif
+
   if (Rules.busy) { return false; }
 
   Rules.busy = true;
@@ -809,7 +882,9 @@ bool RulesProcessEvent(const char *json_event)
 
   SHOW_FREE_MEM(PSTR("RulesProcessEvent"));
 
-//AddLog(LOG_LEVEL_DEBUG, PSTR("RUL: ProcessEvent |%s|"), json_event);
+#ifdef DEBUG_RULES
+  AddLog(LOG_LEVEL_DEBUG, PSTR("RUL: ProcessEvent |%s|"), json_event);
+#endif
 
   String event_saved = json_event;
   // json_event = {"INA219":{"Voltage":4.494,"Current":0.020,"Power":0.089}}
@@ -823,7 +898,9 @@ bool RulesProcessEvent(const char *json_event)
   }
   event_saved.toUpperCase();
 
-//AddLog(LOG_LEVEL_DEBUG, PSTR("RUL: Event |%s|"), event_saved.c_str());
+#ifdef DEBUG_RULES
+  AddLog(LOG_LEVEL_DEBUG, PSTR("RUL: Event |%s|"), event_saved.c_str());
+#endif
 
   for (uint32_t i = 0; i < MAX_RULE_SETS; i++) {
     if (GetRuleLen(i) && bitRead(Settings->rule_enabled, i)) {
@@ -859,7 +936,7 @@ void RulesInit(void)
 
 void RulesEvery50ms(void)
 {
-  if (Settings->rule_enabled && !Rules.busy) {  // Any rule enabled
+  if ((Settings->rule_enabled || BERRY_RULES) && !Rules.busy) {  // Any rule enabled
     char json_event[120];
 
     if (-1 == Rules.new_power) { Rules.new_power = TasmotaGlobal.power; }
@@ -945,32 +1022,65 @@ void RulesEvery50ms(void)
       }
     }
     else if (TasmotaGlobal.rules_flag.data) {
-      uint16_t mask = 1;
-      for (uint32_t i = 0; i < MAX_RULES_FLAG; i++) {
-        if (TasmotaGlobal.rules_flag.data & mask) {
-          TasmotaGlobal.rules_flag.data ^= mask;
-          json_event[0] = '\0';
-          switch (i) {
-            case 0: strncpy_P(json_event, PSTR("{\"System\":{\"Init\":1}}"), sizeof(json_event)); break;
-            case 1: strncpy_P(json_event, PSTR("{\"System\":{\"Boot\":1}}"), sizeof(json_event)); break;
-            case 2: snprintf_P(json_event, sizeof(json_event), PSTR("{\"Time\":{\"Initialized\":%d}}"), MinutesPastMidnight()); break;
-            case 3: snprintf_P(json_event, sizeof(json_event), PSTR("{\"Time\":{\"Set\":%d}}"), MinutesPastMidnight()); break;
-            case 4: strncpy_P(json_event, PSTR("{\"MQTT\":{\"Connected\":1}}"), sizeof(json_event)); break;
-            case 5: strncpy_P(json_event, PSTR("{\"MQTT\":{\"Disconnected\":1}}"), sizeof(json_event)); break;
-            case 6: strncpy_P(json_event, PSTR("{\"WIFI\":{\"Connected\":1}}"), sizeof(json_event)); break;
-            case 7: strncpy_P(json_event, PSTR("{\"WIFI\":{\"Disconnected\":1}}"), sizeof(json_event)); break;
-            case 8: strncpy_P(json_event, PSTR("{\"HTTP\":{\"Initialized\":1}}"), sizeof(json_event)); break;
+      json_event[0] = '\0';
+      if (TasmotaGlobal.rules_flag.system_init) {
+        TasmotaGlobal.rules_flag.system_init = 0;
+        strncpy_P(json_event, PSTR("{\"System\":{\"Init\":1}}"), sizeof(json_event));
+      }
+      else if (TasmotaGlobal.rules_flag.system_boot) {
+        TasmotaGlobal.rules_flag.system_boot = 0;
+        strncpy_P(json_event, PSTR("{\"System\":{\"Boot\":1}}"), sizeof(json_event));
+      }
+      else if (TasmotaGlobal.rules_flag.time_init) {
+        TasmotaGlobal.rules_flag.time_init = 0;
+        snprintf_P(json_event, sizeof(json_event), PSTR("{\"Time\":{\"Initialized\":%d}}"), MinutesPastMidnight());
+      }
+      else if (TasmotaGlobal.rules_flag.time_set) {
+        TasmotaGlobal.rules_flag.time_set = 0;
+        snprintf_P(json_event, sizeof(json_event), PSTR("{\"Time\":{\"Set\":%d}}"), MinutesPastMidnight());
+      }
+      else if (TasmotaGlobal.rules_flag.mqtt_connected) {
+        TasmotaGlobal.rules_flag.mqtt_connected = 0;
+        strncpy_P(json_event, PSTR("{\"MQTT\":{\"Connected\":1}}"), sizeof(json_event));
+      }
+      else if (TasmotaGlobal.rules_flag.mqtt_disconnected) {
+        TasmotaGlobal.rules_flag.mqtt_disconnected = 0;
+        strncpy_P(json_event, PSTR("{\"MQTT\":{\"Disconnected\":1}}"), sizeof(json_event));
+      }
+      else if (TasmotaGlobal.rules_flag.wifi_connected) {
+        TasmotaGlobal.rules_flag.wifi_connected = 0;
+        strncpy_P(json_event, PSTR("{\"WIFI\":{\"Connected\":1}}"), sizeof(json_event));
+      }
+      else if (TasmotaGlobal.rules_flag.wifi_disconnected) {
+        TasmotaGlobal.rules_flag.wifi_disconnected = 0;
+        strncpy_P(json_event, PSTR("{\"WIFI\":{\"Disconnected\":1}}"), sizeof(json_event));
+      }
+#if defined(ESP32) && CONFIG_IDF_TARGET_ESP32 && defined(USE_ETHERNET)
+      else if (TasmotaGlobal.rules_flag.eth_connected) {
+        TasmotaGlobal.rules_flag.eth_connected = 0;
+        strncpy_P(json_event, PSTR("{\"ETH\":{\"Connected\":1}}"), sizeof(json_event));
+      }
+      else if (TasmotaGlobal.rules_flag.eth_disconnected) {
+        TasmotaGlobal.rules_flag.eth_disconnected = 0;
+        strncpy_P(json_event, PSTR("{\"ETH\":{\"Disconnected\":1}}"), sizeof(json_event));
+      }
+#endif  // USE_ETHERNET
+      else if (TasmotaGlobal.rules_flag.http_init) {
+        TasmotaGlobal.rules_flag.http_init = 0;
+        strncpy_P(json_event, PSTR("{\"HTTP\":{\"Initialized\":1}}"), sizeof(json_event));
+      }
 #ifdef USE_SHUTTER
-            case 9: strncpy_P(json_event, PSTR("{\"SHUTTER\":{\"Moved\":1}}"), sizeof(json_event)); break;
-            case 10: strncpy_P(json_event, PSTR("{\"SHUTTER\":{\"Moving\":1}}"), sizeof(json_event)); break;
+      else if (TasmotaGlobal.rules_flag.shutter_moved) {
+        TasmotaGlobal.rules_flag.shutter_moved = 0;
+        strncpy_P(json_event, PSTR("{\"SHUTTER\":{\"Moved\":1}}"), sizeof(json_event));
+      }
+      else if (TasmotaGlobal.rules_flag.shutter_moving) {
+        TasmotaGlobal.rules_flag.shutter_moving = 0;
+        strncpy_P(json_event, PSTR("{\"SHUTTER\":{\"Moving\":1}}"), sizeof(json_event));
+      }
 #endif  // USE_SHUTTER
-          }
-          if (json_event[0]) {
-            RulesProcessEvent(json_event);
-            break;                       // Only service one event within 50mS
-          }
-        }
-        mask <<= 1;
+      if (json_event[0]) {
+        RulesProcessEvent(json_event);  // Only service one event within 50mS
       }
     }
   }
@@ -978,8 +1088,7 @@ void RulesEvery50ms(void)
 
 void RulesEvery100ms(void) {
   static uint8_t xsns_index = 0;
-
-  if (Settings->rule_enabled && !Rules.busy && (TasmotaGlobal.uptime > 4)) {  // Any rule enabled and allow 4 seconds start-up time for sensors (#3811)
+  if ((Settings->rule_enabled || BERRY_RULES) && !Rules.busy && (TasmotaGlobal.uptime > 4)) {  // Any rule enabled and allow 4 seconds start-up time for sensors (#3811)
     ResponseClear();
     int tele_period_save = TasmotaGlobal.tele_period;
     TasmotaGlobal.tele_period = 2;                                   // Do not allow HA updates during next function call
@@ -988,11 +1097,7 @@ void RulesEvery100ms(void) {
     if (ResponseLength()) {
       ResponseJsonStart();                                           // {"INA219":{"Voltage":4.494,"Current":0.020,"Power":0.089}
       ResponseJsonEnd();
-#ifdef MQTT_DATA_STRING
-      RulesProcessEvent(TasmotaGlobal.mqtt_data.c_str());
-#else
-      RulesProcessEvent(TasmotaGlobal.mqtt_data);
-#endif
+      RulesProcessEvent(ResponseData());
     }
   }
 }
@@ -1000,7 +1105,7 @@ void RulesEvery100ms(void) {
 void RulesEverySecond(void)
 {
   char json_event[120];
-  if (Settings->rule_enabled && !Rules.busy) {  // Any rule enabled
+  if ((Settings->rule_enabled || BERRY_RULES) && !Rules.busy) {  // Any rule enabled
     if (RtcTime.valid) {
       if ((TasmotaGlobal.uptime > 60) && (RtcTime.minute != Rules.last_minute)) {  // Execute from one minute after restart every minute only once
         Rules.last_minute = RtcTime.minute;
@@ -1013,7 +1118,7 @@ void RulesEverySecond(void)
     if (Rules.timer[i] != 0L) {           // Timer active?
       if (TimeReached(Rules.timer[i])) {  // Timer finished?
         Rules.timer[i] = 0L;              // Turn off this timer
-        if (Settings->rule_enabled && !Rules.busy) {  // Any rule enabled
+        if ((Settings->rule_enabled || BERRY_RULES) && !Rules.busy) {  // Any rule enabled
           snprintf_P(json_event, sizeof(json_event), PSTR("{\"Rules\":{\"Timer\":%d}}"), i +1);
           RulesProcessEvent(json_event);
         }
@@ -1024,7 +1129,7 @@ void RulesEverySecond(void)
 
 void RulesSaveBeforeRestart(void)
 {
-  if (Settings->rule_enabled && !Rules.busy) {  // Any rule enabled
+  if ((Settings->rule_enabled || BERRY_RULES) && !Rules.busy) {  // Any rule enabled
     char json_event[32];
 
     strncpy_P(json_event, PSTR("{\"System\":{\"Save\":1}}"), sizeof(json_event));
@@ -1167,7 +1272,11 @@ void CmndSubscribe(void)
       subscription_item.Key = key;
       subscriptions.add(subscription_item);
 
+      if (2 == XdrvMailbox.index) {
+        topic = subscription_item.Topic;  // Do not append "/#""
+      }
       MqttSubscribe(topic.c_str());
+
       events.concat(event_name + "," + topic
         + (key.length()>0 ? "," : "")
         + key);
@@ -1346,12 +1455,19 @@ bool findNextVariableValue(char * &pVarname, float &value)
     value = UtcTime();
   } else if (sVarName.equals(F("LOCALTIME"))) {
     value = LocalTime();
-#if defined(USE_TIMERS) && defined(USE_SUNRISE)
+#if defined(USE_TIMERS)
+  } else if (sVarName.startsWith(F("TIMER"))) {
+    uint32_t index = sVarName.substring(5).toInt();
+    if (index > 0 && index <= MAX_TIMERS) {
+      value = Settings->timer[index -1].time;
+    }
+#if defined(USE_SUNRISE)
   } else if (sVarName.equals(F("SUNRISE"))) {
     value = SunMinutes(0);
   } else if (sVarName.equals(F("SUNSET"))) {
     value = SunMinutes(1);
-#endif
+#endif  // USE_SUNRISE
+#endif  // USE_TIMERS
 // #ifdef USE_ZIGBEE
 //   // } else if (sVarName.equals(F("ZBDEVICE"))) {
 //   //   value = Z_GetLastDevice();
@@ -1926,6 +2042,7 @@ void ExecuteCommandBlock(const char * commands, int len)
     //Going to insert the command into backlog
     String sCurrentCommand = oneCommand;
     sCurrentCommand.trim();
+/*
     if (sCurrentCommand.length() > 0
       && backlog.size() < MAX_BACKLOG && !TasmotaGlobal.backlog_mutex)
     {
@@ -1933,6 +2050,12 @@ void ExecuteCommandBlock(const char * commands, int len)
       TasmotaGlobal.backlog_mutex = true;
       backlog.add(insertPosition, sCurrentCommand);
       TasmotaGlobal.backlog_mutex = false;
+      insertPosition++;
+    }
+*/
+    if ((sCurrentCommand.length() > 0) && (backlog.size() < MAX_BACKLOG)) {
+      //Insert into backlog
+      backlog.add(insertPosition, sCurrentCommand);
       insertPosition++;
     }
   }
@@ -2185,7 +2308,7 @@ void CmndEvent(void)
   if (XdrvMailbox.data_len > 0) {
     strlcpy(Rules.event_data, XdrvMailbox.data, sizeof(Rules.event_data));
 #ifdef USE_DEVICE_GROUPS
-    SendDeviceGroupMessage(1, DGR_MSGTYP_UPDATE, DGR_ITEM_EVENT, XdrvMailbox.data);
+    if (!XdrvMailbox.grpflg) SendDeviceGroupMessage(1, DGR_MSGTYP_UPDATE, DGR_ITEM_EVENT, XdrvMailbox.data);
 #endif  // USE_DEVICE_GROUPS
   }
   if (XdrvMailbox.command) ResponseCmndDone();

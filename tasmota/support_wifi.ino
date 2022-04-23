@@ -32,10 +32,13 @@
 #ifndef WIFI_RESCAN_MINUTES
 #define WIFI_RESCAN_MINUTES     44         // Number of minutes between wifi network rescan
 #endif
+#ifndef WIFI_RETRY_SECONDS
+#define WIFI_RETRY_SECONDS      12         // Number of seconds connection to wifi network will retry
+#endif
 
 const uint8_t WIFI_CONFIG_SEC = 180;       // seconds before restart
 const uint8_t WIFI_CHECK_SEC = 20;         // seconds
-const uint8_t WIFI_RETRY_OFFSET_SEC = 12;  // seconds
+const uint8_t WIFI_RETRY_OFFSET_SEC = WIFI_RETRY_SECONDS;  // seconds
 
 #include <ESP8266WiFi.h>                   // Wifi, MQTT, Ota, WifiManager
 #if LWIP_IPV6
@@ -49,6 +52,7 @@ struct WIFI {
   uint8_t counter;
   uint8_t retry_init;
   uint8_t retry;
+  uint8_t max_retry;
   uint8_t status;
   uint8_t config_type = 0;
   uint8_t config_counter = 0;
@@ -112,7 +116,18 @@ void WifiConfig(uint8_t type)
   }
 }
 
+#ifdef CONFIG_IDF_TARGET_ESP32C3
+  // https://github.com/espressif/arduino-esp32/issues/6264#issuecomment-1040147331
+  // There's an include for this but it doesn't define the function if it doesn't think it needs it, so manually declare the function
+extern "C" void phy_bbpll_en_usb(bool en);
+#endif  // CONFIG_IDF_TARGET_ESP32C3
+
 void WifiSetMode(WiFiMode_t wifi_mode) {
+#ifdef CONFIG_IDF_TARGET_ESP32C3
+  // https://github.com/espressif/arduino-esp32/issues/6264#issuecomment-1094376906
+  // This brings the USB serial-jtag back to life. Suggest doing this immediately after wifi startup.
+  phy_bbpll_en_usb(true);
+#endif  // CONFIG_IDF_TARGET_ESP32C3
   if (WiFi.getMode() == wifi_mode) { return; }
 
   if (wifi_mode != WIFI_OFF) {
@@ -206,7 +221,7 @@ void WifiBegin(uint8_t flag, uint8_t channel)
     Settings->sta_active ^= 1;  // Skip empty SSID
   }
   if (Settings->ipv4_address[0]) {
-    WiFi.config(Settings->ipv4_address[0], Settings->ipv4_address[1], Settings->ipv4_address[2], Settings->ipv4_address[3]);  // Set static IP
+    WiFi.config(Settings->ipv4_address[0], Settings->ipv4_address[1], Settings->ipv4_address[2], Settings->ipv4_address[3], Settings->ipv4_address[4]);  // Set static IP
   }
   WiFi.hostname(TasmotaGlobal.hostname);  // ESP8266 needs this here (after WiFi.mode)
 
@@ -221,6 +236,8 @@ void WifiBegin(uint8_t flag, uint8_t channel)
   }
   AddLog(LOG_LEVEL_INFO, PSTR(D_LOG_WIFI D_CONNECTING_TO_AP "%d %s%s " D_IN_MODE " 11%c " D_AS " %s..."),
     Settings->sta_active +1, SettingsText(SET_STASSID1 + Settings->sta_active), stemp, pgm_read_byte(&kWifiPhyMode[WiFi.getPhyMode() & 0x3]), TasmotaGlobal.hostname);
+
+  WiFi.waitForConnectResult(1000);
 
 #if LWIP_IPV6
   for (bool configured = false; !configured;) {
@@ -373,27 +390,27 @@ String WifiGetIPv6(void)
 #endif  // LWIP_IPV6=1
 
 // Check to see if we have any routable IP address
-inline bool WifiCheck_hasIP(IPAddress const & ip_address)
-{
+bool WifiHasIP(void) {
 #ifdef LWIP2_IPV6
   return !a.isLocal();
 #else
-  return static_cast<uint32_t>(ip_address) != 0;
+  return (uint32_t)WiFi.localIP() != 0;
 #endif
 }
 
-void WifiCheckIp(void)
-{
-  if ((WL_CONNECTED == WiFi.status()) && WifiCheck_hasIP(WiFi.localIP())) {
+void WifiCheckIp(void) {
+  if ((WL_CONNECTED == WiFi.status()) && WifiHasIP()) {
     WifiSetState(1);
     Wifi.counter = WIFI_CHECK_SEC;
     Wifi.retry = Wifi.retry_init;
+    Wifi.max_retry = 0;
     if (Wifi.status != WL_CONNECTED) {
       AddLog(LOG_LEVEL_INFO, PSTR(D_LOG_WIFI D_CONNECTED));
 //      AddLog(LOG_LEVEL_INFO, PSTR("Wifi: Set IP addresses"));
       Settings->ipv4_address[1] = (uint32_t)WiFi.gatewayIP();
       Settings->ipv4_address[2] = (uint32_t)WiFi.subnetMask();
       Settings->ipv4_address[3] = (uint32_t)WiFi.dnsIP();
+      Settings->ipv4_address[4] = (uint32_t)WiFi.dnsIP(1);
 
       // Save current AP parameters for quick reconnect
       Settings->wifi_channel = WiFi.channel();
@@ -439,6 +456,10 @@ void WifiCheckIp(void)
         if (!Wifi.retry || ((Wifi.retry_init / 2) == Wifi.retry)) {
           AddLog(LOG_LEVEL_INFO, PSTR(D_LOG_WIFI D_CONNECT_FAILED_AP_TIMEOUT));
           Settings->wifi_channel = 0;  // Disable stored AP
+          Wifi.max_retry++;
+          if (100 == Wifi.max_retry) {  // Restart after 100 * (WIFI_RETRY_OFFSET_SEC + MAC) / 2 seconds
+            TasmotaGlobal.restart_flag = 2;
+          }
         } else {
           if (!strlen(SettingsText(SET_STASSID1)) && !strlen(SettingsText(SET_STASSID2))) {
             Settings->wifi_channel = 0;  // Disable stored AP
@@ -508,7 +529,7 @@ void WifiCheck(uint8_t param)
         Wifi.counter = WIFI_CHECK_SEC;
         WifiCheckIp();
       }
-      if ((WL_CONNECTED == WiFi.status()) && WifiCheck_hasIP(WiFi.localIP()) && !Wifi.config_type) {
+      if ((WL_CONNECTED == WiFi.status()) && WifiHasIP() && !Wifi.config_type) {
         WifiSetState(1);
         if (Settings->flag3.use_wifi_rescan) {  // SetOption57 - Scan wifi network every 44 minutes for configured AP's
           if (!(TasmotaGlobal.uptime % (60 * WIFI_RESCAN_MINUTES))) {
@@ -584,6 +605,7 @@ void WifiConnect(void)
   Wifi.status = 0;
   Wifi.retry_init = WIFI_RETRY_OFFSET_SEC + (ESP_getChipId() & 0xF);  // Add extra delay to stop overrun by simultanous re-connects
   Wifi.retry = Wifi.retry_init;
+  Wifi.max_retry = 0;
   Wifi.counter = 1;
 
   memcpy((void*) &Wifi.bssid, (void*) Settings->wifi_bssid, sizeof(Wifi.bssid));
@@ -657,6 +679,7 @@ void EspRestart(void)
   }
 }
 
+#ifdef ESP8266
 //
 // Gratuitous ARP, backported from https://github.com/esp8266/Arduino/pull/6889
 //
@@ -704,9 +727,11 @@ void wifiKeepAlive(void) {
     SetNextTimeInterval(wifi_timer, wifiTimerSec * 1000);
   }
 }
+#endif  // ESP8266
 
 void WifiPollNtp() {
   static uint8_t ntp_sync_minute = 0;
+  static uint32_t ntp_run_time = 0;
 
   if (TasmotaGlobal.global_state.network_down || Rtc.user_time_entry) { return; }
 
@@ -715,17 +740,25 @@ void WifiPollNtp() {
     ntp_sync_minute = 1;                 // If sync prepare for a new cycle
   }
   // First try ASAP to sync. If fails try once every 60 seconds based on chip id
-  uint8_t offset = (TasmotaGlobal.uptime < 30) ? RtcTime.second : (((ESP_getChipId() & 0xF) * 3) + 3) ;
+  uint8_t offset = (TasmotaGlobal.uptime < 30) ? RtcTime.second + ntp_run_time : (((ESP_getChipId() & 0xF) * 3) + 3) ;
+
   if ( (((offset == RtcTime.second) && ( (RtcTime.year < 2016) ||                  // Never synced
                                          (ntp_sync_minute == uptime_minute))) ||   // Re-sync every hour
        TasmotaGlobal.ntp_force_sync ) ) {                                          // Forced sync
 
     TasmotaGlobal.ntp_force_sync = false;
+
+    AddLog(LOG_LEVEL_DEBUG_MORE, PSTR("NTP: Sync time..."));
+    ntp_run_time = millis();
     uint32_t ntp_time = WifiGetNtp();
+    ntp_run_time = (millis() - ntp_run_time) / 1000;
+//    AddLog(LOG_LEVEL_DEBUG, PSTR("NTP: Runtime %d"), ntp_run_time);
+    if (ntp_run_time < 5) { ntp_run_time = 0; }  // DNS timeout is around 10s
+
     if (ntp_time > START_VALID_TIME) {
       Rtc.utc_time = ntp_time;
       ntp_sync_minute = 60;             // Sync so block further requests
-      RtcSync();
+      RtcSync("NTP");
     } else {
       ntp_sync_minute++;                // Try again in next minute
     }
@@ -750,19 +783,23 @@ uint32_t WifiGetNtp(void) {
       ntp_server = fallback_ntp_server;
     }
     if (strlen(ntp_server)) {
-      resolved_ip = (WiFi.hostByName(ntp_server, time_server_ip) == 1);
-      if (255 == time_server_ip[0]) { resolved_ip = false; }
+      resolved_ip = (WiFi.hostByName(ntp_server, time_server_ip) == 1);  // DNS timeout set to (ESP8266) 10s / (ESP32) 14s
+      if ((255 == time_server_ip[0]) ||                                                                // No valid name resolved (255.255.255.255)
+          ((255 == time_server_ip[1]) && (255 == time_server_ip[2]) && (255 == time_server_ip[3]))) {  // No valid name resolved (x.255.255.255)
+        resolved_ip = false;
+      }
       yield();
       if (resolved_ip) { break; }
+//      AddLog(LOG_LEVEL_DEBUG, PSTR("NTP: Unable to resolve '%s'"), ntp_server);
     }
     ntp_server_id++;
   }
   if (!resolved_ip) {
-//    AddLog(LOG_LEVEL_DEBUG, PSTR("NTP: No server found"));
+    AddLog(LOG_LEVEL_DEBUG, PSTR("NTP: Unable to resolve IP address"));
     return 0;
   }
 
-//  AddLog(LOG_LEVEL_DEBUG, PSTR("NTP: Name %s, IP %_I"), ntp_server, (uint32_t)time_server_ip);
+//  AddLog(LOG_LEVEL_DEBUG, PSTR("NTP: Host %s IP %_I"), ntp_server, (uint32_t)time_server_ip);
 
   WiFiUDP udp;
 
@@ -812,7 +849,7 @@ uint32_t WifiGetNtp(void) {
       if ((packet_buffer[0] & 0b11000000) == 0b11000000) {
         // Leap-Indicator: unknown (clock unsynchronized)
         // See: https://github.com/letscontrolit/ESPEasy/issues/2886#issuecomment-586656384
-        AddLog(LOG_LEVEL_DEBUG, PSTR("NTP: IP %_I unsynched"), (uint32_t)time_server_ip);
+        AddLog(LOG_LEVEL_DEBUG, PSTR("NTP: IP %_I unsynced"), (uint32_t)time_server_ip);
         ntp_server_id++;                            // Next server next time
         return 0;
       }

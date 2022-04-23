@@ -50,11 +50,11 @@ extern "C" {
       light_controller.calcLevels(channels);
       uint8_t bri = light_state.getBri();
 
-      // map_insert_int(vm, "_devices_present", TasmotaGlobal.devices_present);
-      // map_insert_int(vm, "_light_device", Light.device);
-      // map_insert_int(vm, "_light_subtype", Light.subtype);
-      // map_insert_int(vm, "_light_multi", Light.pwm_multi_channels);
-      // map_insert_int(vm, "_light_linked", light_controller.isCTRGBLinked());
+      // be_map_insert_int(vm, "_devices_present", TasmotaGlobal.devices_present);
+      // be_map_insert_int(vm, "_light_device", Light.device);
+      // be_map_insert_int(vm, "_light_subtype", Light.subtype);
+      // be_map_insert_int(vm, "_light_multi", Light.pwm_multi_channels);
+      // be_map_insert_int(vm, "_light_linked", light_controller.isCTRGBLinked());
 
       if (!Light.pwm_multi_channels) {
         uint32_t subtype = Light.subtype;   // virtual sub-type, for SO37 128
@@ -64,7 +64,7 @@ extern "C" {
         if (light_controller.isCTRGBLinked() && (light_num == 0)) {
           data_present = true;    // valid combination
           if (subtype >= LST_RGBW) {
-            map_insert_str(vm, "colormode", (light_state.getColorMode() & LCM_RGB ? "rgb" : "ct"));
+            be_map_insert_str(vm, "colormode", (light_state.getColorMode() & LCM_RGB ? "rgb" : "ct"));
           }
         }
         if (!light_controller.isCTRGBLinked()) {
@@ -83,33 +83,33 @@ extern "C" {
 
         if (data_present) {
           // see ResponseLightState()
-          map_insert_bool(vm, "power", bitRead(TasmotaGlobal.power, light_num + Light.device - 1));
-          map_insert_int(vm, "bri", bri);
+          be_map_insert_bool(vm, "power", bitRead(TasmotaGlobal.power, light_num + Light.device - 1));
+          be_map_insert_int(vm, "bri", bri);
 
           if (subtype >= LST_RGB) {
             uint16_t hue;
             uint8_t  sat, bri;
             light_state.getHSB(&hue, &sat, &bri);
-            map_insert_int(vm, "hue", hue);
-            map_insert_int(vm, "sat", sat);
+            be_map_insert_int(vm, "hue", hue);
+            be_map_insert_int(vm, "sat", sat);
           }
           if ((LST_COLDWARM == subtype) || (LST_RGBW <= subtype)) {
-            map_insert_int(vm, "ct", light_state.getCT());
+            be_map_insert_int(vm, "ct", light_state.getCT());
           }
           if (subtype >= LST_RGB) {
             snprintf(s_rgb, sizeof(s_rgb), PSTR("%02X%02X%02X"), channels[0], channels[1], channels[2]);
-            map_insert_str(vm, "rgb", s_rgb);
+            be_map_insert_str(vm, "rgb", s_rgb);
           }
           if (subtype > LST_NONE) {
-            map_insert_list_uint8(vm, "channels", &channels[chanidx], subtype);
+            be_map_insert_list_uint8(vm, "channels", &channels[chanidx], subtype);
           }
         }
       } else { // Light.pwm_multi_channels
         if ((light_num >= 0) && (light_num < LST_MAX)) {
           data_present = true;
-          map_insert_bool(vm, "power", Light.power & (1 << light_num));
-          map_insert_int(vm, "bri", Light.current_color[light_num]);
-          map_insert_list_uint8(vm, "channels", &channels[light_num], 1);
+          be_map_insert_bool(vm, "power", Light.power & (1 << light_num));
+          be_map_insert_int(vm, "bri", Light.current_color[light_num]);
+          be_map_insert_list_uint8(vm, "channels", &channels[light_num], 1);
         }
       }
 
@@ -216,6 +216,7 @@ extern "C" {
 
             uint8_t channels[LST_MAX] = {};     // initialized with all zeroes
             if (list_size > LST_MAX) { list_size = LST_MAX; }   // no more than 5 channels, no need to test for positive, any negative will be discarded by loop
+            bool on = false;    // if all are zero, then only set power off
             for (uint32_t i = 0; i < list_size; i++) {
               // be_dumpstack(vm);
               get_list_item(vm, i);
@@ -223,16 +224,12 @@ extern "C" {
               int32_t val = be_toint(vm, -1);
               be_pop(vm, 1);      // remove result from stack
               channels[i] = to_u8(val);
-
-              bool on = false;    // if all are zero, then only set power off
-              for (uint32_t i = 0; i < LST_MAX; i++) {
-                if (channels[i] != 0) { on = true; }
-              }
-              if (on) {
-                light_controller.changeChannels(channels);
-              } else {
-                ExecuteCommandPower(idx + 1, POWER_OFF, SRC_BERRY);
-              }
+              if (channels[i]) { on = true; }
+            }
+            if (on) {
+              light_controller.changeChannels(channels);
+            } else {
+              ExecuteCommandPower(idx + 1, POWER_OFF, SRC_BERRY);
             }
           } else {
             be_pop(vm, 1);      // remove "list" class from top

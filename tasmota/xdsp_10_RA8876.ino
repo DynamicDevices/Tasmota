@@ -61,15 +61,17 @@ void RA8876_InitDriver(void) {
     ra8876->begin();
     renderer = ra8876;
     renderer->DisplayInit(DISPLAY_INIT_MODE,Settings->display_size,Settings->display_rotate,Settings->display_font);
-    renderer->dim(Settings->display_dimmer);
+    renderer->dim(GetDisplayDimmer16());
 
     //testall();
 #ifdef SHOW_SPLASH
-    // Welcome text
-    renderer->setTextFont(2);
-    renderer->setTextColor(RA8876_WHITE,RA8876_BLACK);
-    renderer->DrawStringAt(600, 300, "RA8876", RA8876_RED,0);
-    delay(1000);
+    if (!Settings->flag5.display_no_splash) {
+      // Welcome text
+      renderer->setTextFont(2);
+      renderer->setTextColor(RA8876_WHITE,RA8876_BLACK);
+      renderer->DrawStringAt(600, 300, "RA8876", RA8876_RED,0);
+      delay(1000);
+    }
 
 #endif
     color_type = COLOR_COLOR;

@@ -24,13 +24,25 @@
 #include <OpenTherm.h>
 
 // Hot water and boiler parameter ranges
+#ifndef OT_HOT_WATER_MIN
 #define OT_HOT_WATER_MIN 23
+#endif
+#ifndef OT_HOT_WATER_MAX
 #define OT_HOT_WATER_MAX 55
+#endif
+#ifndef OT_BOILER_MIN
 #define OT_BOILER_MIN 40
+#endif
+#ifndef OT_BOILER_MAX
 #define OT_BOILER_MAX 85
+#endif
 
+#ifndef OT_HOT_WATER_DEFAULT
 #define OT_HOT_WATER_DEFAULT 36;
+#endif
+#ifndef OT_BOILER_DEFAULT
 #define OT_BOILER_DEFAULT 85;
+#endif
 
 // Seconds before OT will make an attempt to connect to the boiler after connection error
 #define SNS_OT_DISCONNECT_COOLDOWN_SECONDS 4
@@ -179,7 +191,7 @@ void sns_opentherm_processResponseCallback(unsigned long response, int st)
 
     switch (status)
     {
-    case OpenThermResponseStatus::SUCCESS:
+    case OpenThermResponseStatus::OPTH_SUCCESS:
         if (sns_ot_master->isValidResponse(response))
         {
             sns_opentherm_process_success_response(&sns_ot_boiler_status, response);
@@ -188,7 +200,7 @@ void sns_opentherm_processResponseCallback(unsigned long response, int st)
         sns_ot_timeout_before_disconnect = SNS_OT_MAX_TIMEOUTS_BEFORE_DISCONNECT;
         break;
 
-    case OpenThermResponseStatus::INVALID:
+    case OpenThermResponseStatus::OPTH_INVALID:
         sns_opentherm_check_retry_request();
         sns_ot_connection_status = OpenThermConnectionStatus::OTC_READY;
         sns_ot_timeout_before_disconnect = SNS_OT_MAX_TIMEOUTS_BEFORE_DISCONNECT;
@@ -198,7 +210,7 @@ void sns_opentherm_processResponseCallback(unsigned long response, int st)
     // In this case we do reconnect.
     // If this command will timeout multiple times, it will be excluded from the rotation later on
     // after couple of failed attempts. See sns_opentherm_check_retry_request logic
-    case OpenThermResponseStatus::TIMEOUT:
+    case OpenThermResponseStatus::OPTH_TIMEOUT:
         sns_opentherm_check_retry_request();
         if (--sns_ot_timeout_before_disconnect == 0)
         {
@@ -235,9 +247,7 @@ void sns_opentherm_stat(bool json)
 
     if (json)
     {
-        ResponseAppend_P(PSTR(",\"OPENTHERM\":{"));
-        ResponseAppend_P(PSTR("\"conn\":\"%s\","), statusStr);
-        ResponseAppend_P(PSTR("\"settings\":%d,"), Settings->ot_flags);
+        ResponseAppend_P(PSTR(",\"OPENTHERM\":{\"conn\":\"%s\",\"settings\":%d"), statusStr, Settings->ot_flags);
         sns_opentherm_dump_telemetry();
         ResponseJsonEnd();
 #ifdef USE_WEBSERVER
@@ -317,7 +327,7 @@ void sns_ot_start_handshake()
     sns_opentherm_protocol_reset();
 
     sns_ot_master->sendRequestAync(
-        OpenTherm::buildRequest(OpenThermMessageType::READ_DATA, OpenThermMessageID::SConfigSMemberIDcode, 0));
+        OpenTherm::buildRequest(OpenThermMessageType::OPTH_READ_DATA, OpenThermMessageID::SConfigSMemberIDcode, 0));
 
     sns_ot_connection_status = OpenThermConnectionStatus::OTC_HANDSHAKE;
 }
@@ -326,7 +336,7 @@ void sns_ot_process_handshake(unsigned long response, int st)
 {
     OpenThermResponseStatus status = (OpenThermResponseStatus)st;
 
-    if (status != OpenThermResponseStatus::SUCCESS || !sns_ot_master->isValidResponse(response))
+    if (status != OpenThermResponseStatus::OPTH_SUCCESS || !sns_ot_master->isValidResponse(response))
     {
         AddLog(LOG_LEVEL_ERROR,
                   PSTR("[OTH]: getSlaveConfiguration failed. Status=%s"),
@@ -469,8 +479,11 @@ uint8_t sns_opentherm_read_flags(char *data, uint32_t len)
 // flag value, however, this command does not update the settings.
 #define D_CMND_SET_HOT_WATER_ENABLED "dhw"
 
+// BLOR - Reset boiler 
+#define D_CMND_BLLOR "blor"
+
 const char kOpenThermCommands[] PROGMEM = D_PRFX_OTHERM "|" D_CMND_OTHERM_BOILER_SETPOINT "|" D_CMND_OTHERM_DHW_SETPOINT
-	    "|" D_CMND_OTHERM_SAVE_SETTINGS "|" D_CMND_OTHERM_FLAGS "|" D_CMND_SET_CENTRAL_HEATING_ENABLED "|" D_CMND_SET_HOT_WATER_ENABLED;
+	    "|" D_CMND_OTHERM_SAVE_SETTINGS "|" D_CMND_OTHERM_FLAGS "|" D_CMND_SET_CENTRAL_HEATING_ENABLED "|" D_CMND_SET_HOT_WATER_ENABLED "|" D_CMND_BLLOR;
 
 void (*const OpenThermCommands[])(void) PROGMEM = {
     &sns_opentherm_boiler_setpoint_cmd,
@@ -478,7 +491,8 @@ void (*const OpenThermCommands[])(void) PROGMEM = {
     &sns_opentherm_save_settings_cmd,
     &sns_opentherm_flags_cmd,
     &sns_opentherm_set_central_heating_cmd,
-    &sns_opentherm_set_hot_water_cmd};
+    &sns_opentherm_set_hot_water_cmd,
+    &sns_opentherm_blor_cmd,};
 
 void sns_opentherm_cmd(void) { }
 void sns_opentherm_boiler_setpoint_cmd(void)
@@ -550,6 +564,17 @@ void sns_opentherm_set_hot_water_cmd(void)
         sns_ot_boiler_status.m_enableHotWater = atoi(XdrvMailbox.data);
     }
     ResponseCmndNumber(sns_ot_boiler_status.m_enableHotWater ? 1 : 0);
+}
+
+void sns_opentherm_blor_cmd(void)
+{
+    bool query = strlen(XdrvMailbox.data) == 0;
+    bool retval = false;
+    if (!query)
+    {
+        if (atoi(XdrvMailbox.data)) retval = sns_opentherm_call_blor();
+    }
+    ResponseCmndNumber(retval);
 }
 
 /*********************************************************************************************\

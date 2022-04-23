@@ -29,7 +29,7 @@ using irutils::addIntToString;
 using irutils::addLabeledString;
 using irutils::addModeToString;
 using irutils::addTempToString;
-
+using irutils::addToggleToString;
 
 #if SEND_TRANSCOLD
 /// Send a Transcold message
@@ -339,7 +339,7 @@ stdAc::fanspeed_t IRTranscoldAc::toCommonFanSpeed(const uint8_t speed) {
 /// @param[in] prev Ptr to the previous state if required.
 /// @return A stdAc::state_t state.
 stdAc::state_t IRTranscoldAc::toCommon(const stdAc::state_t *prev) const {
-  stdAc::state_t result;
+  stdAc::state_t result{};
   // Start with the previous state if given it.
   if (prev != NULL) {
     result = *prev;
@@ -391,13 +391,7 @@ String IRTranscoldAc::toString(void) const {
   result += addBoolToString(getPower(), kPowerStr, false);
   if (!getPower()) return result;  // If it's off, there is no other info.
   // Special modes.
-  if (getSwing()) {
-    result += kCommaSpaceStr;
-    result += kSwingStr;
-    result += kColonSpaceStr;
-    result += kToggleStr;
-    return result;
-  }
+  if (getSwing()) return result + addToggleToString(true, kSwingStr);
   result += addModeToString(getMode(), kTranscoldAuto, kTranscoldCool,
                             kTranscoldHeat, kTranscoldDry, kTranscoldFan);
   result += addIntToString(_.Fan, kFanStr);

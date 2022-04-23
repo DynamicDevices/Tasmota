@@ -51,7 +51,7 @@ void EZ_RSTACK(uint8_t reset_code) {
     default: reason_str = PSTR("Unknown"); break;
   }
   Response_P(PSTR("{\"" D_JSON_ZIGBEE_STATE "\":{"
-                  "\"Status\":%d,\"Message\":\"EFR32 booted\",\"RestartReason\":\"%s\""
+                  "\"Status\":%d,\"Message\":\"EFR32 EZSP booted\",\"RestartReason\":\"%s\""
                   ",\"Code\":%d}}"),
                   ZIGBEE_STATUS_BOOT, reason_str, reset_code);
 
@@ -418,7 +418,7 @@ int32_t ZNP_Reboot(int32_t res, SBuffer &buf) {
   }
 
   Response_P(PSTR("{\"" D_JSON_ZIGBEE_STATE "\":{"
-                  "\"Status\":%d,\"Message\":\"CCxxxx booted\",\"RestartReason\":\"%s\""
+                  "\"Status\":%d,\"Message\":\"CCxxxx ZNP booted\",\"RestartReason\":\"%s\""
                   ",\"MajorRel\":%d,\"MinorRel\":%d}}"),
                   ZIGBEE_STATUS_BOOT, reason_str,
                   major_rel, minor_rel);
@@ -638,7 +638,7 @@ int32_t Z_ReceiveActiveEp(int32_t res, const SBuffer &buf) {
   for (uint32_t i = 0; i < activeEpCount; i++) {
     uint8_t ep = activeEpList[i];
     zigbee_devices.getShortAddr(nwkAddr).addEndpoint(ep);
-    if ((i < 4) && (ep < 0x10)) {
+    if ((i < USE_ZIGBEE_AUTOBIND_MAX_ENDPOINTS) && (ep < USE_ZIGBEE_AUTOBIND_MAX_CLUSTER)) {
       zigbee_devices.queueTimer(nwkAddr, 0 /* groupaddr */, 1500, ep /* fake cluster as ep */, ep, Z_CAT_EP_DESC, 0 /* value */, &Z_SendSimpleDescReq);
     }
   }
@@ -1577,11 +1577,7 @@ void Z_AutoConfigReportingForCluster(uint16_t shortaddr, uint16_t groupaddr, uin
   ResponseAppend_P(PSTR("}}"));
 
   if (buf.len() > 0) {
-#ifdef MQTT_DATA_STRING
-    AddLog(LOG_LEVEL_INFO, PSTR(D_LOG_ZIGBEE "auto-bind `%s`"), TasmotaGlobal.mqtt_data.c_str());
-#else
-    AddLog(LOG_LEVEL_INFO, PSTR(D_LOG_ZIGBEE "auto-bind `%s`"), TasmotaGlobal.mqtt_data);
-#endif
+    AddLog(LOG_LEVEL_INFO, PSTR(D_LOG_ZIGBEE "auto-bind `%s`"), ResponseData());
     ZCLMessage zcl(buf.len());   // message is 4 bytes
     zcl.shortaddr = shortaddr;
     zcl.cluster = cluster;

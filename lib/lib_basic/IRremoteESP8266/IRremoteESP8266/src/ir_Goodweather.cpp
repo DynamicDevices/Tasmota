@@ -21,6 +21,7 @@ using irutils::addLabeledString;
 using irutils::addModeToString;
 using irutils::addFanToString;
 using irutils::addTempToString;
+using irutils::addToggleToString;
 
 #if SEND_GOODWEATHER
 /// Send a Goodweather HVAC formatted message.
@@ -310,7 +311,7 @@ stdAc::fanspeed_t IRGoodweatherAc::toCommonFanSpeed(const uint8_t speed) {
 /// Convert the current internal state into its stdAc::state_t equivalent.
 /// @return The stdAc equivalent of the native settings.
 stdAc::state_t IRGoodweatherAc::toCommon(void) const {
-  stdAc::state_t result;
+  stdAc::state_t result{};
   result.protocol = decode_type_t::GOODWEATHER;
   result.power = _.Power;
   result.mode = toCommonMode(_.Mode);
@@ -346,9 +347,10 @@ String IRGoodweatherAc::toString(void) const {
   result += addFanToString(_.Fan, kGoodweatherFanHigh, kGoodweatherFanLow,
                            kGoodweatherFanAuto, kGoodweatherFanAuto,
                            kGoodweatherFanMed);
-  result += addLabeledString(_.Turbo ? kToggleStr : "-", kTurboStr);
-  result += addLabeledString(_.Light ? kToggleStr : "-", kLightStr);
-  result += addLabeledString(_.Sleep ? kToggleStr : "-", kSleepStr);
+
+  result += addToggleToString(_.Turbo, kTurboStr);
+  result += addToggleToString(_.Light, kLightStr);
+  result += addToggleToString(_.Sleep, kSleepStr);
   result += addIntToString(_.Swing, kSwingStr);
   result += kSpaceLBraceStr;
   switch (_.Swing) {

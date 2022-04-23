@@ -1,18 +1,14 @@
 /*
   xdrv_12_home_assistant.ino - home assistant support for Tasmota
-
   Copyright (C) 2021  Erik Montnemery, Federico Leoni and Theo Arends
-
   This program is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
   the Free Software Foundation, either version 3 of the License, or
   (at your option) any later version.
-
   This program is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
   GNU General Public License for more details.
-
   You should have received a copy of the GNU General Public License
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
@@ -39,12 +35,12 @@ const char kHAssJsonSensorUnits[] PROGMEM =
   "ppm|ppm|ppb|R|G|B|" D_UNIT_KELVIN "| |";
 
 const char kHAssJsonSensorDevCla[] PROGMEM =
-  "dev_cla\":\"temperature|ic\":\"mdi:weather-rainy|dev_cla\":\"pressure|dev_cla\":\"pressure|"
-  "dev_cla\":\"power|dev_cla\":\"battery|ic\":\"mdi:alpha-a-circle-outline|ic\":\"mdi:leak|ic\":\"mdi:current-ac|dev_cla\":\"humidity|dev_cla\":\"illuminance|"
+  "dev_cla\":\"temperature|dev_cla\":\"temperature|dev_cla\":\"pressure|dev_cla\":\"pressure|"
+  "dev_cla\":\"power|dev_cla\":\"battery|dev_cla\":\"current|ic\":\"mdi:leak|ic\":\"mdi:current-ac|dev_cla\":\"humidity|dev_cla\":\"illuminance|"
   "ic\":\"mdi:cup-water|ic\":\"mdi:flask|ic\":\"mdi:flask|ic\":\"mdi:flask|ic\":\"mdi:flask|ic\":\"mdi:flask|ic\":\"mdi:flask|"
-  "ic\":\"mdi:air-filter|ic\":\"mdi:air-filter|ic\":\"mdi:air-filter|ic\":\"mdi:alpha-f-circle-outline|dev_cla\":\"power|ic\":\"mdi:progress-clock|"
-  "dev_cla\":\"power|dev_cla\":\"power|dev_cla\":\"power|ic\":\"mdi:alpha-v-circle-outline|ic\":\"mdi:scale|dev_cla\":\"power|"
-  "ic\":\"mdi:molecule-co2|ic\":\"mdi:molecule-co2|ic\":\"mdi:air-filter|"
+  "dev_cla\":\"pm1|dev_cla\":\"pm25|dev_cla\":\"pm10|dev_cla\":\"power_factor|dev_cla\":\"power|ic\":\"mdi:progress-clock|"
+  "dev_cla\":\"power|dev_cla\":\"energy|dev_cla\":\"energy\",\"stat_cla\":\"total_increasing|dev_cla\":\"voltage|ic\":\"mdi:scale|dev_cla\":\"energy|"
+  "dev_cla\":\"carbon_dioxide|dev_cla\":\"carbon_dioxide|dev_class\":\"volatile_organic_compounds|"
   "ic\":\"mdi:palette|ic\":\"mdi:palette|ic\":\"mdi:palette|ic\":\"mdi:temperature-kelvin|ic\":\"mdi:ruler|dev_cla\":\"illuminance|";
 
 // List of sensors ready for discovery
@@ -132,6 +128,24 @@ const char HASS_DISCOVER_SHUTTER_POS[] PROGMEM =
   "\"pos_open\":100,"
   "\"set_pos_t\":\"%s%d\"";                       // cmnd/%topic%/ShutterPosition1
 
+const char HASS_DISCOVER_SHUTTER_TILT[] PROGMEM =
+ ",\"tilt_cmd_t\":\"%s%d\","           // cmnd/%topic%/ShutterTilt1
+ "\"tilt_opnd_val\":%d,"
+ "\"tilt_clsd_val\":%d";
+
+/*
+"tilt_clsd_val": "tilt_closed_value",
+"tilt_cmd_t": "tilt_command_topic",
+"tilt_cmd_tpl": "tilt_command_template",
+"tilt_inv_stat": "tilt_invert_state",
+"tilt_max": "tilt_max",
+"tilt_min": "tilt_min",
+"tilt_opnd_val": "tilt_opened_value",
+"tilt_opt": "tilt_optimistic",
+"tilt_status_t": "tilt_status_topic",
+"tilt_status_tpl": "tilt_status_template",
+*/
+
 const char HASS_DISCOVER_SENSOR_HASS_STATUS[] PROGMEM =
   ",\"json_attr_t\":\"%s\","
   "\"unit_of_meas\":\"%%\","
@@ -186,180 +200,206 @@ uint8_t hass_mode = 0;
 int hass_tele_period = 0;
 
 // NEW DISCOVERY
-
-const char HASS_DISCOVER_DEVICE[] PROGMEM =                         // Basic parameters for Discovery
-  "{\"ip\":\"%_I\","                                                // IP Address
-  "\"dn\":\"%s\","                                                  // Device Name
-  "\"fn\":[%s],"                                                    // Friendly Names
-  "\"hn\":\"%s\","                                                  // Host Name
-  "\"mac\":\"%s\","                                                 // Full MAC as Device id
-  "\"md\":\"%s\","                                                  // Module or Template Name
-  "\"ty\":%d,\"if\":%d,"                                            // Flag for TuyaMCU and Ifan devices
-  "\"ofln\":\"" MQTT_LWT_OFFLINE "\","                              // Payload Offline
-  "\"onln\":\"" MQTT_LWT_ONLINE "\","                               // Payload Online
-  "\"state\":[\"%s\",\"%s\",\"%s\",\"%s\"],"                        // State text for "OFF","ON","TOGGLE","HOLD"
-  "\"sw\":\"%s\","                                                  // Software Version
-  "\"t\":\"%s\","                                                   // Topic
-  "\"ft\":\"%s\","                                                  // Full Topic
-  "\"tp\":[\"%s\",\"%s\",\"%s\"],"                                  // Topics for command, stat and tele
-  "\"rl\":[%s],\"swc\":[%s],\"swn\":[%s],\"btn\":[%s],"             // Inputs / Outputs
-  "\"so\":{\"4\":%d,\"11\":%d,\"13\":%d,\"17\":%d,\"20\":%d,"       // SetOptions
-  "\"30\":%d,\"68\":%d,\"73\":%d,\"82\":%d,\"114\":%d,\"117\":%d},"
-  "\"lk\":%d,\"lt_st\":%d,\"sho\":[%s],\"ver\":1}";                 // Light SubType, Shutter Options and Discovery version
-
-typedef struct HASS {
-  uint16_t Relay[MAX_RELAYS]; // Base array to store the relay type
-  char RelLst[MAX_RELAYS*2];  // Relay as a char list, "0,0,0,0,0,0,0,0"
-  bool RelPst;                // Needed for Switches. If Power devices are not present entities will be created even when switchtopic in not set.
-} HASS;
-
-void HassDiscoveryRelays(struct HASS &Hass)
-{
-  Hass = {.Relay={0,0,0,0,0,0,0,0}, .RelLst={'\0'}};
-  uint16_t Shutter[MAX_RELAYS] = { 0 };  // Array to store a temp list for shutters
-  uint8_t lightidx = MAX_RELAYS + 1;     // Will store the starting position of the lights
-  bool iFan = false;
-
-  Hass.RelPst = TasmotaGlobal.devices_present > 0;
-
-#ifdef ESP8266
-    if (SONOFF_IFAN02 == TasmotaGlobal.module_type || SONOFF_IFAN03 == TasmotaGlobal.module_type) { iFan = true;}
-#endif // ESP8266
-
-  if (Light.subtype > LST_NONE) {
-    if (!light_controller.isCTRGBLinked()) { // One or two lights present
-      lightidx = TasmotaGlobal.devices_present - 2;
-    } else {
-      lightidx = TasmotaGlobal.devices_present - 1;
-    }
+void HassDiscoverMessage(void) {
+  uint32_t ip_address = (uint32_t)WiFi.localIP();
+  char* hostname = TasmotaGlobal.hostname;
+#if defined(ESP32) && CONFIG_IDF_TARGET_ESP32 && defined(USE_ETHERNET)
+  if (static_cast<uint32_t>(EthernetLocalIP()) != 0) {
+    ip_address = (uint32_t)EthernetLocalIP();
+    hostname = EthernetHostname();
   }
-
-  if (Light.device > 0 && Settings->flag3.pwm_multi_channels) { // How many relays are light devices?
-    lightidx = TasmotaGlobal.devices_present - Light.subtype;
-  }
-
-  for (uint32_t i = 0; i < MAX_RELAYS; i++) {
-
-    if (i < TasmotaGlobal.devices_present) {
-
-#ifdef USE_SHUTTER
-      if (Settings->flag3.shutter_mode) {
-        for (uint32_t k = 0; k < MAX_SHUTTERS; k++) {
-          if (0 == Settings->shutter_startrelay[k]) {
-            break;
-          } else {
-            if (Settings->shutter_startrelay[k] > 0 && Settings->shutter_startrelay[k] <= MAX_SHUTTER_RELAYS) {
-              Shutter[Settings->shutter_startrelay[k]-1] = Shutter[Settings->shutter_startrelay[k]] = 1;
-            }
-          }
-        }
-      }
-#endif // USE_SHUTTER
-
-      if (Shutter[i] != 0) {    // Check if there are shutters present
-        Hass.Relay[i] = 3;      // Relay is a shutter
-      } else {
-        if (i >= lightidx || (iFan && i == 0)) { // First relay on Ifan controls the light
-          Hass.Relay[i] = 2;    // Relay is a light
-        } else {
-          if (!iFan) {          // Relays 2-4 for ifan are controlled by FANSPEED and don't need to be present if TasmotaGlobal.module_type = SONOFF_IFAN02 or SONOFF_IFAN03
-            Hass.Relay[i] = 1;  // Simple Relay
-          }
-        }
-      }
-    }
-    snprintf_P(Hass.RelLst, sizeof(Hass.RelLst), PSTR("%s%s%d"), Hass.RelLst, (i > 0 ? "," : ""), Hass.Relay[i]); // Vector for the Official Integration
-  }
-}
-
-void NewHAssDiscovery(void)
-{
-  char stopic[TOPSZ];
-  char stemp1[TOPSZ];
-  char stemp2[200];
-  char switch_mode[90];
-  char switch_name[300];
-  char stemp5[90];
-  char stemp6[90];
-  char unique_id[30];
-  char relays[TOPSZ];
-  char *state_topic = stemp1;
-  bool SerialButton = false;
-  bool TuyaMod = false;
-  bool iFanMod = false;
-
-  stemp2[0] = '\0';
-  struct HASS Hass;
-  HassDiscoveryRelays(Hass);
-
-#ifdef ESP8266
-    if (TUYA_DIMMER == TasmotaGlobal.module_type || SK03_TUYA == TasmotaGlobal.module_type) { TuyaMod = true; }
-    if (SONOFF_IFAN02 == TasmotaGlobal.module_type || SONOFF_IFAN03 == TasmotaGlobal.module_type) { iFanMod = true; }
-#endif // ESP8266
+#endif
+  Response_P(PSTR("{\"ip\":\"%_I\","                           // IP Address
+                   "\"dn\":\"%s\","                            // Device Name
+                   "\"fn\":["),                                // Friendly Names (start)
+                   ip_address,
+                   SettingsText(SET_DEVICENAME));
 
   uint32_t maxfn = (TasmotaGlobal.devices_present > MAX_FRIENDLYNAMES) ? MAX_FRIENDLYNAMES : (!TasmotaGlobal.devices_present) ? 1 : TasmotaGlobal.devices_present;
   for (uint32_t i = 0; i < MAX_FRIENDLYNAMES; i++) {
     char fname[TOPSZ];
     snprintf_P(fname, sizeof(fname), PSTR("\"%s\""), EscapeJSONString(SettingsText(SET_FRIENDLYNAME1 +i)).c_str());
-    snprintf_P(stemp2, sizeof(stemp2), PSTR("%s%s%s"), stemp2, (i > 0 ? "," : ""), (i < maxfn) ? fname : PSTR("null"));
+    ResponseAppend_P(PSTR("%s%s"), (i > 0 ? "," : ""), (i < maxfn) ? fname : PSTR("null"));
   }
 
-  switch_mode[0] = '\0';
-  switch_name[0] = '\0';
+  bool TuyaMod = false;
+#ifdef USE_TUYA_MCU
+  TuyaMod = IsModuleTuya();
+#endif
+  bool iFanMod = false;
+#ifdef ESP8266
+  iFanMod = ((SONOFF_IFAN02 == TasmotaGlobal.module_type) || (SONOFF_IFAN03 == TasmotaGlobal.module_type));
+#endif  // ESP8266
+
+  ResponseAppend_P(PSTR("],"                                   // Friendly Names (end)
+                   "\"hn\":\"%s\","                            // Host Name
+                   "\"mac\":\"%s\","                           // Full MAC as Device id
+                   "\"md\":\"%s\","                            // Module or Template Name
+                   "\"ty\":%d,\"if\":%d,"                      // Flag for TuyaMCU and Ifan devices
+                   "\"ofln\":\"" MQTT_LWT_OFFLINE "\","        // Payload Offline
+                   "\"onln\":\"" MQTT_LWT_ONLINE "\","         // Payload Online
+                   "\"state\":[\"%s\",\"%s\",\"%s\",\"%s\"],"  // State text for "OFF","ON","TOGGLE","HOLD"
+                   "\"sw\":\"%s\","                            // Software Version
+                   "\"t\":\"%s\","                             // Topic
+                   "\"ft\":\"%s\","                            // Full Topic
+                   "\"tp\":[\"%s\",\"%s\",\"%s\"],"            // Topics for command, stat and tele
+                   "\"rl\":["),                                // Relays (start)
+                   hostname,
+                   NetworkUniqueId().c_str(),
+                   ModuleName().c_str(),
+                   TuyaMod, iFanMod,
+                   GetStateText(0), GetStateText(1), GetStateText(2), GetStateText(3),
+                   TasmotaGlobal.version,
+                   TasmotaGlobal.mqtt_topic,
+                   SettingsText(SET_MQTT_FULLTOPIC),
+                   SettingsText(SET_MQTTPREFIX1),
+                   SettingsText(SET_MQTTPREFIX2),
+                   SettingsText(SET_MQTTPREFIX3));
+
+  uint8_t light_idx = MAX_RELAYS + 1;                          // Will store the starting position of the lights
+  uint8_t light_subtype = 0;
+  bool light_controller_isCTRGBLinked = false;
+#ifdef USE_LIGHT
+  light_subtype = Light.subtype;
+  if (light_subtype > LST_NONE) {
+    light_controller_isCTRGBLinked = light_controller.isCTRGBLinked();
+    if (!light_controller_isCTRGBLinked) {                     // One or two lights present
+      light_idx = TasmotaGlobal.devices_present - 2;
+    } else {
+      light_idx = TasmotaGlobal.devices_present - 1;
+    }
+  }
+
+  if ((Light.device > 0) && Settings->flag3.pwm_multi_channels) {  // How many relays are light devices?
+    light_idx = TasmotaGlobal.devices_present - light_subtype;
+  }
+#endif  // USE_LIGHT
+
+  uint16_t Relay[MAX_RELAYS] = { 0 };                          // Base array to store the relay type
+  uint16_t Shutter[MAX_RELAYS] = { 0 };                        // Array to store a temp list for shutters
+  for (uint32_t i = 0; i < MAX_RELAYS; i++) {
+    if (i < TasmotaGlobal.devices_present) {
+
+#ifdef USE_SHUTTER
+      if (Settings->flag3.shutter_mode) {
+        for (uint32_t k = 0; k < MAX_SHUTTERS; k++) {
+          if (Settings->shutter_startrelay[k] > 0) {
+            Shutter[Settings->shutter_startrelay[k]-1] = Shutter[Settings->shutter_startrelay[k]] = 1;
+          } else {
+            // terminate loop at first INVALID Settings->shutter_startrelay[i].
+            break;
+          }
+        }
+      }
+#endif  // USE_SHUTTER
+
+      if (Shutter[i] != 0) {                                   // Check if there are shutters present
+        Relay[i] = 3;                                          // Relay is a shutter
+      } else {
+        if (i >= light_idx || (iFanMod && (0 == i))) {          // First relay on Ifan controls the light
+          Relay[i] = 2;                                        // Relay is a light
+        } else {
+          if (!iFanMod) {                                      // Relays 2-4 for ifan are controlled by FANSPEED and don't need to be present if TasmotaGlobal.module_type = SONOFF_IFAN02 or SONOFF_IFAN03
+            Relay[i] = 1;                                      // Simple Relay
+          }
+        }
+      }
+    }
+    ResponseAppend_P(PSTR("%s%d"), (i > 0 ? "," : ""), Relay[i]); // Vector for the Official Integration
+  }
+
+  ResponseAppend_P(PSTR("],"                                   // Relays (end)
+                        "\"swc\":["));                         // Switch modes (start)
+
+  // Enable Discovery for Switches only if SetOption114 is enabled
+  for (uint32_t i = 0; i < MAX_SWITCHES; i++) {
+    ResponseAppend_P(PSTR("%s%d"), (i > 0 ? "," : ""), (PinUsed(GPIO_SWT1, i) && Settings->flag5.mqtt_switches) ? Settings->switchmode[i] : -1);
+  }
+
+  ResponseAppend_P(PSTR("],"                                   // Switch modes (end)
+                        "\"swn\":["));                         // Switch names (start)
+
   // Enable Discovery for Switches only if SetOption114 is enabled
   for (uint32_t i = 0; i < MAX_SWITCHES; i++) {
     char sname[TOPSZ];
     snprintf_P(sname, sizeof(sname), PSTR("\"%s\""), GetSwitchText(i).c_str());
-    snprintf_P(switch_mode, sizeof(switch_mode), PSTR("%s%s%d"), switch_mode, (i > 0 ? "," : ""), (PinUsed(GPIO_SWT1, i) & Settings->flag5.mqtt_switches) ? Settings->switchmode[i] : -1);
-    snprintf_P(switch_name, sizeof(switch_name), PSTR("%s%s%s"), switch_name, (i > 0 ? "," : ""), (PinUsed(GPIO_SWT1, i) & Settings->flag5.mqtt_switches) ? sname : PSTR("null"));
+    ResponseAppend_P(PSTR("%s%s"), (i > 0 ? "," : ""), (PinUsed(GPIO_SWT1, i) && Settings->flag5.mqtt_switches) ? sname : PSTR("null"));
   }
 
-  stemp5[0] = '\0';
+  ResponseAppend_P(PSTR("],"                                   // Switch names (end)
+                        "\"btn\":["));                         // Button flag (start)
+
+  bool SerialButton = false;
   // Enable Discovery for Buttons only if SetOption73 is enabled
   for (uint32_t i = 0; i < MAX_KEYS; i++) {
 #ifdef ESP8266
-    if (i == 0 && (SONOFF_DUAL == TasmotaGlobal.module_type )) { SerialButton = true; }
-#endif // ESP8266
-    snprintf_P(stemp5, sizeof(stemp5), PSTR("%s%s%d"), stemp5, (i > 0 ? "," : ""), (SerialButton ? 1 : (PinUsed(GPIO_KEY1, i)) & Settings->flag3.mqtt_buttons));
-    SerialButton = false;
+    SerialButton = ((0 == i) && (SONOFF_DUAL == TasmotaGlobal.module_type ));
+#endif  // ESP8266
+    ResponseAppend_P(PSTR("%s%d"), (i > 0 ? "," : ""), (SerialButton ? 1 : (PinUsed(GPIO_KEY1, i)) && Settings->flag3.mqtt_buttons));
   }
-  stemp6[0] = '\0';
-#ifdef USE_SHUTTER
+
+  ResponseAppend_P(PSTR("],"                                   // Button flag (end)
+                        "\"so\":{\"4\":%d,"                    // SetOptions
+                                "\"11\":%d,"
+                                "\"13\":%d,"
+                                "\"17\":%d,"
+                                "\"20\":%d,"
+                                "\"30\":%d,"
+                                "\"68\":%d,"
+                                "\"73\":%d,"
+                                "\"82\":%d,"
+                                "\"114\":%d,"
+                                "\"117\":%d},"
+                        "\"lk\":%d,"                           // Light CTRGB linked
+                        "\"lt_st\":%d,"                        // Light SubType
+                        "\"sho\":["),                          // Shutter Options (start)
+                        Settings->flag.mqtt_response,
+                        Settings->flag.button_swap,
+                        Settings->flag.button_single,
+                        Settings->flag.decimal_text,
+                        Settings->flag.not_power_linked,
+                        Settings->flag.hass_light,
+                        Settings->flag3.pwm_multi_channels,
+                        Settings->flag3.mqtt_buttons,
+                        Settings->flag4.alexa_ct_range,
+                        Settings->flag5.mqtt_switches,
+                        Settings->flag5.fade_fixed_duration,
+                        light_controller_isCTRGBLinked,
+                        light_subtype);
+
   for (uint32_t i = 0; i < MAX_SHUTTERS; i++) {
-    snprintf_P(stemp6, sizeof(stemp6), PSTR("%s%s%d"), stemp6, (i > 0 ? "," : ""), Settings->shutter_options[i]);
-  }
+#ifdef USE_SHUTTER
+    ResponseAppend_P(PSTR("%s%d"), (i > 0 ? "," : ""), Settings->shutter_options[i]);
 #else
-   snprintf_P(stemp6, sizeof(stemp6), PSTR("0,0,0,0"));
-#endif // USE_SHUTTER
-
-  ResponseClear(); // Clear retained message
-
-  // Full 12 chars MAC address as ID
-  snprintf_P(unique_id, sizeof(unique_id), PSTR("%s"), NetworkUniqueId().c_str());
-  snprintf_P(stopic, sizeof(stopic), PSTR("tasmota/discovery/%s/config"), unique_id);
-
-  // Send empty message if new discovery is disabled
-  TasmotaGlobal.masterlog_level = 4;   // Hide topic on clean and remove use weblog 4 to show it
-  if (!Settings->flag.hass_discovery) { // HassDiscoveryRelays(relays)
-    Response_P(HASS_DISCOVER_DEVICE, (uint32_t)WiFi.localIP(), SettingsText(SET_DEVICENAME),
-              stemp2, TasmotaGlobal.hostname, unique_id, ModuleName().c_str(), TuyaMod, iFanMod, GetStateText(0), GetStateText(1), GetStateText(2), GetStateText(3),
-              TasmotaGlobal.version, TasmotaGlobal.mqtt_topic, SettingsText(SET_MQTT_FULLTOPIC), PSTR(SUB_PREFIX), PSTR(PUB_PREFIX), PSTR(PUB_PREFIX2), Hass.RelLst, switch_mode, switch_name,
-              stemp5, Settings->flag.mqtt_response, Settings->flag.button_swap, Settings->flag.button_single, Settings->flag.decimal_text, Settings->flag.not_power_linked,
-              Settings->flag.hass_light, Settings->flag3.pwm_multi_channels, Settings->flag3.mqtt_buttons, Settings->flag4.alexa_ct_range, Settings->flag5.mqtt_switches,
-              Settings->flag5.fade_fixed_duration, light_controller.isCTRGBLinked(), Light.subtype, stemp6);
+    ResponseAppend_P(PSTR("%s0"), (i > 0 ? "," : ""));
+#endif  // USE_SHUTTER
   }
-  MqttPublish(stopic, true);
 
-  if (!Settings->flag.hass_discovery) {
-    snprintf_P(stopic, sizeof(stopic), PSTR("tasmota/discovery/%s/sensors"), unique_id);
-    Response_P(PSTR("{\"sn\":"));
-    MqttShowSensor();
-    ResponseAppend_P(PSTR(",\"ver\":1}"));
-    MqttPublish(stopic, true);
-  }
-  TasmotaGlobal.masterlog_level = 0; // Restore WebLog state
+  ResponseAppend_P(PSTR("],"                                   // Shutter Options (end)
+                        "\"ver\":1}"));                        // Discovery version
 }
 
+void NewHAssDiscovery(void) {
+  TasmotaGlobal.masterlog_level = LOG_LEVEL_DEBUG_MORE;        // Hide topic on clean and remove use weblog 4 to show it
+
+  ResponseClear();                                             // Clear retained message
+  if (!Settings->flag.hass_discovery) {                         // SetOption19 - Clear retained message
+    HassDiscoverMessage();                                      // Build discovery message
+  }
+  char stopic[TOPSZ];
+  snprintf_P(stopic, sizeof(stopic), PSTR("tasmota/discovery/%s/config"), NetworkUniqueId().c_str());
+  MqttPublish(stopic, true);
+
+  if (!Settings->flag.hass_discovery) {                         // SetOption19 - Clear retained message
+    Response_P(PSTR("{\"sn\":"));
+    MqttShowSensor(true);
+    ResponseAppend_P(PSTR(",\"ver\":1}"));
+  }
+  snprintf_P(stopic, sizeof(stopic), PSTR("tasmota/discovery/%s/sensors"), NetworkUniqueId().c_str());
+  MqttPublish(stopic, true);
+
+  TasmotaGlobal.masterlog_level = LOG_LEVEL_NONE;              // Restore WebLog state
+}
 // NEW DISCOVERY
 
 void TryResponseAppend_P(const char *format, ...) {
@@ -405,7 +445,9 @@ void HAssAnnounceRelayLight(void)
   char stemp3[TOPSZ];
   char unique_id[30];
 
+#ifdef USE_LIGHT
   bool LightControl = light_controller.isCTRGBLinked(); // SetOption37 - Color remapping for led channels, also provides an option for allowing independent handling of RGB and white channels
+#endif //USE_LIGHT
   bool PwmMulti = Settings->flag3.pwm_multi_channels;    // SetOption68 - Multi-channel PWM instead of a single light
   bool is_topic_light = false;                          // Switch HAss domain between Lights and Relays
   bool ind_light = false;                               // Controls Separated Lights when SetOption37 is >= 128
@@ -422,30 +464,36 @@ void HAssAnnounceRelayLight(void)
   uint8_t TuyaRel = 0;
   uint8_t TuyaRelInv = 0;
   uint8_t TuyaDim = 0;
-  uint8_t shutter_mask = 0;
+  power_t shutter_mask = 0;
 
-  #ifdef ESP8266
-        if (PWM_DIMMER == TasmotaGlobal.module_type ) { PwmMod = true; } //
-        if (SONOFF_IFAN02 == TasmotaGlobal.module_type || SONOFF_IFAN03 == TasmotaGlobal.module_type) { FanMod = true; }
-        if (SONOFF_DUAL == TasmotaGlobal.module_type) { valid_relay = 2; }
-        if (TUYA_DIMMER == TasmotaGlobal.module_type || SK03_TUYA == TasmotaGlobal.module_type) { TuyaMod = true; }
-  #endif //ESP8266
+#ifdef ESP8266
+  PwmMod = (PWM_DIMMER == TasmotaGlobal.module_type);
+  FanMod = (SONOFF_IFAN02 == TasmotaGlobal.module_type || SONOFF_IFAN03 == TasmotaGlobal.module_type);
+  if (SONOFF_DUAL == TasmotaGlobal.module_type) { valid_relay = 2; }
+#endif //ESP8266
+#ifdef USE_TUYA_MCU
+  TuyaMod = IsModuleTuya();
+#endif
 
+#ifdef USE_LIGHT
   // If there is a special Light to be enabled and managed with SetOption68 or SetOption37 >= 128, Discovery calculates the maximum number of entities to be generated in advance
-
   if (PwmMulti) { max_lights = Light.subtype; }
 
   if (!LightControl) {
     ind_light = true;
     if (!PwmMulti) { max_lights = 2;}
   }
+#endif //USE_LIGHT
 
 #ifdef USE_SHUTTER
   if (Settings->flag3.shutter_mode) {
     for (uint32_t i = 0; i < MAX_SHUTTERS; i++) {
-      if (Settings->shutter_startrelay[i] > 0 && Settings->shutter_startrelay[i] <= MAX_SHUTTER_RELAYS) {
+      if (Settings->shutter_startrelay[i] > 0 ) {
         bitSet(shutter_mask, Settings->shutter_startrelay[i] -1);
         bitSet(shutter_mask, Settings->shutter_startrelay[i]);
+      } else {
+        // terminate loop at first INVALID Settings->shutter_startrelay[i].
+        break;
       }
     }
   }
@@ -483,11 +531,16 @@ void HAssAnnounceRelayLight(void)
 
     if (bitRead(shutter_mask, i-1)) {
       // suppress shutter relays
+#ifdef USE_LIGHT
     } else if ((i < Light.device) && !RelayX) {
       err_flag = true;
       AddLog(LOG_LEVEL_ERROR, PSTR("%s"), kHAssError2);
     } else {
       if (Settings->flag.hass_discovery && (RelayX || (Light.device > 0) && (max_lights > 0)) && !err_flag )
+#else
+    } else {
+      if (Settings->flag.hass_discovery && RelayX )
+#endif //USE_LIGHT
       {                    // SetOption19 - Control Home Assistant automatic discovery (See SetOption59)
           char name[TOPSZ]; // friendlyname(33) + " " + index
           char value_template[33];
@@ -896,11 +949,7 @@ void HAssAnnounceSensors(void)
     TasmotaGlobal.tele_period = tele_period_save;
     size_t sensordata_len = ResponseLength();
     char sensordata[sensordata_len+2];   // dynamically adjust the size
-#ifdef MQTT_DATA_STRING
-    strcpy(sensordata, TasmotaGlobal.mqtt_data.c_str());    // we can use strcpy since the buffer has the right size
-#else
-    strcpy(sensordata, TasmotaGlobal.mqtt_data);    // we can use strcpy since the buffer has the right size
-#endif
+    strcpy(sensordata, ResponseData());    // we can use strcpy since the buffer has the right size
 
     // ******************* JSON TEST *******************
     // char sensordata[512];
@@ -982,15 +1031,14 @@ void HAssAnnounceShutters(void)
     snprintf_P(unique_id, sizeof(unique_id), PSTR("%06X_SHT_%d"), ESP_getChipId(), i + 1);
     snprintf_P(stopic, sizeof(stopic), PSTR(HOME_ASSISTANT_DISCOVERY_PREFIX "/cover/%s/config"), unique_id);
 
-    if (Settings->flag.hass_discovery && Settings->flag3.shutter_mode && Settings->shutter_startrelay[i] > 0 && Settings->shutter_startrelay[i] <= MAX_SHUTTER_RELAYS) {
+    if (Settings->flag.hass_discovery && Settings->flag3.shutter_mode && Settings->shutter_startrelay[i] > 0) {
        ShowTopic = 0; // Show the new generated topic
       if (i > MAX_FRIENDLYNAMES) {
         snprintf_P(stemp1, sizeof(stemp1), PSTR("%s Shutter %d"), SettingsText(SET_DEVICENAME), i + 1);
       } else {
         snprintf_P(stemp1, sizeof(stemp1), PSTR("%s"), SettingsText(SET_FRIENDLYNAME1 + i));
       }
-      GetTopic_P(stemp2, TELE, TasmotaGlobal.mqtt_topic, D_RSLT_STATE);
-      Response_P(HASS_DISCOVER_BASE, stemp1, stemp2);
+      Response_P(PSTR("{\"name\":\"%s\""), stemp1);
 
       GetTopic_P(stemp1, TELE, TasmotaGlobal.mqtt_topic, S_LWT);
       TryResponseAppend_P(HASS_DISCOVER_SENSOR_LWT, stemp1);
@@ -1002,8 +1050,16 @@ void HAssAnnounceShutters(void)
       GetTopic_P(stemp2, CMND, TasmotaGlobal.mqtt_topic, PSTR("ShutterPosition"));
       TryResponseAppend_P(HASS_DISCOVER_SHUTTER_POS, stemp1, i + 1, stemp2, i + 1);
 
+      if (Settings->shutter_tilt_config[3][i] != Settings->shutter_tilt_config[4][i]) {
+        GetTopic_P(stemp1, CMND, TasmotaGlobal.mqtt_topic, PSTR("ShutterTilt"));
+        TryResponseAppend_P(HASS_DISCOVER_SHUTTER_TILT, stemp1, i + 1, Settings->shutter_tilt_config[3][i], Settings->shutter_tilt_config[4][i]);
+      }
+
       TryResponseAppend_P(HASS_DISCOVER_DEVICE_INFO_SHORT, unique_id, ESP_getChipId());
       TryResponseAppend_P(PSTR("}"));
+    } else {
+      // terminate loop at first INVALID Settings->shutter_startrelay[i].
+      break;
     }
 
     TasmotaGlobal.masterlog_level = ShowTopic;
