@@ -104,7 +104,7 @@
 #define USE_MQTT_WATSON_IOT
 #define USE_MQTT_MOSQUITTO // Use our Mosquitto server (which is based on the WIOT changes). Note we can define both and both CA certs will build in
 
-#if !defined(FIRMWARE_MINIMAL) and !defined(FIRMWARE_LITE)
+#if !defined(FIRMWARE_MINIMAL) && !defined(FIRMWARE_LITE)
 
 #if 1
 #ifndef USE_MQTT_TLS
