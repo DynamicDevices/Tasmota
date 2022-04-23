@@ -1,3 +1,6 @@
+18/04/2022  v9.5.0.3/v1.1.3.0   - Fix issue with OTA URL always being "devel" even when running "prod" firmware
+                                - Disable rules support in full Tasmota to try to prevent boot loop lockup
+
 15/04/2022  v9.5.0.3/v1.1.2.0   - fix provisioning AP name from 'Provisoning' to 'Provisioning'
                                 - revert to old Watson IoT broker
 
