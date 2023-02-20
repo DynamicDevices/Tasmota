@@ -37,7 +37,8 @@
 #define CSE_PULSES_NOT_INITIALIZED  -1
 
 #define CSE_PREF                    1000
-#define CSE_UREF                    100
+//#define CSE_UREF                    100
+#define CSE_UREF                    188
 
 #define CSE_BUFFER_SIZE             25
 
