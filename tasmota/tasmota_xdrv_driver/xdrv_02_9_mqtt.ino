@@ -27,7 +27,40 @@
   #include "WiFiClientSecureLightBearSSL.h"
   BearSSL::WiFiClientSecure_light *tlsClient;
 #endif
-WiFiClient EspClient;                     // Wifi Client - non-TLS
+
+#ifdef USE_MQTT_TINYGSM
+
+#ifdef TINY_GSM_MODEM_SIM800
+  #include <./include/tcall_utilities.h>
+#endif
+
+  #include <TinyGsmClient.h>
+#ifdef DUMP_AT_COMMANDS
+#include <StreamDebugger.h>
+  StreamDebugger debugger(MQTT_MODEM_PORT, TINY_GSM_DEBUG);
+  TinyGsm modem(debugger);
+#else
+  TinyGsm        modem(MQTT_MODEM_PORT); // Use default serial port for now
+#endif
+  TinyGsmClient EspClient(modem);
+
+  // Range to attempt to autobaud
+  // NOTE:  DO NOT AUTOBAUD in production code.  Once you've established
+  // communication, set a fixed baud rate using modem.setBaud(#).
+  #define GSM_AUTOBAUD_MIN 9600
+  #define GSM_AUTOBAUD_MAX 115200
+  // set GSM PIN, if any
+  #define GSM_PIN ""
+  // Your GPRS credentials, if any
+//  const char apn[]      = "internet.cxn";
+//  const char gprsUser[] = "";
+//  const char gprsPass[] = "";
+  const char apn[]      = "wap.o2.co.uk";
+  const char gprsUser[] = "o2web";
+  const char gprsPass[] = "password";
+#else
+  WiFiClient EspClient;                     // Wifi Client - non-TLS
+#endif
 
 #ifdef USE_MQTT_AZURE_IOT
 #undef  MQTT_PORT
@@ -255,8 +288,54 @@ void MqttInit(void) {
     MqttClient.setClient(EspClient);    // non-TLS
   }
 #else // USE_MQTT_TLS
-  MqttClient.setClient(EspClient);
+    MqttClient.setClient(EspClient);
 #endif // USE_MQTT_TLS
+
+#ifdef USE_MQTT_TINYGSM
+
+  AddLog(LOG_LEVEL_INFO, PSTR(D_LOG_MQTT "Autobauding modem..."));
+
+#ifdef TINY_GSM_MODEM_SIM800
+  // Initialise T-CALL modem
+  setupModem();
+
+  MQTT_MODEM_PORT.begin(115200, SERIAL_8N1, MODEM_RX, MODEM_TX);
+#endif
+
+// Set GSM module baud rate
+  TinyGsmAutoBaud(MQTT_MODEM_PORT, GSM_AUTOBAUD_MIN, GSM_AUTOBAUD_MAX);
+  // SerialAT.begin(9600);
+  delay(6000);
+
+  // Restart takes quite some time
+  // To skip it, call init() instead of restart()
+  AddLog(LOG_LEVEL_INFO, PSTR(D_LOG_MQTT "Initializing modem..."));
+  modem.restart();
+  // modem.init();
+
+  String modemInfo = modem.getModemInfo();
+  AddLog(LOG_LEVEL_INFO, PSTR(D_LOG_MQTT "Modem Info: %s"),  String(modemInfo).c_str());
+
+  // Unlock your SIM card with a PIN if needed
+  if (GSM_PIN && modem.getSimStatus() != 3) { modem.simUnlock(GSM_PIN); }
+
+#ifdef TINY_GSM_TCP_KEEPALIVE_SECS
+    AddLog(LOG_LEVEL_INFO, PSTR(D_LOG_MQTT "Overriding TCP KeepAlive to %d secs"), TINY_GSM_TCP_KEEPALIVE_SECS);
+    modem.sendAT(GF((String)"+CIPTKA=1," + TINY_GSM_TCP_KEEPALIVE_SECS + "," + TINY_GSM_TCP_KEEPALIVE_SECS + ",9"));
+    if (modem.waitResponse() != 1) { AddLog(LOG_LEVEL_ERROR, PSTR(D_LOG_MQTT "Failed setting KeepAlive"));
+    }
+#endif
+
+  AddLog(LOG_LEVEL_INFO, PSTR(D_LOG_MQTT "Waiting for network..."));
+  if (!modem.waitForNetwork()) {
+    AddLog(LOG_LEVEL_ERROR, PSTR(D_LOG_MQTT "Fail"));
+    // FIXME
+  }
+  AddLog(LOG_LEVEL_INFO, PSTR(D_LOG_MQTT "Success"));
+
+  if (modem.isNetworkConnected()) { AddLog(LOG_LEVEL_INFO, PSTR(D_LOG_MQTT "Network Connected")); }
+
+#endif // USE_MQTT_TINYGSM
 
   MqttClient.setKeepAlive(Settings->mqtt_keepalive);
   MqttClient.setSocketTimeout(Settings->mqtt_socket_timeout);
@@ -1065,12 +1144,30 @@ void MqttReconnect(void) {
   MqttClient.setCallback(MqttDataHandler);
 
   // Keep using hostname to solve rc -4 issues
+#ifdef USE_MQTT_TINYGSM
+
+  if(!modem.isGprsConnected()) {
+    // GPRS connection parameters are usually set after network registration
+    AddLog(LOG_LEVEL_INFO, PSTR(D_LOG_MQTT "Connecting to %s"), String(apn).c_str());
+    if (!modem.gprsConnect(apn, gprsUser, gprsPass)) {
+      AddLog(LOG_LEVEL_ERROR, PSTR(D_LOG_MQTT "Fail"));
+      // FIXME
+      MqttDisconnected(-5);  // MQTT_DNS_DISCONNECTED
+      return;
+    }
+    AddLog(LOG_LEVEL_INFO, PSTR(D_LOG_MQTT "Success"));
+  }
+
+  MqttClient.setServer(SettingsText(SET_MQTT_HOST), Settings->mqtt_port);
+#else
   IPAddress ip;
   if (!WifiHostByName(SettingsText(SET_MQTT_HOST), ip)) {
     MqttDisconnected(-5);  // MQTT_DNS_DISCONNECTED
     return;
   }
+
   MqttClient.setServer(ip, Settings->mqtt_port);
+#endif
 
   if (2 == Mqtt.initial_connection_state) {  // Executed once just after power on and wifi is connected
     Mqtt.initial_connection_state = 1;
@@ -1078,6 +1175,7 @@ void MqttReconnect(void) {
 
   char *mqtt_user = nullptr;
   char *mqtt_pwd = nullptr;
+
   if (strlen(SettingsText(SET_MQTT_USER))) {
     mqtt_user = SettingsText(SET_MQTT_USER);
   }
@@ -1138,6 +1236,7 @@ void MqttReconnect(void) {
   char stopic[TOPSZ];
   GetTopic_P(stopic, TELE, TasmotaGlobal.mqtt_topic, S_LWT);
   Response_P(S_LWT_OFFLINE);
+
   if (MqttClient.connect(TasmotaGlobal.mqtt_client,
                          mqtt_user,
                          mqtt_pwd,
