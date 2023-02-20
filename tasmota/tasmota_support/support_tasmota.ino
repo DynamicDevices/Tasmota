@@ -1615,6 +1615,8 @@ void Every250mSeconds(void)
         // send FUNC_NETWORK_DOWN to all modules
 //        AddLog(LOG_LEVEL_DEBUG_MORE, PSTR("WIF: Sending FUNC_NETWORK_DOWN"));
         XdrvXsnsCall(FUNC_NETWORK_DOWN);
+
+        MqttCheck();
       }                                           // Every x.75 second
     }
     break;
