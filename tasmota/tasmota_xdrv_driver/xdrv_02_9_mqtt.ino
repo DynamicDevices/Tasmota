@@ -52,12 +52,9 @@
   // set GSM PIN, if any
   #define GSM_PIN ""
   // Your GPRS credentials, if any
-//  const char apn[]      = "internet.cxn";
-//  const char gprsUser[] = "";
-//  const char gprsPass[] = "";
-  const char apn[]      = "wap.o2.co.uk";
-  const char gprsUser[] = "o2web";
-  const char gprsPass[] = "password";
+  const char apn[]      = GPRS_APN;
+  const char gprsUser[] = GPRS_USER;
+  const char gprsPass[] = GPRS_PASS;
 #else
   WiFiClient EspClient;                     // Wifi Client - non-TLS
 #endif
@@ -325,15 +322,6 @@ void MqttInit(void) {
     if (modem.waitResponse() != 1) { AddLog(LOG_LEVEL_ERROR, PSTR(D_LOG_MQTT "Failed setting KeepAlive"));
     }
 #endif
-
-  AddLog(LOG_LEVEL_INFO, PSTR(D_LOG_MQTT "Waiting for network..."));
-  if (!modem.waitForNetwork()) {
-    AddLog(LOG_LEVEL_ERROR, PSTR(D_LOG_MQTT "Fail"));
-    // FIXME
-  }
-  AddLog(LOG_LEVEL_INFO, PSTR(D_LOG_MQTT "Success"));
-
-  if (modem.isNetworkConnected()) { AddLog(LOG_LEVEL_INFO, PSTR(D_LOG_MQTT "Network Connected")); }
 
 #endif // USE_MQTT_TINYGSM
 
@@ -1145,6 +1133,16 @@ void MqttReconnect(void) {
 
   // Keep using hostname to solve rc -4 issues
 #ifdef USE_MQTT_TINYGSM
+
+  // TODO: Do we want to wait here for the network?
+  AddLog(LOG_LEVEL_INFO, PSTR(D_LOG_MQTT "Waiting for network..."));
+  if (!modem.waitForNetwork()) {
+    AddLog(LOG_LEVEL_ERROR, PSTR(D_LOG_MQTT "Fail"));
+    // FIXME
+  }
+  AddLog(LOG_LEVEL_INFO, PSTR(D_LOG_MQTT "Success"));
+
+  if (modem.isNetworkConnected()) { AddLog(LOG_LEVEL_INFO, PSTR(D_LOG_MQTT "Network Connected")); }
 
   if(!modem.isGprsConnected()) {
     // GPRS connection parameters are usually set after network registration
