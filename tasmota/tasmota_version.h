@@ -21,6 +21,6 @@
 #define _TASMOTA_VERSION_H_
 
 const uint32_t VERSION = 0x0B010000;   // 11.1.0.0
-const uint32_t KC_VERSION = 0x01010300l; // See KC_README.md
+const uint32_t KC_VERSION = 0x01010400l; // See KC_README.md
 
 #endif  // _TASMOTA_VERSION_H_
