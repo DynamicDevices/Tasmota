@@ -947,11 +947,13 @@ void MqttConnected(void) {
     MqttPublish(stopic, true);
 #endif
 
+#if !defined(USE_MQTT_MOSQUITTO)
     if (!Settings->flag4.only_json_message) {  // SetOption90 - Disable non-json MQTT response
       // Satisfy iobroker (#299)
       ResponseClear();
       MqttPublishPrefixTopic_P(CMND, S_RSLT_POWER);
     }
+#endif
 
 #if !defined(USE_MQTT_WATSON_IOT)
     GetTopic_P(stopic, CMND, TasmotaGlobal.mqtt_topic, PSTR("#"));
