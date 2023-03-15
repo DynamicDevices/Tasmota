@@ -117,14 +117,6 @@
 
 #endif // FIRMWARE_MINIMAL
 
-#undef MQTT_USER
-//#undef MQTT_PASS
-//#undef MQTT_CLIENT_ID
-#undef MQTT_TOPIC
-#undef MQTT_FULLTOPIC
-
-#define MQTT_TOPIC             PROJECT "_FactoryDefault"
-
 // For Watson IoT
 
 // We are forwarding the connection via DNS so don't
@@ -136,14 +128,20 @@
 #undef MQTT_TLS_ENABLED
 #define MQTT_TLS_ENABLED       true             // [SetOption103] Enable TLS mode (requires TLS version)
 
-#undef MQTT_CLIENT_ID
-#define MQTT_CLIENT_ID    "provisioning"
-#undef MQTT_USER
-#define MQTT_USER         "provisioning"
-#undef MQTT_PASS
-#define MQTT_PASS         "provisioning"
+#ifndef MQTT_CLIENT_ID
+#define MQTT_CLIENT_ID    "dummmy_client_id"
+#endif
+#ifndef MQTT_USER
+#define MQTT_USER         "dummy_mqtt_user"
+#endif
+#ifndef MQTT_PASS
+#define MQTT_PASS         "dummy_mqtt_password"
+#endif
 
-#define MQTT_FULLTOPIC    "evt/%prefix%/%topic%"
+#undef MQTT_TOPIC
+#define MQTT_TOPIC             PROJECT "_FactoryDefault"
+#undef MQTT_FULLTOPIC
+#define MQTT_FULLTOPIC    "%prefix%/%topic%"
 
 #undef MQTT_GRPTOPIC
 #define MQTT_GRPTOPIC          "kettles"        // [GroupTopic] MQTT Group topic

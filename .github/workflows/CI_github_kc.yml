@@ -19,7 +19,7 @@ jobs:
     environment: 
       name: build
     env:
-      PLATFORMIO_BUILD_FLAGS: -D MQTT_CLIENT_ID='"${{ secrets.MQTT_CLIENT_ID }}"' -D MQTT_PASS='"${{ secrets.MQTT_PASS }}"'
+      PLATFORMIO_BUILD_FLAGS: -D MQTT_CLIENT_ID='"${{ secrets.MQTT_CLIENT_ID }}"' -D MQTT_USER='"${{ secrets.MQTT_USER }}"' -D MQTT_PASS='"${{ secrets.MQTT_PASS }}"'
     steps:
     - name: Set environment for branch
       run: |
@@ -71,7 +71,7 @@ jobs:
     environment: 
       name: build
     env:
-      PLATFORMIO_BUILD_FLAGS: -D MQTT_CLIENT_ID='"${{ secrets.MQTT_CLIENT_ID }}"' -D MQTT_PASS='"${{ secrets.MQTT_PASS }}"'
+      PLATFORMIO_BUILD_FLAGS: -D MQTT_CLIENT_ID='"${{ secrets.MQTT_CLIENT_ID }}"' -D MQTT_USER='"${{ secrets.MQTT_USER }}"' -D MQTT_PASS='"${{ secrets.MQTT_PASS }}"'
     needs: tasmota-minimal
     steps:
     - name: Set environment for branch
@@ -125,7 +125,7 @@ jobs:
     environment: 
       name: build
     env:
-      PLATFORMIO_BUILD_FLAGS: -D MQTT_CLIENT_ID='"${{ secrets.MQTT_CLIENT_ID }}"' -D MQTT_PASS='"${{ secrets.MQTT_PASS }}"'
+      PLATFORMIO_BUILD_FLAGS: -D MQTT_CLIENT_ID='"${{ secrets.MQTT_CLIENT_ID }}"' -D MQTT_USER='"${{ secrets.MQTT_USER }}"' -D MQTT_PASS='"${{ secrets.MQTT_PASS }}"'
     steps:
     - name: Set environment for branch
       run: |
@@ -177,7 +177,7 @@ jobs:
     environment: 
       name: build
     env:
-      PLATFORMIO_BUILD_FLAGS: -D MQTT_CLIENT_ID='"${{ secrets.MQTT_CLIENT_ID }}"' -D MQTT_PASS='"${{ secrets.MQTT_PASS }}"'
+      PLATFORMIO_BUILD_FLAGS: -D MQTT_CLIENT_ID='"${{ secrets.MQTT_CLIENT_ID }}"' -D MQTT_USER='"${{ secrets.MQTT_USER }}"' -D MQTT_PASS='"${{ secrets.MQTT_PASS }}"'
     needs: tasmota-lite
     steps:
     - name: Set environment for branch
@@ -230,7 +230,7 @@ jobs:
     environment: 
       name: build
     env:
-      PLATFORMIO_BUILD_FLAGS: -D MQTT_CLIENT_ID='"${{ secrets.MQTT_CLIENT_ID }}"' -D MQTT_PASS='"${{ secrets.MQTT_PASS }}"'
+      PLATFORMIO_BUILD_FLAGS: -D MQTT_CLIENT_ID='"${{ secrets.MQTT_CLIENT_ID }}"' -D MQTT_USER='"${{ secrets.MQTT_USER }}"' -D MQTT_PASS='"${{ secrets.MQTT_PASS }}"'
     needs: tasmota-lite-trampoline
     steps:
     - name: Set environment for branch
