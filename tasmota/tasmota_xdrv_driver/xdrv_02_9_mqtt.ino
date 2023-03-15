@@ -953,7 +953,7 @@ void MqttConnected(void) {
       MqttPublishPrefixTopic_P(CMND, S_RSLT_POWER);
     }
 
-#if !defined(USE_MQTT_WATSON_IOT) && !defined(USE_MQTT_MOSQUITTO)
+#if !defined(USE_MQTT_WATSON_IOT)
     GetTopic_P(stopic, CMND, TasmotaGlobal.mqtt_topic, PSTR("#"));
     MqttSubscribe(stopic);
     if (strstr_P(SettingsText(SET_MQTT_FULLTOPIC), MQTT_TOKEN_TOPIC) != nullptr) {
