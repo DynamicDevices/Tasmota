@@ -941,7 +941,7 @@ void MqttConnected(void) {
     Mqtt.retry_counter_delay = 1;
     Mqtt.connect_count++;
 
-#if !defined(USE_MQTT_WATSON_IOT) && !defined(USE_MQTT_MOSQUITTO)
+#if !defined(USE_MQTT_WATSON_IOT)
     GetTopic_P(stopic, TELE, TasmotaGlobal.mqtt_topic, S_LWT);
     Response_P(PSTR(MQTT_LWT_ONLINE));
     MqttPublish(stopic, true);
