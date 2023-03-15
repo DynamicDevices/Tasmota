@@ -132,20 +132,19 @@
 //#define DISABLE_SNI_CHECK
 
 #define MQTT_HOST         "broker-new.kettlecompanion.com"
-//#define MQTT_HOST         "jit4q3.messaging.internetofthings.ibmcloud.com"
 #define MQTT_PORT         8883
 #undef MQTT_TLS_ENABLED
 #define MQTT_TLS_ENABLED       true             // [SetOption103] Enable TLS mode (requires TLS version)
 
-#define MQTT_USER         "use-token-auth"
 #ifndef MQTT_CLIENT_ID
 #define MQTT_CLIENT_ID    "DummyClientId"
 #endif
-#ifndef MQTT_PASS
-#define MQTT_PASS         "DummyPass"
-#endif
+#undef MQTT_USER
+#define MQTT_USER         "provisioning"
+#undef MQTT_PASS
+#define MQTT_PASS         "provisioning"
 
-#define MQTT_FULLTOPIC    "iot-2/evt/%prefix%|%topic%"
+#define MQTT_FULLTOPIC    "evt/%prefix%/%topic%"
 
 #undef MQTT_GRPTOPIC
 #define MQTT_GRPTOPIC          "kettles"        // [GroupTopic] MQTT Group topic
