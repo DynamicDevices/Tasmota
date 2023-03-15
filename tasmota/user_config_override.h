@@ -101,7 +101,7 @@
 
 // We have a partial implementation for Watson topic requirements
 // Subscriptions are currently not supported and LWT is disabled?
-#define USE_MQTT_WATSON_IOT
+//#define USE_MQTT_WATSON_IOT
 #define USE_MQTT_MOSQUITTO // Use our Mosquitto server (which is based on the WIOT changes). Note we can define both and both CA certs will build in
 
 #if !defined(FIRMWARE_MINIMAL) && !defined(FIRMWARE_LITE)
