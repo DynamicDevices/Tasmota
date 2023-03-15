@@ -1,3 +1,9 @@
+15/03/2023  v12.4.0.x/v1.1.5.0  - Merged in master from upstream Tasmota which is currently v12.4.0.0 + some bits
+                                - Tested against our Mosquitto KC broker and made various changes to move away from WIOTP implementation
+                                - So login and topics and such have changed
+                                - Also removed dodgy 'io broker' fix publishing POWER to cmnd topic on connection 
+                                - Seems to be working so tagging for test
+
 15/03/2023  v11.1.0.0/v1.1.4.0   - Disable Watson MQTT support
 
 18/04/2022  v11.1.0.0/v1.1.3.0   - Fix issue with OTA URL always being "devel" even when running "prod" firmware
