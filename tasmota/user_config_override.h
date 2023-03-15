@@ -131,8 +131,8 @@
 // check the actual hostname of the server
 //#define DISABLE_SNI_CHECK
 
-//#define MQTT_HOST         "broker-new.kettlecompanion.com"
-#define MQTT_HOST         "jit4q3.messaging.internetofthings.ibmcloud.com"
+#define MQTT_HOST         "broker-new.kettlecompanion.com"
+//#define MQTT_HOST         "jit4q3.messaging.internetofthings.ibmcloud.com"
 #define MQTT_PORT         8883
 #define MQTT_USER         "use-token-auth"
 #ifndef MQTT_CLIENT_ID
@@ -150,6 +150,10 @@
 // Heartbeat currently set to 60s. Could easily take this up to 5 mins or more
 #undef TELE_PERIOD
 #define TELE_PERIOD            120               // [TelePeriod] Telemetry (0 = disable, 10 - 3600 seconds)
+
+// For testing with Wemos LED board (i.e. test GlowOrb firmware)
+#undef USE_WS2812_CTYPE
+#define USE_WS2812_CTYPE     NEO_RGB           // Color type (NEO_RGB, NEO_GRB, NEO_BRG, NEO_RBG, NEO_RGBW, NEO_GRBW)
 
 // Web / Alexa friendly nam
 #undef FRIENDLY_NAME
