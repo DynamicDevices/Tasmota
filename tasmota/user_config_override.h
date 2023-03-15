@@ -136,9 +136,8 @@
 #undef MQTT_TLS_ENABLED
 #define MQTT_TLS_ENABLED       true             // [SetOption103] Enable TLS mode (requires TLS version)
 
-#ifndef MQTT_CLIENT_ID
-#define MQTT_CLIENT_ID    "DummyClientId"
-#endif
+#undef MQTT_CLIENT_ID
+#define MQTT_CLIENT_ID    "provisioning"
 #undef MQTT_USER
 #define MQTT_USER         "provisioning"
 #undef MQTT_PASS
