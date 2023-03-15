@@ -612,7 +612,7 @@ void MqttDataHandler(char* mqtt_topic, uint8_t* mqtt_data, unsigned int data_len
 #endif  // ESP32
 #endif  // USE_TASMESH
 
-#if defined (USE_MQTT_WATSON_IOT) || defined(USE_MQTT_MOSQUITTO)
+#if defined (USE_MQTT_WATSON_IOT)
     // Strip off ending fmt/text
     String topicN = String(topic);
     topicN.replace(F("/fmt/text"), "");
