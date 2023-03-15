@@ -35,8 +35,11 @@ return_types = {
   "int32_t": "i",
   "void *": ".",
   "const void *": ".",
-  "char *": "s",
+  "char *": "c",
+  "uint8_t *": "c",
   "const char *": "s",
+  "retchar *": "s",
+  "constchar *": "s",       # special construct
   "lv_obj_user_data_t": "i",
 
   "lv_objmask_mask_t *": ".",
@@ -71,7 +74,7 @@ return_types = {
   "lv_textarea_style_t": "i",
   "lv_slider_type_t": "i",
   "lv_spinner_type_t": "i",
-  "lv_spinner_dir_t": "i",
+  "lv_spinner_dir_t": "i",  
   "lv_blend_mode_t": "i",
   "lv_grad_dir_t": "i",
   "lv_border_side_t": "i",
@@ -105,12 +108,13 @@ return_types = {
   "lv_style_prop_t": "i",
   "lv_dither_mode_t": "i",
   "lv_chart_update_mode_t": "i",
+  "lv_style_res_t": "i",
   # layouts
   "lv_flex_align_t": "i",
   "lv_flex_flow_t": "i",
   "lv_grid_align_t": "i",
 
-  "_lv_event_dsc_t *": "i",
+  "_lv_event_dsc_t *": "c",
   # lv_anim
   "lv_anim_t *": "lv_anim",
   "lv_anim_enable_t": "i",
@@ -122,6 +126,7 @@ return_types = {
   "lv_anim_start_cb_t": "c",
 
   # arrays
+  "constchar * []": "str_arr",
   "char * []": "str_arr",
   "lv_coord_t []": "lv_coord_arr",
   "lv_point_t []": "lv_point_arr",
@@ -154,13 +159,16 @@ return_types = {
   "lv_style_transition_dsc_t *": "lv_style_transition_dsc",
   "lv_draw_ctx_t *": "lv_draw_ctx",
   "_lv_draw_ctx_t *": "lv_draw_ctx",
+  "_lv_draw_layer_ctx_t *": "lv_draw_layer_ctx",
   "lv_grad_dsc_t *": "lv_grad_dsc",
   "lv_sqrt_res_t *": "lv_sqrt_res",
   # "lv_color_hsv_t *": "lv_color_hsv",
   "lv_color_filter_dsc_t *": "lv_color_filter_dsc",
   "lv_timer_t *": "lv_timer",
+  "_lv_timer_t *": "lv_timer",
   "lv_coord_t *": "c",      # treat as a simple pointer, decoding needs to be done at Berry level
   "char **": "c",      # treat as a simple pointer, decoding needs to be done at Berry level
+  "constchar **": "c",      # treat as a simple pointer, decoding needs to be done at Berry level
 
   # callbacks
   "lv_group_focus_cb_t": "lv_group_focus_cb",
@@ -188,8 +196,11 @@ lv_widgets = ['arc', 'bar', 'btn', 'btnmatrix', 'canvas', 'checkbox',
               'dropdown', 'img', 'label', 'line', 'roller', 'slider',
               'switch', 'table', 'textarea' ]
 # extra widgets
-
 lv_widgets = lv_widgets + [ 'chart', 'colorwheel', 'imgbtn', 'led', 'meter', 'msgbox', 'spinbox', 'spinner' ]
+
+# add qrcode
+lv_widgets = lv_widgets + [ 'qrcode' ]
+
 lv_prefix = ['obj', 'group', 'style', 'indev', 'disp', 'timer', 'anim'] + lv_widgets
 
 # define here widget inheritance because it's hard to deduce from source
@@ -203,6 +214,14 @@ lv_widget_inheritance = {
   "spinner": "arc",             # lv_spinner is a subclass of lv_arc
   "canvas": "img",
   "roller_label": "label",
+}
+
+# contains any custom attribute we need to add to a widget
+lv_widget_custom_ptr = {
+  "spinner": {
+    "_arc_anim_start_angle": "comptr(&arc_anim_start_angle)",
+    "_arc_anim_end_angle": "comptr(&arc_anim_end_angle)",
+  }
 }
 
 def try_int(s):
@@ -226,6 +245,8 @@ with open(lv_widgets_file) as f:
     l_raw = l_raw.strip(" \t\n\r")    # remove leading or trailing spaces
     l_raw = re.sub('static ', '', l_raw)
     l_raw = re.sub('inline ', '', l_raw)
+    l_raw = re.sub('const\s+char\s*\*', 'constchar *', l_raw)
+    l_raw = re.sub('^char\s*\*', 'retchar *', l_raw)    # special case for returning a char*
     l_raw = re.sub('const ', '', l_raw)
     l_raw = re.sub('struct ', '', l_raw)
     if (len(l_raw) == 0): continue
@@ -528,171 +549,136 @@ print("""
 /********************************************************************
 ** Solidified class: lv_style
 ********************************************************************/
-be_local_class(lv_style,
-    1,
-    NULL,
-    be_nested_map(4,
-    ( (struct bmapnode*) &(const bmapnode[]) {
-        { be_const_key(member, -1), be_const_func(lv_x_member) },
-        { be_const_key(tostring, -1), be_const_func(lv_x_tostring) },
-        { be_const_key(_p, -1), be_const_var(0) },
-        { be_const_key(init, 0), be_const_func(lv_be_style_init) },
-    })),
-    (be_str_literal("lv_style"))
-);
-/*******************************************************************/
+#include "be_fixed_be_class_lv_style.h"
+/* @const_object_info_begin
+class be_class_lv_style (scope: global, name: lv_style, strings: weak) {
+    _p, var
+    init, func(lv_be_style_init)
+    tostring, func(lv_x_tostring)
+    member, func(lv_x_member)
+}
+@const_object_info_end */
 
 /********************************************************************
 ** Solidified class: lv_obj
 ********************************************************************/
-be_local_class(lv_obj,
-    1,
-    NULL,
-    be_nested_map(5,
-    ( (struct bmapnode*) &(const bmapnode[]) {
-        { be_const_key(_class, 3), be_const_comptr(&lv_obj_class) },
-        { be_const_key(member, -1), be_const_func(lv_x_member) },
-        { be_const_key(_p, -1), be_const_var(0) },
-        { be_const_key(tostring, 4), be_const_func(lv_x_tostring) },
-        { be_const_key(init, -1), be_const_func(be_ntv_lv_obj_init) },
-    })),
-    (be_str_literal("lv_obj"))
-);
-/*******************************************************************/
+#include "be_fixed_be_class_lv_obj.h"
+/* @const_object_info_begin
+class be_class_lv_obj (scope: global, name: lv_obj, strings: weak) {
+    _p, var
+    _class, comptr(&lv_obj_class)
+    init, func(be_ntv_lv_obj_init)
+    tostring, func(lv_x_tostring)
+    member, func(lv_x_member)
+}
+@const_object_info_end */
 
 /********************************************************************
 ** Solidified class: lv_group
 ********************************************************************/
-be_local_class(lv_group,
-    1,
-    NULL,
-    be_nested_map(4,
-    ( (struct bmapnode*) &(const bmapnode[]) {
-        { be_const_key(member, -1), be_const_func(lv_x_member) },
-        { be_const_key(tostring, -1), be_const_func(lv_x_tostring) },
-        { be_const_key(_p, -1), be_const_var(0) },
-        { be_const_key(init, 0), be_const_func(be_ntv_lv_group_init) },
-    })),
-    (be_str_literal("lv_group"))
-);
-/*******************************************************************/
+#include "be_fixed_be_class_lv_group.h"
+/* @const_object_info_begin
+class be_class_lv_group (scope: global, name: lv_group, strings: weak) {
+    _p, var
+    init, func(be_ntv_lv_group_init)
+    tostring, func(lv_x_tostring)
+    member, func(lv_x_member)
+}
+@const_object_info_end */
 
 /********************************************************************
 ** Solidified class: lv_indev
 ********************************************************************/
-be_local_class(lv_indev,
-    1,
-    NULL,
-    be_nested_map(4,
-    ( (struct bmapnode*) &(const bmapnode[]) {
-        { be_const_key(member, -1), be_const_func(lv_x_member) },
-        { be_const_key(tostring, -1), be_const_func(lv_x_tostring) },
-        { be_const_key(_p, -1), be_const_var(0) },
-        { be_const_key(init, 0), be_const_func(lv0_init) },
-    })),
-    (be_str_literal("lv_indev"))
-);
-/*******************************************************************/
+#include "be_fixed_be_class_lv_indev.h"
+/* @const_object_info_begin
+class be_class_lv_indev (scope: global, name: lv_indev, strings: weak) {
+    _p, var
+    init, func(lv0_init)
+    tostring, func(lv_x_tostring)
+    member, func(lv_x_member)
+}
+@const_object_info_end */
 
 /********************************************************************
 ** Solidified class: lv_disp
 ********************************************************************/
-be_local_class(lv_disp,
-    1,
-    NULL,
-    be_nested_map(4,
-    ( (struct bmapnode*) &(const bmapnode[]) {
-        { be_const_key(member, -1), be_const_func(lv_x_member) },
-        { be_const_key(tostring, -1), be_const_func(lv_x_tostring) },
-        { be_const_key(_p, -1), be_const_var(0) },
-        { be_const_key(init, 0), be_const_func(lv0_init) },
-    })),
-    (be_str_literal("lv_disp"))
-);
-/*******************************************************************/
+#include "be_fixed_be_class_lv_disp.h"
+/* @const_object_info_begin
+class be_class_lv_disp (scope: global, name: lv_disp, strings: weak) {
+    _p, var
+    init, func(lv0_init)
+    tostring, func(lv_x_tostring)
+    member, func(lv_x_member)
+}
+@const_object_info_end */
 
 /********************************************************************
 ** Solidified class: lv_timer
 ********************************************************************/
-be_local_class(lv_timer,
-    1,
-    NULL,
-    be_nested_map(4,
-    ( (struct bmapnode*) &(const bmapnode[]) {
-        { be_const_key(member, -1), be_const_func(lv_x_member) },
-        { be_const_key(tostring, -1), be_const_func(lv_x_tostring) },
-        { be_const_key(_p, -1), be_const_var(0) },
-        { be_const_key(init, 0), be_const_func(lv0_init) },
-    })),
-    be_str_literal("lv_timer")
-);
-/*******************************************************************/
+#include "be_fixed_be_class_lv_timer.h"
+/* @const_object_info_begin
+class be_class_lv_timer (scope: global, name: lv_timer, strings: weak) {
+    _p, var
+    init, func(lv0_init)
+    tostring, func(lv_x_tostring)
+    member, func(lv_x_member)
+}
+@const_object_info_end */
 
 /********************************************************************
 ** Solidified class: lv_anim
 ********************************************************************/
-be_local_class(lv_anim,
-    1,
-    NULL,
-    be_nested_map(4,
-    ( (struct bmapnode*) &(const bmapnode[]) {
-        { be_const_key(member, -1), be_const_func(lv_x_member) },
-        { be_const_key(tostring, -1), be_const_func(lv_x_tostring) },
-        { be_const_key(_p, -1), be_const_var(0) },
-        { be_const_key(init, 0), be_const_func(lv_be_anim_init) },
-    })),
-    be_str_literal("lv_anim")
-);
-/*******************************************************************/
+#include "be_fixed_be_class_lv_anim.h"
+/* @const_object_info_begin
+class be_class_lv_anim (scope: global, name: lv_anim, strings: weak) {
+    _p, var
+    init, func(lv_be_anim_init)
+    tostring, func(lv_x_tostring)
+    member, func(lv_x_member)
+}
+@const_object_info_end */
 
 /********************************************************************
 ** Solidified class: lv_font
 ********************************************************************/
-be_local_class(lv_font,
-    1,
-    NULL,
-    be_nested_map(3,
-    ( (struct bmapnode*) &(const bmapnode[]) {
-        { be_const_key(init, -1), be_const_func(lvbe_font_create) },
-        { be_const_key(tostring, -1), be_const_func(lv_x_tostring) },
-        { be_const_key(_p, -1), be_const_var(0) },
-    })),
-    (be_str_literal("lv_font"))
-);
-/*******************************************************************/
+#include "be_fixed_be_class_lv_font.h"
+/* @const_object_info_begin
+class be_class_lv_font (scope: global, name: lv_font, strings: weak) {
+    _p, var
+    init, func(lvbe_font_create)
+    tostring, func(lv_x_tostring)
+}
+@const_object_info_end */
 
 /********************************************************************
 ** Solidified class: lv_theme
 ********************************************************************/
-be_local_class(lv_theme,
-    1,
-    NULL,
-    be_nested_map(3,
-    ( (struct bmapnode*) &(const bmapnode[]) {
-        { be_const_key(init, -1), be_const_func(lvbe_theme_create) },
-        { be_const_key(tostring, -1), be_const_func(lv_x_tostring) },
-        { be_const_key(_p, -1), be_const_var(0) },
-    })),
-    (be_str_literal("lv_theme"))
-);
-/*******************************************************************/
+#include "be_fixed_be_class_lv_theme.h"
+/* @const_object_info_begin
+class be_class_lv_theme (scope: global, name: lv_theme, strings: weak) {
+    _p, var
+    init, func(lvbe_theme_create)
+    tostring, func(lv_x_tostring)
+}
+@const_object_info_end */
 
 /********************************************************************
 ** Solidified class: lv_color
 ********************************************************************/
-be_local_class(lv_color,
-    1,
-    NULL,
-    be_nested_map(4,
-    ( (struct bmapnode*) &(const bmapnode[]) {
-        { be_const_key(toint, -1), be_const_func(lco_toint) },
-        { be_const_key(tostring, 0), be_const_func(lco_tostring) },
-        { be_const_key(_p, -1), be_const_var(0) },
-        { be_const_key(init, -1), be_const_func(lco_init) },
-    })),
-    (be_str_literal("lv_color"))
-);
-/*******************************************************************/
+#include "be_fixed_be_class_lv_color.h"
+/* @const_object_info_begin
+class be_class_lv_color (scope: global, name: lv_color, strings: weak) {
+    _p, var
+    init, func(lco_init)
+    tostring, func(lco_tostring)
+    toint, func(lco_toint)
+}
+@const_object_info_end */
+
+/* define extern function for arc_anim_start_angle and arc_anim_end_angle*/
+extern void arc_anim_start_angle(void * obj, int32_t v);
+extern void arc_anim_end_angle(void * obj, int32_t v);
+
 """)
 
 
@@ -703,18 +689,18 @@ for subtype, flv in lv.items():
     print(f"""/********************************************************************
 ** Solidified class: lv_{subtype}
 ********************************************************************/
-extern const bclass be_class_lv_obj;
-be_local_class(lv_{subtype},
-    0,
-    &be_class_lv_{super_class},
-    be_nested_map(2,
-    ( (struct bmapnode*) &(const bmapnode[]) {{
-        {{ be_const_key(_class, -1), be_const_comptr(&lv_{subtype}_class) }},
-        {{ be_const_key(init, -1), be_const_func(be_ntv_lv_{subtype}_init) }},
-    }})),
-    (be_str_literal("lv_{subtype}"))
-);
-/*******************************************************************/
+#include "be_fixed_be_class_lv_{subtype}.h"
+/* @const_object_info_begin
+class be_class_lv_{subtype} (scope: global, name: lv_{subtype}, super: be_class_lv_{super_class}, strings: weak) {{
+    _class, comptr(&lv_{subtype}_class)
+    init, func(be_ntv_lv_{subtype}_init)""")
+
+    if subtype in lv_widget_custom_ptr:
+      for k, v in lv_widget_custom_ptr[subtype].items():
+        print(f"    {k}, {v}")
+
+    print(f"""}}
+@const_object_info_end */
 """)
 
 sys.stdout.close()
@@ -732,14 +718,18 @@ print("""/********************************************************************
 
 #include "lvgl.h"
 #include "be_mapping.h"
+#include "be_ctypes.h"
 #include "lv_berry.h"
-#include "lv_theme_openhasp.h"
+#include "lv_theme_haspmota.h"
+
+// declare accessors for non-const ints
+int32_t be_LV_LAYOUT_GRID(void) { return LV_LAYOUT_GRID; };              BE_VAR_CTYPE_DECLARE(be_LV_LAYOUT_GRID, "i");
+int32_t be_LV_LAYOUT_FLEX(void) { return LV_LAYOUT_FLEX; };              BE_VAR_CTYPE_DECLARE(be_LV_LAYOUT_FLEX, "i");
 
 extern int lv0_member(bvm *vm);     // resolve virtual members
 extern int lv0_load_font(bvm *vm);
 
 extern lv_ts_calibration_t * lv_get_ts_calibration(void);
-
 
 static int lv_get_hor_res(void) {
   return lv_disp_get_hor_res(lv_disp_get_default());
@@ -824,6 +814,7 @@ for k in sorted(lv_module2):
     if v[0] == '"': v_prefix = "$"; v_macro = "be_cconst_string"
     if v[0] == '&': v_prefix = "&"; v_macro = "be_cconst_ptr"
     if v[0] == '@': v_prefix = "@"; v_macro = "be_cconst_ptr"; v = "&" + v[1:]
+    if v[0] == '>': v_prefix = ">"; v_macro = "be_ctype"; v = v[1:]
     print(f"    {{ \"{v_prefix}{k}\", {v_macro}({v}) }},")
   else:
     print(f"    {{ \"{k}\", be_cconst_int(LV_{k}) }},")
@@ -833,42 +824,11 @@ print("""
 
 const size_t lv0_constants_size = sizeof(lv0_constants)/sizeof(lv0_constants[0]);
 
-/********************************************************************
-** Solidified function: lv_module_init
-********************************************************************/
-be_local_closure(lv_lv_module_init,   /* name */
-  be_nested_proto(
-    3,                          /* nstack */
-    1,                          /* argc */
-    0,                          /* varg */
-    0,                          /* has upvals */
-    NULL,                       /* no upvals */
-    0,                          /* has sup protos */
-    NULL,                       /* no sub protos */
-    1,                          /* has constants */
-    ( &(const bvalue[ 3]) {     /* constants */
-    /* K0   */  be_nested_str(lv),
-    /* K1   */  be_nested_str(member),
-    /* K2   */  be_nested_str(lv_solidified),
-    }),
-    &be_const_str_lv_module_init,
-    &be_const_str_solidified,
-    ( &(const binstruction[ 7]) {  /* code */
-      0x6004000B,  //  0000  GETGBL	R1	G11
-      0x58080000,  //  0001  LDCONST	R2	K0
-      0x7C040200,  //  0002  CALL	R1	1
-      0x88080101,  //  0003  GETMBR	R2	R0	K1
-      0x90060202,  //  0004  SETMBR	R1	K1	R2
-      0x90060400,  //  0005  SETMBR	R1	K2	R0
-      0x80040200,  //  0006  RET	1	R1
-    })
-  )
-);
-/*******************************************************************/
+#include "../src/solidify/solidified_lv.h"
 
 /* @const_object_info_begin
 module lv (scope: global, file: lv) {
-    init, closure(lv_lv_module_init_closure)
+    init, closure(lv_module_init_closure)
     member, func(lv0_member)
 }
 @const_object_info_end */

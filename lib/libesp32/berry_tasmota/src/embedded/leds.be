@@ -4,7 +4,7 @@
 
 
 # Native commands
-# 00 : ctor         (leds:int, gpio:int[, type:int, rmt:int]) -> void
+# 00 : ctor         (leds:int, gpio:int[, typ:int, rmt:int]) -> void
 # 01 : begin        void -> void
 # 02 : show         void -> void
 # 03 : CanShow      void -> bool
@@ -21,15 +21,17 @@
 # 22 : ShiftLeft    (rot:int [, first:int, last:int]) -> void
 # 23 : ShiftRight   (rot:int [, first:int, last:int]) -> void
 
+class Leds_ntv end
 
+#@ solidify:Leds
 class Leds : Leds_ntv
   var gamma       # if true, apply gamma (true is default)
   var leds        # number of leds
   # leds:int = number of leds of the strip
   # gpio:int (optional) = GPIO for NeoPixel. If not specified, takes the WS2812 gpio
-  # type:int (optional) = Type of LED, defaults to WS2812 RGB
+  # typ:int (optional) = Type of LED, defaults to WS2812 RGB
   # rmt:int (optional) = RMT hardware channel to use, leave default unless you have a good reason 
-  def init(leds, gpio_phy, type, rmt)   # rmt is optional
+  def init(leds, gpio_phy, typ, rmt)   # rmt is optional
     self.gamma = true     # gamma is enabled by default, it should be disabled explicitly if needed
     self.leds = int(leds)
 
@@ -39,7 +41,7 @@ class Leds : Leds_ntv
     end
 
     # initialize the structure
-    self.ctor(self.leds, gpio_phy, type, rmt)
+    self.ctor(self.leds, gpio_phy, typ, rmt)
 
     if self._p == nil raise "internal_error", "couldn't not initialize noepixelbus" end
 
@@ -91,14 +93,14 @@ class Leds : Leds_ntv
     self.show()
   end
 
-  def ctor(leds, gpio_phy, type, rmt)
-    if type == nil
-      type = self.WS2812_GRB
+  def ctor(leds, gpio_phy, typ, rmt)
+    if typ == nil
+      typ = self.WS2812_GRB
     end
     if rmt == nil
       rmt = self.assign_rmt(gpio_phy)
     end
-    self.call_native(0, leds, gpio_phy, type, rmt)
+    self.call_native(0, leds, gpio_phy, typ, rmt)
   end
   def begin()
     self.call_native(1)
@@ -115,8 +117,14 @@ class Leds : Leds_ntv
   def dirty()
     self.call_native(5)
   end
-  def pixels_buffer()
-    return self.call_native(6)
+  def pixels_buffer(old_buf)
+    var buf = self.call_native(6)   # address of buffer in memory
+    if old_buf == nil
+      return bytes(buf, self.pixel_size() * self.pixel_count())
+    else
+      old_buf._change_buffer(buf)
+      return old_buf
+    end
   end
   def pixel_size()
     return self.call_native(7)
@@ -247,6 +255,8 @@ class Leds : Leds_ntv
       var offset
       var h, w
       var alternate     # are rows in alternate mode (even/odd are reversed)
+      var pix_buffer
+      var pix_size
     
       def init(strip, w, h, offset)
         self.strip = strip
@@ -254,6 +264,9 @@ class Leds : Leds_ntv
         self.h = h
         self.w = w
         self.alternate = false
+
+        self.pix_buffer = self.strip.pixels_buffer()
+        self.pix_size = self.strip.pixel_size()
       end
     
       def clear()
@@ -268,6 +281,7 @@ class Leds : Leds_ntv
         # don't trigger on segment, you will need to trigger on full strip instead
         if bool(force) || (self.offset == 0 && self.w * self.h == self.strip.leds)
           self.strip.show()
+          self.pix_buffer = self.strip.pixels_buffer(self.pix_buffer)  # update buffer after show()
         end
       end
       def can_show()
@@ -280,10 +294,10 @@ class Leds : Leds_ntv
         self.strip.dirty()
       end
       def pixels_buffer()
-        return nil
+        return self.strip.pixels_buffer()
       end
       def pixel_size()
-        return self.strip.pixel_size()
+        return self.pix_size
       end
       def pixel_count()
         return self.w * self.h
@@ -300,6 +314,15 @@ class Leds : Leds_ntv
       end
       def get_pixel_color(idx)
         return self.strip.get_pixel_color(idx + self.offseta)
+      end
+
+      # setbytes(row, bytes)
+      # sets the raw bytes for `row`, copying at most 3 or 4 x col  bytes
+      def set_bytes(row, buf, offset, len)
+        var h_bytes = self.h * self.pix_size
+        if (len > h_bytes)  len = h_bytes end
+        var offset_in_matrix = (self.offset + row) * h_bytes
+        self.pix_buffer.setbytes(offset_in_matrix, buf, offset, len)
       end
 
       # Leds_matrix specific

@@ -23,7 +23,11 @@
 #endif
 
 #if defined(CONFIG_BT_NIMBLE_ROLE_BROADCASTER)
-#include "NimBLEAdvertising.h"
+#  if CONFIG_BT_NIMBLE_EXT_ADV
+#    include "NimBLEExtAdvertising.h"
+#  else
+#    include "NimBLEAdvertising.h"
+#  endif
 #endif
 
 #if defined(CONFIG_BT_NIMBLE_ROLE_CENTRAL)
@@ -93,6 +97,7 @@ class NimBLEDevice {
 public:
     static void             init(const std::string &deviceName);
     static void             deinit(bool clearAll = false);
+    static void             setDeviceName(const std::string &deviceName);
     static bool             getInitialized();
     static NimBLEAddress    getAddress();
     static std::string      toString();
@@ -139,9 +144,19 @@ public:
     static void             removeIgnored(const NimBLEAddress &address);
 
 #if defined(CONFIG_BT_NIMBLE_ROLE_BROADCASTER)
-    static NimBLEAdvertising* getAdvertising();
-    static void               startAdvertising();
-    static void               stopAdvertising();
+#  if CONFIG_BT_NIMBLE_EXT_ADV
+    static NimBLEExtAdvertising* getAdvertising();
+    static bool                  startAdvertising(uint8_t inst_id,
+                                                  int duration = 0,
+                                                  int max_events = 0);
+    static bool                  stopAdvertising(uint8_t inst_id);
+    static bool                  stopAdvertising();
+#  endif
+#  if !CONFIG_BT_NIMBLE_EXT_ADV || defined(_DOXYGEN_)
+    static NimBLEAdvertising*    getAdvertising();
+    static bool                  startAdvertising();
+    static bool                  stopAdvertising();
+#  endif
 #endif
 
 #if defined( CONFIG_BT_NIMBLE_ROLE_CENTRAL)
@@ -178,6 +193,10 @@ private:
 
 #if defined(CONFIG_BT_NIMBLE_ROLE_BROADCASTER)
     friend class NimBLEAdvertising;
+#  if CONFIG_BT_NIMBLE_EXT_ADV
+    friend class NimBLEExtAdvertising;
+    friend class NimBLEExtAdvertisement;
+#  endif
 #endif
 
     static void        onReset(int reason);
@@ -194,7 +213,11 @@ private:
 #endif
 
 #if defined(CONFIG_BT_NIMBLE_ROLE_BROADCASTER)
+#  if CONFIG_BT_NIMBLE_EXT_ADV
+    static NimBLEExtAdvertising*      m_bleAdvertising;
+#  else
     static NimBLEAdvertising*         m_bleAdvertising;
+#  endif
 #endif
 
 #if defined( CONFIG_BT_NIMBLE_ROLE_CENTRAL)

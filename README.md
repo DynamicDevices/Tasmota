@@ -1,7 +1,7 @@
-![Tasmota logo](/tools/logo/TASMOTA_FullLogo_Vector.svg)
+![Tasmota logo](/tools/logo/TASMOTA_FullLogo_Vector.svg#gh-light-mode-only)![Tasmota logo](/tools/logo/TASMOTA_FullLogo_Vector_White.svg#gh-dark-mode-only)
 
 Alternative firmware for [ESP8266](https://en.wikipedia.org/wiki/ESP8266) and [ESP32](https://en.wikipedia.org/wiki/ESP32) based devices with **easy configuration using webUI, OTA updates, automation using timers or rules, expandability and entirely local control over MQTT, HTTP, Serial or KNX**.
-_Written for PlatformIO with limited support for Arduino IDE._
+_Written for PlatformIO._
 
 [![GitHub version](https://img.shields.io/github/release/arendst/Tasmota.svg)](http://ota.tasmota.com/tasmota/release)
 [![GitHub download](https://img.shields.io/github/downloads/arendst/Tasmota/total.svg)](https://github.com/arendst/Tasmota/releases/latest)
@@ -17,13 +17,14 @@ _Written for PlatformIO with limited support for Arduino IDE._
 
 ## Easy install
 
-Easy initial installation of Tasmota can be performed using the [Tasmota WebInstaller](https://arendst.github.io/Tasmota-firmware/).
+Easy initial installation of Tasmota can be performed using the [Tasmota WebInstaller](https://tasmota.github.io/install/).
 
 If you like **Tasmota**, give it a star, or fork it and contribute!
 
 [![GitHub stars](https://img.shields.io/github/stars/arendst/Tasmota.svg?style=social&label=Star)](https://github.com/arendst/Tasmota/stargazers)
 [![GitHub forks](https://img.shields.io/github/forks/arendst/Tasmota.svg?style=social&label=Fork)](https://github.com/arendst/Tasmota/network)
 [![donate](https://img.shields.io/badge/donate-PayPal-blue.svg)](https://paypal.me/tasmota)
+[![donate](https://img.shields.io/badge/donate-buy%20me%20a%20coffee-yellow.svg)](https://www.buymeacoffee.com/tasmota)
 
 See [RELEASENOTES.md](https://github.com/arendst/Tasmota/blob/master/RELEASENOTES.md) for release information.
 
@@ -31,14 +32,14 @@ Firmware binaries can be downloaded from http://ota.tasmota.com/tasmota/release/
 
 ## Development
 
-[![Dev Version](https://img.shields.io/badge/development%20version-v11.1.x.x-blue.svg)](https://github.com/arendst/Tasmota)
+[![Dev Version](https://img.shields.io/badge/development%20version-v12.3.x.x-blue.svg)](https://github.com/arendst/Tasmota)
 [![Download Dev](https://img.shields.io/badge/download-development-yellow.svg)](http://ota.tasmota.com/tasmota/)
 [![Tasmota CI](https://github.com/arendst/Tasmota/actions/workflows/build_all_the_things.yml/badge.svg)](https://github.com/arendst/Tasmota/actions/workflows/build_all_the_things.yml)
 [![Build_development](https://github.com/arendst/Tasmota/actions/workflows/Tasmota_build_devel.yml/badge.svg)](https://github.com/arendst/Tasmota/actions/workflows/Tasmota_build_devel.yml)
 
 See [CHANGELOG.md](CHANGELOG.md) for detailed change information.
 
-Unless your Tasmota powered device exhibits a problem or you need to make use of a feature that is not available in the Tasmota version currently installed on your device, leave your device alone - it works so don't make unnecessary changes! If the release version (i.e., the master branch) exhibits unexpected behaviour for your device and configuration, you should upgrade to the latest development version instead to see if your problem is resolved as some bugs in previous releases or development builds may already have been resolved.
+Unless your Tasmota powered device exhibits a problem or lacks a feature that you need, leave your device alone - it works so don’t make unnecessary changes! If the release version (i.e., the master branch) exhibits unexpected behaviour for your device and configuration, you should upgrade to the latest development version instead to see if your problem is resolved as some bugs in previous releases or development builds may already have been resolved.
 
 Every commit made to the development branch, which is compiling successfuly, will post new binary files at http://ota.tasmota.com/tasmota/ (this web address can be used for OTA updates too). It is important to note that these binaries are based on the current development codebase. These commits are tested as much as is possible and are typically quite stable. However, it is infeasible to test on the hundreds of different types of devices with all the available configuration options permitted.
 
@@ -46,7 +47,7 @@ Note that there is a chance, as with any upgrade, that the device may not functi
 
 ## Disclaimer
 
-st:warning: **DANGER OF ELECTROCUTION** :warning:
+:warning: **DANGER OF ELECTROCUTION** :warning:
 
 If your device connects to mains electricity (AC power) there is danger of electrocution if not installed properly. If you don't know how to install it, please call an electrician (***Beware:*** certain countries prohibit installation without a licensed electrician present). Remember: _**SAFETY FIRST**_. It is not worth the risk to yourself, your family and your home if you don't know exactly what you are doing. Never tinker or try to flash a device using the serial programming interface while it is connected to MAINS ELECTRICITY (AC power).
 
@@ -125,10 +126,13 @@ You can contribute to Tasmota by
 - Contributing missing [documentation](https://tasmota.github.io/docs) for features and devices
 
 [![donate](https://img.shields.io/badge/donate-PayPal-blue.svg)](https://paypal.me/tasmota)
+[![donate](https://img.shields.io/badge/donate-buy%20me%20a%20coffee-yellow.svg)](https://www.buymeacoffee.com/tasmota)
 
 ## Credits
 
 People helping to keep the show on the road:
+- Sfromis providing extensive user support
+- Barbudor providing user support and code fixes and additions
 - David Lang providing initial issue resolution and code optimizations
 - Heiko Krupp for his IRSend, HTU21, SI70xx and Wemo/Hue emulation drivers
 - Wiktor Schmidt for Travis CI implementation
@@ -154,7 +158,7 @@ People helping to keep the show on the road:
 - Joel Stein, digiblur and Shantur Rathore for their Tuya research and driver
 - Frogmore42 for providing many issue answers
 - Jason2866 for platformio support and providing many issue answers
-- Blakadder for managing the new document site and providing template management
+- Blakadder for managing the document site and providing template management
 - Stephan Hadinger for refactoring light driver, enhancing HueEmulation, LVGL, Zigbee and Berry support
 - tmo for designing the official Tasmota logo
 - Stefan Bode for his Shutter and Deep sleep drivers

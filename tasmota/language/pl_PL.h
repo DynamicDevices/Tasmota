@@ -28,7 +28,7 @@
  * Use online command StateText to translate ON, OFF, HOLD and TOGGLE.
  * Use online command Prefix to translate cmnd, stat and tele.
  *
- * Updated until v10.1.0.7 - Last update 04.02.2022
+ * Updated until v12.3.1.4 - Last update 19.01.2023
 \*********************************************************************/
 
 //#define LANGUAGE_MODULE_NAME         // Enable to display "Module Generic" (ie Spanish), Disable to display "Generic Module" (ie English)
@@ -83,6 +83,9 @@
 #define D_DEBUG "Debug"
 #define D_DEWPOINT "Punkt rosy"
 #define D_DISABLED "Wyłączony"
+#define D_MOVING_DISTANCE "Moving Distance"
+#define D_STATIC_DISTANCE "Static Distance"
+#define D_DETECT_DISTANCE "Detect Distance"
 #define D_DISTANCE "Odległość"
 #define D_DNS_SERVER "Serwer DNS"
 #define D_DO "Rozpuszczalność tlenu"
@@ -102,11 +105,12 @@
 #define D_FILE "Plik"
 #define D_FLOW_RATE "Przepływ"
 #define D_FRAGMENTATION "frag."      // Lower case abbreviated version of fragmentation used in "memory fragmentation"
+#define D_FRAME_RATE "Frame rate"
 #define D_FREE_MEMORY "Wolna pamięć"
 #define D_PSR_MAX_MEMORY "Pamięć PS-RAM"
 #define D_PSR_FREE_MEMORY "Wolna pamięć PS-RAM"
 #define D_FREQUENCY "Częstotliwość"
-#define D_GAS "Gas"
+#define D_GAS "Gaz"
 #define D_GATEWAY "Brama"
 #define D_GROUP "Grupa"
 #define D_HOST "Serwer"
@@ -139,6 +143,7 @@
 #define D_PASSWORD "Hasło"
 #define D_PH "pH"
 #define D_MQ "MQ"
+#define D_PARTITION "Partycja"      // As in flash and firmware partition
 #define D_PORT "Port"
 #define D_POWER_FACTOR "Cosinus fi"
 #define D_POWERUSAGE "Moc"
@@ -182,6 +187,7 @@
 #define D_UPGRADE "aktualizacji"
 #define D_UPLOAD "Wgraj"
 #define D_UPTIME "Czas pracy"
+#define D_USED "użyte"
 #define D_USER "Użytkownik"
 #define D_UTC_TIME "UTC"
 #define D_UV_INDEX "Indeks UV"
@@ -200,8 +206,8 @@
 #define D_WEIGHT "Waga"
 #define D_WARMLIGHT "Temperatura światła"
 #define D_WEB_SERVER "Serwer Web"
-#define D_SOC "State of Charge"
-#define D_SOH "State of Health"
+#define D_SOC "Stan naładowania"
+#define D_SOH "Kondycja"
 
 // tasmota.ino
 #define D_WARNING_MINIMAL_VERSION "UWAGA Ta wersja nie obsługuje zapisu ustawień"
@@ -243,6 +249,7 @@
 
 // xdrv_02_webserver.ino
 #define D_NOSCRIPT "Aby korzystać z Tasmota, włącz obsługę JavaScript"
+#define D_SAFEBOOT "SAFEBOOT"
 #define D_MINIMAL_FIRMWARE_PLEASE_UPGRADE "Oprogramowanie MINIMAL<br>proszę uaktualnić"
 #define D_WEBSERVER_ACTIVE_ON "Aktywny serwer Web"
 #define D_WITH_IP_ADDRESS "z adresem IP"
@@ -372,6 +379,7 @@
 #define D_OTA_URL "Adres serwera"
 #define D_START_UPGRADE "Aktualizuj"
 #define D_UPGRADE_BY_FILE_UPLOAD "Aktualizacja z pliku"
+#define D_UPLOAD_FACTORY "Switching to safeboot partition"
 #define D_UPLOAD_STARTED "Wgrywanie rozpoczęte"
 #define D_UPGRADE_STARTED "Aktualizacja rozpoczęta"
 #define D_UPLOAD_DONE "Wgrywanie zakończone"
@@ -490,10 +498,12 @@
 #define D_ZIGBEE_GENERATE_KEY "generuj losowo klucz sieci Zigbee"
 #define D_ZIGBEE_UNKNOWN_DEVICE "Nieznane urządzenie"
 #define D_ZIGBEE_UNKNOWN_ATTRIBUTE "Nieznany atrybut"
+#define D_ZIGBEE_UNKNOWN_ENDPOINT "Unknown endpoint"
 #define D_ZIGBEE_INVALID_PARAM "Zły parametr"
 #define D_ZIGBEE_MISSING_PARAM "Brak parametrów"
 #define D_ZIGBEE_UNKNWON_ATTRIBUTE "Nieznana nazwa atrybutu (ignoruję): %s"
 #define D_ZIGBEE_TOO_MANY_CLUSTERS "Nie więcej niż jeden cluster id na komendę"
+#define D_ZIGBEE_CONFLICTING_ENDPOINTS "Conflicting destination endpoints"
 #define D_ZIGBEE_WRONG_DELIMITER "Błędny delimiter autoryzacji"
 #define D_ZIGBEE_UNRECOGNIZED_COMMAND "Nieznana komenda zigbee: %s"
 #define D_ZIGBEE_TOO_MANY_COMMANDS "Tylko 1 komenda dozwolona (%d)"
@@ -503,6 +513,11 @@
 #define D_ZIGBEE_RESET_1_OR_2 "1 lub 2 aby zresetować"
 #define D_ZIGBEE_EEPROM_FOUND_AT_ADDRESS "Znaleziono ZBBridge EEPROM na adresie"
 #define D_ZIGBEE_RANDOMIZING_ZBCONFIG "Losowanie parametrów Zigbee, proszę sprawdzić 'ZbConfig'"
+
+// xdrv_89_dali.ino
+#define D_SENSOR_DALI_RX                  "Dali RX"
+#define D_SENSOR_DALI_TX                  "Dali TX"
+#define D_CONFIGURE_DALI                  "Config DALI"
 
 // xdrv_03_energy.ino
 #define D_ENERGY_TODAY "Energia dzisiaj"
@@ -559,6 +574,12 @@
 #define D_GY_AXIS "Odchylenie Oś-Y"
 #define D_GZ_AXIS "Odchylenie Oś-Z"
 
+// xsns_33_QMC5883L.ino
+#define D_MX "Induction X-Axis"
+#define D_MY "Induction Y-Axis"
+#define D_MZ "Induction Z-Axis"
+#define D_MAGNETICFLD "Magnetic Induction"
+
 // xsns_34_hx711.ino
 #define D_HX_CAL_REMOVE "Usuń wagę"
 #define D_HX_CAL_REFERENCE "Załaduj wagę referencyjną"
@@ -599,8 +620,8 @@
 #define D_Spannung_L3 "Napięcie L3"
 #define D_METERNR "Numer licznika"
 #define D_METERSID "Identyfikator licznika"
-#define D_GasIN "Licznik"
-#define D_H2oIN "Licznik"
+#define D_GasIN "Licznik Gazu"
+#define D_H2oIN "Licznik Wody"
 #define D_StL1L2L3 "Prąd suma"
 #define D_SpL1L2L3 "Prąd średni"
 
@@ -619,14 +640,16 @@
 #define D_SENSOR_DS18X20       "DS18x20"
 #define D_SENSOR_I2C_SCL       "I2C SCL"
 #define D_SENSOR_I2C_SDA       "I2C SDA"
-#define D_SENSOR_I2S_OUT_DATA  "I2S Out Data"
-#define D_SENSOR_I2S_OUT_CLK   "I2S Out Clk"
-#define D_SENSOR_I2S_OUT_SLCT  "I2S Out Slct"
-#define D_SENSOR_I2S_IN_DATA   "I2S In Data"
-#define D_SENSOR_I2S_IN_CLK    "I2S In Clk"
-#define D_SENSOR_I2S_IN_SLCT   "I2S In Slct"
+#define D_SENSOR_I2S_MCLK      "I2S MCLK"
+#define D_SENSOR_I2S_BCLK      "I2S BCLK"
+#define D_SENSOR_I2S_WS_IN     "I2S BCLK IN"
+#define D_SENSOR_I2S_WS        "I2S WS"
+#define D_SENSOR_I2S_BCLK_IN   "I2S WS IN"
+#define D_SENSOR_I2S_DIN       "I2S DIN"
+#define D_SENSOR_I2S_DOUT      "I2S DOUT"
 #define D_SENSOR_WS2812        "WS2812"
 #define D_SENSOR_DFR562        "Odtwarzacz MP3"
+#define D_SENSOR_DFR562_BUSY   "MP3 zajęty"
 #define D_SENSOR_IRSEND        "IRsend"
 #define D_SENSOR_SWITCH        "Przełącznik"     // Suffix "1"
 #define D_SENSOR_BUTTON        "Przycisk"     // Suffix "1"
@@ -651,7 +674,13 @@
 #define D_SENSOR_SPI_MISO      "SPI MISO"
 #define D_SENSOR_SPI_MOSI      "SPI MOSI"
 #define D_SENSOR_SPI_CLK       "SPI CLK"
-#define D_SENSOR_BACKLIGHT     "Podświetlanie"
+#define D_SENSOR_SDIO_CMD      "SDIO CMD"
+#define D_SENSOR_SDIO_CLK      "SDIO CLK"
+#define D_SENSOR_SDIO_D0       "SDIO D0"
+#define D_SENSOR_SDIO_D1       "SDIO D1"
+#define D_SENSOR_SDIO_D2       "SDIO D2"
+#define D_SENSOR_SDIO_D3       "SDIO D3"
+#define D_SENSOR_BACKLIGHT    "Podświetlanie"
 #define D_SENSOR_PMS5003_TX    "PMS5003 Tx"
 #define D_SENSOR_PMS5003_RX    "PMS5003 Rx"
 #define D_SENSOR_SDS0X1_RX     "SDS0X1 Rx"
@@ -660,8 +689,14 @@
 #define D_SENSOR_HPMA_TX       "HPMA Tx"
 #define D_SENSOR_SBR_RX        "SerBr Rx"
 #define D_SENSOR_SBR_TX        "SerBr Tx"
+#define D_SENSOR_MBR_TX        "ModBr Tx"
+#define D_SENSOR_MBR_RX        "ModBr Rx"
+#define D_SENSOR_MBR_TX_ENA    "ModBr Tx Ena"
 #define D_SENSOR_SR04_TRIG     "SR04 Tri/TX"
 #define D_SENSOR_SR04_ECHO     "SR04 Ech/RX"
+#define D_SENSOR_NRG_MBS_TX    "NrgMbs Tx"
+#define D_SENSOR_NRG_MBS_RX    "NrgMbs Rx"
+#define D_SENSOR_NRG_MBS_TX_ENA  "NrgMbs Tx Ena"
 #define D_SENSOR_SDM72_TX      "SDM72 Tx"
 #define D_SENSOR_SDM72_RX      "SDM72 Rx"
 #define D_SENSOR_SDM120_TX     "SDMx20 Tx"
@@ -672,6 +707,12 @@
 #define D_SENSOR_SDM630_RX     "SDM630 Rx"
 #define D_SENSOR_WE517_TX      "WE517 Tx"
 #define D_SENSOR_WE517_RX      "WE517 Rx"
+#define D_SENSOR_LD2410_TX     "LD2410 Tx"
+#define D_SENSOR_LD2410_RX     "LD2410 Rx"
+#define D_GPIO_TM1621_CS       "TM1621 CS"
+#define D_GPIO_TM1621_WR       "TM1621 WR"
+#define D_GPIO_TM1621_RD       "TM1621 RD"
+#define D_GPIO_TM1621_DAT      "TM1621 DAT"
 #define D_SENSOR_TM1637_CLK    "TM1637 CLK"
 #define D_SENSOR_TM1637_DIO    "TM1637 DIO"
 #define D_SENSOR_TM1638_CLK    "TM1638 CLK"
@@ -736,6 +777,8 @@
 #define D_SENSOR_HRE_DATA      "HRE Dane"
 #define D_SENSOR_ADE7880_IRQ   "ADE7880 IRQ"
 #define D_SENSOR_ADE7953_IRQ   "ADE7953 IRQ"
+#define D_SENSOR_ADE7953_RST   "ADE7953 RST"
+#define D_SENSOR_ADE7953_CS    "ADE7953 CS"
 #define D_SENSOR_BUZZER        "Dzwonek"
 #define D_SENSOR_DISP_RESET    "Reset Display"
 #define D_SENSOR_ZIGBEE_TXD    "Zigbee Tx"
@@ -762,6 +805,12 @@
 #define D_SENSOR_DDSU666_RX    "DDSU666 Rx"
 #define D_SENSOR_SM2135_CLK    "SM2135 Clk"
 #define D_SENSOR_SM2135_DAT    "SM2135 Dat"
+#define D_SENSOR_SM2335_CLK    "SM2335 Clk"
+#define D_SENSOR_SM2335_DAT    "SM2335 Dat"
+#define D_SENSOR_BP1658CJ_CLK  "BP1658CJ Clk"
+#define D_SENSOR_BP1658CJ_DAT  "BP1658CJ Dat"
+#define D_SENSOR_BP5758D_CLK    "BP5758D Clk"
+#define D_SENSOR_BP5758D_DAT    "BP5758D Dat"
 #define D_SENSOR_DEEPSLEEP     "Głęboko uśpiony"
 #define D_SENSOR_EXS_ENABLE    "Załącz EXS"
 #define D_SENSOR_CLIENT_TX    "Klient TX"
@@ -858,8 +907,21 @@
 #define D_GPIO_SHIFT595_RCLK   "74x595 RCLK"
 #define D_GPIO_SHIFT595_OE     "74x595 OE"
 #define D_GPIO_SHIFT595_SER    "74x595 SER"
-#define D_SENSOR_CM11_TX       "CM110x TX" 
-#define D_SENSOR_CM11_RX       "CM110x RX" 
+#define D_GPIO_DINGTIAN_CLK    "Dingtian CLK"
+#define D_GPIO_DINGTIAN_SDI    "Dingtian SDI"
+#define D_GPIO_DINGTIAN_Q7     "Dingtian Q7"
+#define D_GPIO_DINGTIAN_PL     "Dingtian PL"
+#define D_GPIO_DINGTIAN_RCK    "Dingtian RCK"
+#define D_SENSOR_CM11_TX       "CM110x TX"
+#define D_SENSOR_CM11_RX       "CM110x RX"
+#define D_SENSOR_FLOWRATEMETER "Flowrate"
+#define D_SENSOR_ME007_TRIG    "ME007 Tri"
+#define D_SENSOR_ME007_RX      "ME007 Rx"
+#define D_SENSOR_TUYAMCUBR_TX  "TuyaMCUBr Tx"
+#define D_SENSOR_TUYAMCUBR_RX  "TuyaMCUBr Rx"
+#define D_SENSOR_BIOPDU_PZEM0XX_TX "BioPDU PZEM0XX Tx"
+#define D_SENSOR_BIOPDU_PZEM016_RX "BioPDU PZEM016 Rx"
+#define D_SENSOR_BIOPDU_BIT    "BioPDU Bit"
 
 // Units
 #define D_UNIT_AMPERE "A"
@@ -867,10 +929,12 @@
 #define D_UNIT_CENTIMETER "cm"
 #define D_UNIT_DEGREE "°"
 #define D_UNIT_FAHRENHEIT "F"
+#define D_UNIT_FPS "FPS"
 #define D_UNIT_HERTZ "Hz"
 #define D_UNIT_HOUR "Godz"
 #define D_UNIT_GALLONS "gal"
 #define D_UNIT_GALLONS_PER_MIN "g/m"
+#define D_UNIT_INCH_MERCURY "inHg"
 #define D_UNIT_INCREMENTS "inc"
 #define D_UNIT_KELVIN "K"
 #define D_UNIT_KILOMETER "km"
@@ -885,6 +949,7 @@
 #define D_UNIT_MICROMETER "µm"
 #define D_UNIT_MICROSECOND "µs"
 #define D_UNIT_MICROSIEMENS_PER_CM "µS/cm"
+#define D_UNIT_MICROTESLA "µT"
 #define D_UNIT_MILLIAMPERE "mA"
 #define D_UNIT_MILLILITERS "ml"
 #define D_UNIT_MILLIMETER "mm"
@@ -906,6 +971,9 @@
 #define D_UNIT_WATT "W"
 #define D_UNIT_WATTHOUR "Wh"
 #define D_UNIT_WATT_METER_QUADRAT "W/m²"
+#define D_UNIT_LITER_PER_MINUTE "l/min"
+#define D_UNIT_CUBICMETER_PER_HOUR "m³/h"
+#define D_UNIT_CUBIC_METER "m³"
 
 #define D_NEW_ADDRESS          "Ustawiam adres na"
 #define D_OUT_OF_RANGE         "Poza zakresem"
@@ -1046,6 +1114,11 @@
 #define D_FP_ADDRCODE "Adres kodu"           // 0x20 Address code
 #define D_FP_PASSVERIFY "Zweryfikowano poprawnie"    // 0x21 Verify the fingerprint passed
 #define D_FP_UNKNOWNERROR "Błąd"              // Any other error
+
+// xsns_96_flowratemeter.ino
+#define D_FLOWRATEMETER_NAME "Flowrate"
+#define D_FLOWRATEMETER_AMOUNT_TODAY "Amount Today"
+#define D_FLOWRATEMETER_DURATION_TODAY "Duration Today"
 
 // xsns_83_neopool.ino
 #define D_NEOPOOL_MACH_NONE               "NeoPool"           // Machine names

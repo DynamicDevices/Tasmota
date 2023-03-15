@@ -59,7 +59,7 @@ time_t dos2unixtime(uint32_t dostime)
 
 /********************************************************************
 ** Zip file parser
-** 
+**
 ********************************************************************/
 template <typename T> class LList;
 
@@ -119,7 +119,7 @@ protected:
 
 /********************************************************************
 ** Neutral file overlay
-** 
+**
 ********************************************************************/
 
 class ZipReadFileImpl;
@@ -171,6 +171,25 @@ public:
   operator bool() {
     return (bool) _f;
   }
+  bool setBufferSize(size_t size) {
+    return true;
+  }
+
+  #if ESP_ARDUINO_VERSION > ESP_ARDUINO_VERSION_VAL(2, 0, 5)
+  bool seekDir(long position){
+    if(!_f){
+        return false;
+    }
+    return _f.seekDir(position);
+  }
+  String getNextFileName(void)
+  {
+    if (!_f) {
+        return "";
+    }
+    return _f.getNextFileName();
+  }
+  #endif
 
 protected:
   File _f;
@@ -178,7 +197,7 @@ protected:
 
 /********************************************************************
 ** Subfile implementation
-** 
+**
 ** Takes a `File` object of the ZIP archive
 ** First byte in archive and len
 ********************************************************************/
@@ -224,6 +243,10 @@ public:
 
   void flush() {
     // do nothing
+  }
+
+  bool setBufferSize(size_t size) {
+    return true;
   }
 
   bool seek(uint32_t pos, SeekMode mode) {
@@ -277,6 +300,23 @@ public:
   FileImplPtr openNextFile(const char* mode) {
     return nullptr;     // TODO
   }
+
+  #if ESP_ARDUINO_VERSION > ESP_ARDUINO_VERSION_VAL(2, 0, 5)
+  bool seekDir(long position){
+    if(!_f){
+        return false;
+    }
+    return _f.seekDir(position);
+  }
+
+  String getNextFileName(void)
+  {
+    if (!_f) {
+        return "";
+    }
+    return _f.getNextFileName();
+  }
+  #endif
 
   void rewindDirectory(void) {
     // ignore
@@ -383,11 +423,29 @@ bool ZipArchive::parse(void) {
 
 /********************************************************************
 ** Encapsulation of FS and File to piggyback on Arduino
-** 
+**
 ********************************************************************/
 
+/* get the FS corresponding to the prefix, typically /sd/ for sdcard */
+FS * ZipReadFSImpl::getFS(const char *path) const {
+  if (_fs == nullptr) { return nullptr; }
+  if (_alt_fs == nullptr || _alt_fs_prefix == nullptr) { return *_fs; }
+
+  /* from now neither _fs not _alt_fs are null
+  /* if however they point to the same value, then we don't have an alternative FS */
+  if (*_fs == *_alt_fs) { return *_fs; }
+
+  /* check prefix */
+  if (strncmp(_alt_fs_prefix, path, strlen(_alt_fs_prefix))) {
+    return *_alt_fs;
+  } else {
+    return *_fs;
+  }
+}
+
 FileImplPtr ZipReadFSImpl::open(const char* path, const char* mode, const bool create) {
-  if (*_fs == nullptr) { return nullptr; }
+  FS * fs = getFS(path);
+  if (fs == nullptr) { return nullptr; }
 
   if (strchr(path, '#')) {
     // we don't support any other mode than "r" and no-create
@@ -407,7 +465,7 @@ FileImplPtr ZipReadFSImpl::open(const char* path, const char* mode, const bool c
     if (*suffix == '/') { suffix++; }
     // AddLog(LOG_LEVEL_DEBUG, "ZIP: prefix=%s suffix=%s", prefix, suffix);
     // parse ZIP archive
-    File zipfile = (*_fs)->open(prefix, "r", false);
+    File zipfile = fs->open(prefix, "r", false);
     if ((bool)zipfile) {
       // we could read the file
       ZipArchive zip_archive = ZipArchive(&zipfile);
@@ -417,7 +475,7 @@ FileImplPtr ZipReadFSImpl::open(const char* path, const char* mode, const bool c
         if (entry.file_name.equals(suffix)) {
           // found
           // AddLog(LOG_LEVEL_DEBUG, "ZIP: file '%s' in archive (start=%i - len=%i - last_mod=%i)", suffix, entry.file_start, entry.file_len, entry.last_mod);
-          return ZipItemImplPtr(new ZipItemImpl((*_fs)->open(prefix, "r", false), entry.file_start, entry.file_len, entry.last_mod));
+          return ZipItemImplPtr(new ZipItemImpl(fs->open(prefix, "r", false), entry.file_start, entry.file_len, entry.last_mod));
         }
       }
       return ZipReadFileImplPtr();    // return an error
@@ -427,12 +485,13 @@ FileImplPtr ZipReadFSImpl::open(const char* path, const char* mode, const bool c
     }
   } else {
     // simple file, do nothing
-    return ZipReadFileImplPtr(new ZipReadFileImpl((*_fs)->open(path, mode, create)));
+    return ZipReadFileImplPtr(new ZipReadFileImpl(fs->open(path, mode, create)));
   }
 }
 
 bool ZipReadFSImpl::exists(const char* path) {
-  if (*_fs == nullptr) { return false; }
+  FS * fs = getFS(path);
+  if (fs == nullptr) { return false; }
 
   if (strchr(path, '#')) {
     // treat as a ZIP archive
@@ -444,7 +503,7 @@ bool ZipReadFSImpl::exists(const char* path) {
     char *prefix = strtok_r(sub_path, "#", &tok);
     char *suffix = strtok_r(NULL, "", &tok);
     // parse ZIP archive
-    File zipfile = (*_fs)->open(prefix, "r", false);
+    File zipfile = fs->open(prefix, "r", false);
     if ((bool)zipfile) {
       // we could read the file
       ZipArchive zip_archive = ZipArchive(&zipfile);
@@ -459,7 +518,7 @@ bool ZipReadFSImpl::exists(const char* path) {
     return false;
   } else {
     // simple file, do nothing
-    return (*_fs)->exists(path);
+    return fs->exists(path);
   }
 }
 

@@ -78,7 +78,7 @@ lv_fun_globs = [
                   #"**/*.h",
               ]
 headers_names = list_files(lv_src_prefix, lv_fun_globs)
-headers_names += list_files("../../LVGL_assets/src/", ["lv_theme_openhasp.h"])
+headers_names += list_files("../../LVGL_assets/src/", ["lv_theme_haspmota.h"])
 # headers_names += ["lv_pre_style.h"] # for LVGL v7, add pre-generated style functions from C preprocessor
 
 # unit test
@@ -213,6 +213,8 @@ anim_path_ease_out=&lv_anim_path_ease_out
 anim_path_linear=&lv_anim_path_linear
 anim_path_overshoot=&lv_anim_path_overshoot
 anim_path_step=&lv_anim_path_step
+LV_LAYOUT_GRID=>be_LV_LAYOUT_GRID
+LV_LAYOUT_FLEX=>be_LV_LAYOUT_FLEX
 
 // ======================================================================
 // Colors
@@ -235,6 +237,7 @@ COLOR_TEAL=0x008080
 COLOR_BLUE=0x0000FF
 COLOR_NAVY=0x000080
 COLOR_MAGENTA=0xFF00FF
+COLOR_ORANGE=0xFF7F00
 COLOR_PURPLE=0x800080
 
 // Freetype

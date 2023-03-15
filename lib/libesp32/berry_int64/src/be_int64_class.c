@@ -35,12 +35,14 @@ static void int64_toa(int64_t num, uint8_t* str) {
 void* int64_init(bvm *vm, int32_t val) {
   int64_t *i64 = (int64_t*)be_malloc(vm, sizeof(int64_t));
   *i64 = (int64_t) val;
+  // serial_debug("int64_init p=%p\n", i64);
   return i64;
 }
 BE_FUNC_CTYPE_DECLARE(int64_init, "+_p", "@[i]")
 
 void int64_deinit(bvm *vm, int64_t *i64) {
-  // TODO
+  // serial_debug("int64_deinit p=%p\n", i64);
+  be_free(vm, i64, sizeof(int64_t));
 }
 BE_FUNC_CTYPE_DECLARE(int64_deinit, "", "@.")
 
@@ -50,6 +52,15 @@ char* int64_tostring(int64_t *i64) {
   return s;
 }
 BE_FUNC_CTYPE_DECLARE(int64_tostring, "s", ".")
+
+int64_t* int64_fromstring(bvm *vm, const char* s) {
+  int64_t *i64 = (int64_t*)be_malloc(vm, sizeof(int64_t));
+  if (i64 == NULL) { be_raise(vm, "memory_error", "cannot allocate buffer"); }
+  if (s) { *i64 = atoll(s); }
+  else   { *i64 = 0; }
+  return i64;
+}
+BE_FUNC_CTYPE_DECLARE(int64_fromstring, "int64", "@s")
 
 int32_t int64_toint(int64_t *i64) {
   return (int32_t) *i64;
@@ -168,7 +179,6 @@ void* int64_tobytes(int64_t *i64, size_t *len) {
 BE_FUNC_CTYPE_DECLARE(int64_tobytes, "&", ".")
 
 void int64_frombytes(int64_t *i64, uint8_t* ptr, size_t len, int32_t idx) {
-  serial_debug("int64_frombytes p=%p len=%i idx=%i\n", ptr, len, idx);
   if (idx < 0) { idx = len + idx; }   // support negative index, counting from the end
   if (idx < 0) { idx = 0; }           // sanity check
   if (idx > len) { idx = len; }
@@ -189,6 +199,7 @@ class be_class_int64 (scope: global, name: int64) {
   set, ctype_func(int64_set)
 
   tostring, ctype_func(int64_tostring)
+  fromstring, static_ctype_func(int64_fromstring)
   toint, ctype_func(int64_toint)
 
   +, ctype_func(int64_add)

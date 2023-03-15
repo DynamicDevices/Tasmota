@@ -1,12 +1,13 @@
+
 name: Build_development
 
 on:
-  workflow_dispatch:  # Manually start a workflow
+  workflow_dispatch:      # Manually start a workflow
   push:
     branches: development
     paths-ignore:
-    - '.github/**' # Ignore changes towards the .github directory
-    - '**.md' # Do no build if *.md files changes
+    - '.github/**'        # Ignore changes towards the .github directory
+    - '**.md'             # Do no build if *.md files changes
 
 # Ensures that only one deploy task per branch/environment will run at a time.
 concurrency:
@@ -14,6 +15,41 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  safeboot-images:
+    runs-on: ubuntu-latest
+    if: github.repository == 'arendst/Tasmota'
+    continue-on-error: true
+    strategy:
+      matrix:
+        variant:
+          - tasmota32solo1-safeboot
+          - tasmota32-safeboot
+          - tasmota32c3-safeboot
+          - tasmota32c3cdc-safeboot
+          - tasmota32s2-safeboot
+          - tasmota32s2cdc-safeboot
+          - tasmota32s3-safeboot
+          - tasmota32s3cdc-safeboot
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          ref: development
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+      - name: Install dependencies
+        run: |
+          pip install wheel
+          pip install -U platformio
+      - name: Run PlatformIO
+        run: platformio run -e ${{ matrix.variant }}
+      - name: Upload safeboot firmware artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: firmware_safeboot
+          path: ./build_output
+
   base-images:
     runs-on: ubuntu-latest
     if: github.repository == 'arendst/Tasmota'
@@ -22,7 +58,7 @@ jobs:
       matrix:
         variant:
           - tasmota
-          - tasmota4M
+          - tasmota-4M
           - tasmota-minimal
           - tasmota-display
           - tasmota-ir
@@ -31,63 +67,129 @@ jobs:
           - tasmota-sensors
           - tasmota-zbbridge
           - tasmota-zigbee
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          ref: development
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+      - name: Install dependencies
+        run: |
+          pip install wheel
+          pip install -U platformio
+      - name: Run PlatformIO
+        run: platformio run -e ${{ matrix.variant }}
+      - name: Upload firmware artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: firmware
+          path: ./build_output
+
+  base32-images:
+    needs: safeboot-images
+    runs-on: ubuntu-latest
+    if: github.repository == 'arendst/Tasmota'
+    continue-on-error: true
+    strategy:
+      matrix:
+        variant:
           - tasmota32
+          - tasmota32-zbbrdgpro
           - tasmota32-webcam
           - tasmota32-bluetooth
+          - tasmota32-nspanel
           - tasmota32-display
           - tasmota32-ir
           - tasmota32-lvgl
           - tasmota32c3
+          - tasmota32c3cdc
+          - tasmota32s2
+          - tasmota32s2cdc
+          - tasmota32s3
+          - tasmota32s3cdc
           - tasmota32solo1
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           ref: development
       - name: Set up Python
-        uses: actions/setup-python@v1
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
       - name: Install dependencies
         run: |
+          pip install wheel
           pip install -U platformio
+      - name: Download safeboot firmwares
+        uses: actions/download-artifact@v3
+        with:
+          name: firmware_safeboot
+          path: ./firmware
+      - name: Display downloaded files
+        run: |
+          ls -R ./firmware/
       - name: Run PlatformIO
         run: platformio run -e ${{ matrix.variant }}
-      - uses: actions/upload-artifact@v2
+      - name: Upload firmware artifacts
+        uses: actions/upload-artifact@v3
         with:
           name: firmware
           path: ./build_output
 
   language-images:
+    needs: safeboot-images
     runs-on: ubuntu-latest
     if: github.repository == 'arendst/Tasmota'
     continue-on-error: true
     strategy:
       matrix:
         variant: [ tasmota, tasmota32 ]
-        language: [ AF, BG, BR, CN, CZ, DE, ES, FR, FY, GR, HE, HU, IT, KO, NL, PL, PT, RO, RU, SE, SK, TR, TW, UK, VN ]
+        language: [ AD, AF, BG, BR, CN, CZ, DE, ES, FR, FY, GR, HE, HU, IT, KO, NL, PL, PT, RO, RU, SE, SK, TR, TW, UK, VN ]
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           ref: development
       - name: Set up Python
-        uses: actions/setup-python@v1
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
       - name: Install dependencies
         run: |
+          pip install wheel
           pip install -U platformio
+      - name: Download safeboot firmwares
+        uses: actions/download-artifact@v3
+        with:
+          name: firmware_safeboot
+          path: ./firmware
+      - name: Display downloaded files
+        run: |
+          ls -R ./firmware/
       - name: Run PlatformIO
         run: platformio run -e ${{ matrix.variant }}-${{ matrix.language }}
-      - uses: actions/upload-artifact@v2
+      - name: Upload language firmware artifacts
+        uses: actions/upload-artifact@v3
         with:
           name: firmware
           path: ./build_output
 
   Upload:
-    needs: [base-images, language-images]
+    needs: [base-images, base32-images, language-images]
     runs-on: ubuntu-latest
     continue-on-error: true
     steps:
-    - uses: actions/download-artifact@v2
+    - name: Download firmware
+      uses: actions/download-artifact@v3
       with:
         name: firmware
         path: ./mv_firmware
+    - name: Downlaod safeboot firmware
+      uses: actions/download-artifact@v3
+      with:
+          name: firmware_safeboot
+          path: ./mv_firmware
     - name: Display structure of downloaded files
       run: ls -R
       working-directory: ./mv_firmware
@@ -98,7 +200,7 @@ jobs:
         mkdir -p ./firmware/map
         [ ! -f ./mv_firmware/map/* ] || mv ./mv_firmware/map/* ./firmware/map/
         [ ! -f ./mv_firmware/firmware/tasmota.* ] || mv ./mv_firmware/firmware/tasmota.* ./firmware/tasmota/
-        [ ! -f ./mv_firmware/firmware/tasmota4M.* ] || mv ./mv_firmware/firmware/tasmota4M.* ./firmware/tasmota/
+        [ ! -f ./mv_firmware/firmware/tasmota-4M.* ] || mv ./mv_firmware/firmware/tasmota-4M.* ./firmware/tasmota/
         [ ! -f ./mv_firmware/firmware/tasmota-sensors.* ] || mv ./mv_firmware/firmware/tasmota-sensors.* ./firmware/tasmota/
         [ ! -f ./mv_firmware/firmware/tasmota-minimal.bin.gz ] || mv ./mv_firmware/firmware/tasmota-minimal.bin.gz ./firmware/tasmota/
         [ ! -f ./mv_firmware/firmware/tasmota-lite.* ] || mv ./mv_firmware/firmware/tasmota-lite.* ./firmware/tasmota/
@@ -114,10 +216,17 @@ jobs:
         [ ! -f ./mv_firmware/firmware/tasmota32-lvgl.* ] || mv ./mv_firmware/firmware/tasmota32-lvgl.* ./firmware/tasmota32/
         [ ! -f ./mv_firmware/firmware/tasmota32-web*.* ] || mv ./mv_firmware/firmware/tasmota32-web*.* ./firmware/tasmota32/
         [ ! -f ./mv_firmware/firmware/tasmota32-odroidgo.* ] || mv ./mv_firmware/firmware/tasmota32-odroidgo.* ./firmware/tasmota32/
+        [ ! -f ./mv_firmware/firmware/tasmota32-zbbrdgpro.* ] || mv ./mv_firmware/firmware/tasmota32-zbbrdgpro.* ./firmware/tasmota32/
+        [ ! -f ./mv_firmware/firmware/tasmota32-nspanel.* ] || mv ./mv_firmware/firmware/tasmota32-nspanel.* ./firmware/tasmota32/
         [ ! -f ./mv_firmware/firmware/tasmota32-core2.* ] || mv ./mv_firmware/firmware/tasmota32-core2.* ./firmware/tasmota32/
         [ ! -f ./mv_firmware/firmware/tasmota32-bluetooth.* ] || mv ./mv_firmware/firmware/tasmota32-bluetooth.* ./firmware/tasmota32/
         [ ! -f ./mv_firmware/firmware/tasmota32c3*.* ] || mv ./mv_firmware/firmware/tasmota32c3*.* ./firmware/tasmota32/
-        [ ! -f ./mv_firmware/firmware/tasmota32* ] || mv ./mv_firmware/firmware/tasmota32* ./firmware/tasmota32/languages/
+        [ ! -f ./mv_firmware/firmware/tasmota32s2*.* ] || mv ./mv_firmware/firmware/tasmota32s2*.* ./firmware/tasmota32/
+        [ ! -f ./mv_firmware/firmware/tasmota32s3*.* ] || mv ./mv_firmware/firmware/tasmota32s3*.* ./firmware/tasmota32/
+        [ ! -f ./mv_firmware/firmware/tasmota32-safeboot* ] || mv ./mv_firmware/firmware/tasmota32-safeboot* ./firmware/tasmota32/
+        [ ! -f ./mv_firmware/firmware/tasmota32-* ] || mv ./mv_firmware/firmware/tasmota32-* ./firmware/tasmota32/languages/
+        [ ! -f ./mv_firmware/firmware/tasmota32* ] || mv ./mv_firmware/firmware/tasmota32* ./firmware/tasmota32/
+        [ ! -f ./mv_firmware/firmware/tasmota-minimal.bin ] || rm -rf ./mv_firmware/firmware/tasmota-minimal.bin
         [ ! -f ./mv_firmware/firmware/* ] || mv ./mv_firmware/firmware/* ./firmware/tasmota/languages/
     - name: Display files to transfer
       run: ls -R ./*
@@ -131,12 +240,11 @@ jobs:
         destination_branch: 'firmware'
         user_email: 'github-actions@github.com'
         user_name: 'github-actions'
-
   Start_final_copy:
     needs: Upload
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Creat trigger.txt
       run: |
          echo ${GITHUB_SHA}  &> trigger.txt

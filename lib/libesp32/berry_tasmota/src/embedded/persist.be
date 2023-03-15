@@ -7,6 +7,7 @@
   solidify.dump(persist_module.init)
   # copy and paste into `be_persist_lib.c`
 -#
+#@ solidify:persist_module
 var persist_module = module("persist")
 
 persist_module.init = def (m)
@@ -30,7 +31,7 @@ persist_module.init = def (m)
       # print("Persist init")
     end
 
-    #- virtual member getter, if a key does not exists return `nil`-#
+    #- virtual member getter, if a key does not exists return `nil` instead of exception -#
     def member(key)
       return self._p.find(key)
     end

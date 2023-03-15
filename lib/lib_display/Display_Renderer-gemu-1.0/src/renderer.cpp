@@ -86,6 +86,10 @@ void Renderer::Begin(int16_t p1,int16_t p2,int16_t p3) {
 
 }
 
+void Renderer::Sleep(void) {
+
+}
+
 void Renderer::Updateframe() {
 
 }
@@ -639,6 +643,9 @@ void Renderer::ep_update_mode(uint8_t mode) {
 void Renderer::ep_update_area(uint16_t xp, uint16_t yp, uint16_t width, uint16_t height, uint8_t mode) {
 }
 
+uint32_t Renderer::get_sr_touch(uint32_t xp, uint32_t xm, uint32_t yp, uint32_t ym) {
+  return 0;
+}
 
 // #ifndef USE_DISPLAY_LVGL_ONLY
 

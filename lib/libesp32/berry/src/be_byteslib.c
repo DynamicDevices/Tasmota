@@ -18,7 +18,6 @@
 #include <ctype.h>
 
 #define BYTES_DEFAULT_SIZE          28              // default pre-reserved size for buffer (keep 4 bytes for len/size)
-#define BYTES_MAX_SIZE              (32*1024)       // max 32Kb
 #define BYTES_OVERHEAD              4               // bytes overhead to be added when allocating (used to store len and size)
 #define BYTES_HEADROOM              8               // keep a natural headroom of 8 bytes when resizing
 
@@ -506,7 +505,7 @@ void m_write_attributes(bvm *vm, int rel_idx, const buf_impl * attr)
 void bytes_realloc(bvm *vm, buf_impl * attr, int32_t size)
 {
     if (!attr->fixed && size < 4) { size = 4; }
-    if (size > BYTES_MAX_SIZE) { size = BYTES_MAX_SIZE; }
+    if (size > vm->bytesmaxsize) { size = vm->bytesmaxsize; }
     size_t oldsize = attr->bufptr ? attr->size : 0;
     attr->bufptr = (uint8_t*) be_realloc(vm, attr->bufptr, oldsize, size);  /* malloc */
     attr->size = size;
@@ -711,6 +710,24 @@ static int m_tostring(bvm *vm)
         be_remove(vm, -2); /* remove buffer */
     } else {                    /* pointer is null, don't try to dereference it as it would crash */
         be_pushstring(vm, "bytes(<null>)");
+    }
+    be_return(vm);
+}
+
+static int m_tohex(bvm *vm)
+{
+    buf_impl attr = m_read_attributes(vm, 1);
+    if (attr.bufptr) {              /* pointer looks valid */
+        int32_t len = attr.len;
+        size_t hex_len = len * 2 + 1;
+
+        char * hex_out = be_pushbuffer(vm, hex_len);
+        size_t l = tohex(hex_out, hex_len, attr.bufptr, len);
+
+        be_pushnstring(vm, hex_out, l); /* make escape string from buffer */
+        be_remove(vm, -2); /* remove buffer */
+    } else {                    /* pointer is null, don't try to dereference it as it would crash */
+        be_pushstring(vm, "");
     }
     be_return(vm);
 }
@@ -932,6 +949,109 @@ static int m_setfloat(bvm *vm)
     be_return_nil(vm);
 }
 
+/*
+ * Fills a buffer with another buffer.
+ *
+ * This is meant to be very flexible and avoid loops
+ * 
+ * `setbytes(index:int, fill:bytes [, from:int, len:int]) -> nil`
+ * 
+ */
+static int m_setbytes(bvm *vm)
+{
+    int argc = be_top(vm);
+    buf_impl attr = bytes_check_data(vm, 0); /* we reserve 4 bytes anyways */
+    check_ptr(vm, &attr);
+    if (argc >=3 && be_isint(vm, 2) && (be_isbytes(vm, 3))) {
+        int32_t idx = be_toint(vm, 2);
+        size_t from_len_total;
+        const uint8_t* buf_ptr = (const uint8_t*) be_tobytes(vm, 3, &from_len_total);
+        if (idx < 0) { idx = 0; }
+        if (idx >= attr.len) { idx = attr.len; }
+
+        int32_t from_byte = 0;
+        if (argc >= 4 && be_isint(vm, 4)) {
+            from_byte = be_toint(vm, 4);
+            if (from_byte < 0) { from_byte = 0; }
+            if ((size_t)from_byte >= from_len_total) { from_byte = from_len_total; }
+        }
+
+        int32_t from_len = from_len_total - from_byte;
+        if (argc >= 5 && be_isint(vm, 5)) {
+            from_len = be_toint(vm, 5);
+            if (from_len < 0) { from_len = 0; }
+            if (from_len >= (int32_t)from_len_total) { from_len = from_len_total; }
+        }
+        if (idx + from_len >= attr.len) { from_len = attr.len - idx; }
+
+        // all parameters ok
+        if (from_len > 0) {
+            memmove(attr.bufptr + idx, buf_ptr + from_byte, from_len);
+        }
+    }
+    be_return_nil(vm);
+}
+
+
+/*
+ * Reverses in-place a sub-buffer composed of groups of n-bytes packets
+ *
+ * This is useful for pixel manipulation when displaying RGB pixels
+ * 
+ * `reverse([index:int, len:int, grouplen:int]) -> self`
+ * 
+ */
+static int m_reverse(bvm *vm)
+{
+    int argc = be_top(vm);
+    buf_impl attr = bytes_check_data(vm, 0); /* we reserve 4 bytes anyways */
+    check_ptr(vm, &attr);
+
+    int32_t idx = 0;            /* start from index 0 */
+    int32_t len = attr.len;     /* entire len */
+    int32_t grouplen = 1;       /* default to 1-byte group */
+
+    if (argc >= 2 && be_isint(vm, 2)) {
+        idx = be_toint(vm, 2);
+        if (idx < 0) { idx = 0; }               /* railguards */
+        if (idx > attr.len) { idx = attr.len; }
+    }
+    if (argc >= 3 && be_isint(vm, 3)) {
+        len = be_toint(vm, 3);
+        if (len < 0) { len = attr.len - idx; }  /* negative len means */
+    }
+    if (idx + len >= attr.len) { len = attr.len - idx; }
+
+    // truncate len to multiple of grouplen
+    if (argc >= 4 && be_isint(vm, 4)) {
+        grouplen = be_toint(vm, 4);
+        if (grouplen <= 0) { grouplen = 1; }
+    }
+    len = len - (len % grouplen);
+
+    // apply reverse
+    if (len > 0) {
+        if (grouplen == 1) {
+            /* fast version if simple byte inversion */
+            for (int32_t i = idx, j = idx + len -1; i < j; i++, j--) {
+                uint8_t temp = attr.bufptr[i];
+                attr.bufptr[i] = attr.bufptr[j];
+                attr.bufptr[j] = temp;
+            }
+        } else {
+            for (int32_t i = idx, j = idx + len - grouplen; i < j; i += grouplen, j -= grouplen) {
+                for (int32_t k = 0; k < grouplen; k++) {
+                    uint8_t temp = attr.bufptr[i+k];
+                    attr.bufptr[i+k] = attr.bufptr[j+k];
+                    attr.bufptr[j+k] = temp;
+                }
+            }
+        }
+    }
+    be_pushvalue(vm, 1);    /* push bytes object */
+    be_return(vm);
+}
+
 static int m_setitem(bvm *vm)
 {
     int argc = be_top(vm);
@@ -1002,6 +1122,13 @@ static int m_size(bvm *vm)
 {
     buf_impl attr = m_read_attributes(vm, 1);
     be_pushint(vm, attr.len);
+    be_return(vm);
+}
+
+static int m_tobool(bvm *vm)
+{
+    buf_impl attr = m_read_attributes(vm, 1);
+    be_pushbool(vm, attr.len > 0 ? 1 : 0);
     be_return(vm);
 }
 
@@ -1184,6 +1311,45 @@ static int m_fromb64(bvm *vm)
     be_return_nil(vm);
 }
 
+/*
+ * Converts hex to bytes()
+ * 
+ * `bytes().fromhexx() -> bytes()`
+ */
+static int m_fromhex(bvm *vm)
+{
+    int argc = be_top(vm);
+    if (argc >= 2 && be_isstring(vm, 2)) {
+        int32_t from = 0;                       // skip x chars
+        if (argc >= 3 && be_isint(vm, 3)) {
+            from = be_toint(vm, 3);
+        }
+        const char *s = be_tostring(vm, 2);
+        int32_t s_len = strlen(s);
+        if (from < 0) { from = 0; }
+        if (from > s_len) { from = s_len; }
+        int32_t bin_len = (s_len - from) / 2;
+
+        buf_impl attr = m_read_attributes(vm, 1);
+        check_ptr(vm, &attr);
+        if (attr.fixed && attr.len != bin_len) {
+            be_raise(vm, BYTES_RESIZE_ERROR, BYTES_RESIZE_MESSAGE);
+        }
+        bytes_resize(vm, &attr, bin_len); /* resize if needed */
+        if (bin_len > attr.size) { /* avoid overflow */
+            be_raise(vm, "memory_error", "cannot allocate buffer");
+        }
+        attr.len = 0;
+        buf_add_hex(&attr, s + from, s_len - from);
+        
+        be_pop(vm, 1); /* remove arg to leave instance */
+        m_write_attributes(vm, 1, &attr);  /* update instance */
+        be_pop(vm, be_top(vm) - 1);     /* leave instance on stack */
+        be_return(vm);
+    }
+    be_raise(vm, "type_error", "operand must be a string");
+    be_return_nil(vm);
+}
 
 /*
  * Advanced API
@@ -1202,6 +1368,20 @@ static int m_buffer(bvm *vm)
 {
     buf_impl attr = m_read_attributes(vm, 1);
     be_pushcomptr(vm, attr.bufptr);
+    be_return(vm);
+}
+
+/*
+ * Returns `btrue` if the buffer is mapped to memory
+ * or `bfalse` if memory was allocated by us.
+ * 
+ * `ismapped() -> bool`
+ */
+static int m_is_mapped(bvm *vm)
+{
+    buf_impl attr = m_read_attributes(vm, 1);
+    bbool mapped = (attr.mapped || (attr.bufptr == NULL));
+    be_pushbool(vm, mapped);
     be_return(vm);
 }
 
@@ -1490,23 +1670,31 @@ void be_load_byteslib(bvm *vm)
         { ".len", NULL },
         { "_buffer", m_buffer },
         { "_change_buffer", m_change_buffer },
+        { "ismapped", m_is_mapped },
         { "init", m_init },
         { "deinit", m_deinit },
         { "tostring", m_tostring },
         { "asstring", m_asstring },
+        { "tobool", m_tobool },
         { "fromstring", m_fromstring },
         { "tob64", m_tob64 },
         { "fromb64", m_fromb64 },
+        { "fromhex", m_fromhex },
+        { "tohex", m_tohex },
         { "add", m_add },
         { "get", m_getu },
         { "geti", m_geti },
         { "set", m_set },
         { "seti", m_set },      // setters for signed and unsigned are identical
+        { "setbytes", m_setbytes },
+        { "getfloat", m_getfloat },
+        { "setfloat", m_setfloat },
         { "item", m_item },
         { "setitem", m_setitem },
         { "size", m_size },
         { "resize", m_resize },
         { "clear", m_clear },
+        { "reverse", m_reverse },
         { "copy", m_copy },
         { "+", m_merge },
         { "..", m_connect },
@@ -1529,13 +1717,17 @@ class be_class_bytes (scope: global, name: bytes) {
     .len, var
     _buffer, func(m_buffer)
     _change_buffer, func(m_change_buffer)
+    ismapped, func(m_is_mapped)
     init, func(m_init)
     deinit, func(m_deinit)
     tostring, func(m_tostring)
     asstring, func(m_asstring)
+    tobool, func(m_tobool)
     fromstring, func(m_fromstring)
     tob64, func(m_tob64)
     fromb64, func(m_fromb64)
+    fromhex, func(m_fromhex)
+    tohex, func(m_tohex)
     add, func(m_add)
     get, func(m_getu)
     geti, func(m_geti)
@@ -1543,11 +1735,13 @@ class be_class_bytes (scope: global, name: bytes) {
     setfloat, func(m_setfloat)
     set, func(m_set)
     seti, func(m_set)
+    setbytes, func(m_setbytes)
     item, func(m_item)
     setitem, func(m_setitem)
     size, func(m_size)
     resize, func(m_resize)
     clear, func(m_clear)
+    reverse, func(m_reverse)
     copy, func(m_copy)
     +, func(m_merge)
     .., func(m_connect)

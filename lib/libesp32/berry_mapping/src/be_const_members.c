@@ -22,6 +22,7 @@
 
 #include "be_mapping.h"
 #include "be_exec.h"
+#include "be_string.h"
 #include <string.h>
 /*********************************************************************************************\
  * Takes a pointer to be_const_member_t array and size
@@ -37,6 +38,7 @@
  * - `@func` Berry native function
  * - `*my_func` native function - the function is called and return value passed back.
  *              This allows to create dynamic virtual members that are the result of a call.
+ * - `/my_class` a Berry class
  * 
  * The array must be lexically sorted, but the sort function must ignore the prefix `$`, `&`, `*`
 \*********************************************************************************************/
@@ -62,6 +64,9 @@ static bbool be_const_member_dual(bvm *vm, const be_const_member_t * definitions
         case '&': // pointer
           be_pushcomptr(vm, (void*) definitions[idx].value);
           break;
+        case '/':
+          be_pushntvclass(vm, (const struct bclass*) definitions[idx].value);
+          break;
         case '*': // call to a native function
         {
           bntvfunc f = (bntvfunc) definitions[idx].value;
@@ -76,6 +81,7 @@ static bbool be_const_member_dual(bvm *vm, const be_const_member_t * definitions
         case '>': // call to a ctype function
         {
           be_ctype_var_args_t* args = (be_ctype_var_args_t*) definitions[idx].value;
+          be_pop(vm, be_top(vm) - 1);     // make sure we have only the instance left on the stack
           int ret = be_call_c_func(vm, args->func, args->return_type, NULL);
           if ((ret == BE_OK) && !be_isnil(vm, -1)) {
             return btrue;
@@ -98,6 +104,20 @@ bbool be_const_module_member(bvm *vm, const be_const_member_t * definitions, siz
   return be_const_member_dual(vm, definitions, def_len, bfalse);   // call for module, non-method
 }
 
+/* This version raises an exception if the attribute is not found */
+void be_const_module_member_raise(bvm *vm, const be_const_member_t * definitions, size_t def_len) {
+  if (!be_const_member_dual(vm, definitions, def_len, bfalse)) {
+    be_module_load(vm, be_newstr(vm, "undefined"));
+  }
+}
+
 bbool be_const_class_member(bvm *vm, const be_const_member_t * definitions, size_t def_len) {
   return be_const_member_dual(vm, definitions, def_len, btrue);   // call for method
+}
+
+/* This version raises an exception if the attribute is not found */
+void be_const_class_member_raise(bvm *vm, const be_const_member_t * definitions, size_t def_len) {
+  if (!be_const_member_dual(vm, definitions, def_len, btrue)) {
+    be_module_load(vm, be_newstr(vm, "undefined"));
+  }
 }
