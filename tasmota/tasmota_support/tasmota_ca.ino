@@ -545,7 +545,7 @@ const br_x509_trust_anchor PROGMEM Tasmota_TA[] = {
 #if defined(USE_MQTT_MOSQUITTO)
     {
         { (unsigned char *)TA0_DN_mosquitto, sizeof TA0_DN_mosquitto },
-        0,
+        BR_X509_TA_CA,
         {
             BR_KEYTYPE_RSA,
             { .rsa = {
