@@ -1,3 +1,11 @@
+19/03/2023  v12.4.0/v2.0.0.0    - Found issues with our TLS configuration as we had a trust anchor for USE_MOSQUITTO for BearSSL
+                                  which directly trusted broker-new.kettlecompanion.com. What we actually need is to trust the CA key
+                                  which has been used to signed the certificate for the named server. This is changed now to use our
+                                  own CA certificate which is [here](https://github.com/DynamicDevices/kc-devops/blob/master/keys/ca.key)
+
+                                  This means older releases will only connect to WIoTP or broker-new. Whereas from now we should
+                                  be able to connect to any named server with a key signed by our CA.
+
 15/03/2023  v12.4.0.x/v1.1.5.0  - Merged in master from upstream Tasmota which is currently v12.4.0.0 + some bits
                                 - Tested against our Mosquitto KC broker and made various changes to move away from WIOTP implementation
                                 - So login and topics and such have changed
