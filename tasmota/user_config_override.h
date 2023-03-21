@@ -277,7 +277,9 @@
 #ifdef KC_KETTLE
 
 // Starting boil script implementation for model kettle
-#define PRECONFIGURED_SCRIPT ">D\r\nt=0\r\nr=0\r\ng=0\r\nb=0\r\nlevel=255\r\n>B\r\ndone=0\r\nt=0\r\nr=0\r\ng=0\r\nb=0\r\nlevel=255\r\n>F\r\nif t==0 {\r\nprint Start\r\nr=0\r\ng=0\r\nb=0\r\nlevel=255\r\n-> power2 0\r\n-> dimmer 100\r\n-> hsbcolor 0,100,100\r\n-> channel 100,0,0\r\n-> color %r%,%g%,%b%\r\n-> power2 1\r\n}\r\nelse {\r\nif b<255\r\nand r<255 {\r\nb=b+5\r\n} else {\r\nif b==255\r\nand r<255 {\r\nr=r+5\r\n} else {\r\nif b>0 {\r\nb=b-5\r\n}\r\nelse {\r\nt = -1\r\nr = 0\r\nb = 0\r\ng = 255\r\nprint Stop\r\n+> script 0\r\n}\r\n}\r\n}\r\n-> color %r%,%g%,%b%\r\n}\r\nt = t+1\r\n"
+#define START_SCRIPT_FROM_BOOT
+#define USER_BACKLOG "script 1"
+#define PRECONFIGURED_SCRIPT ">D\r\nt=0\r\nr=0\r\ng=0\r\nb=0\r\nlevel=255\r\n>B\r\ndone=0\r\nt=0\r\nr=0\r\ng=0\r\nb=0\r\nlevel=255\r\n>F\r\nif t==0 {\r\nprint Start\r\nr=0\r\ng=0\r\nb=0\r\nlevel=255\r\n-> power2 0\r\n-> dimmer 100\r\n-> hsbcolor 0,100,100\r\n-> channel 100,0,0\r\n-> color %r%,%g%,%b%\r\n-> power2 1\r\n}\r\nelse {\r\nif b<254\r\nand r<254 {\r\nb=b+2\r\n} else {\r\nif b==254\r\nand r<254 {\r\nr=r+2\r\n} else {\r\nif b>0 {\r\nb=b-2\r\n}\r\nelse {\r\nt = -1\r\nr = 0\r\nb = 0\r\ng = 255\r\nprint Stop\r\n+> script 0\r\n}\r\n}\r\n}\r\n-> color %r%,%g%,%b%\r\n}\r\nt = t+1\r\n"
 
 #endif
 
