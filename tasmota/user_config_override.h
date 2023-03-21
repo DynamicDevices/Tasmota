@@ -101,7 +101,7 @@
 // Use our own build for minimal trampoline to full fat firmware
 #undef OTA_URL
 #ifdef KC_KETTLE
-#define OTA_URL "http://dl.kettlecompanion.com/kettle/devel/tasmota-minimal-trampoline.bin.gz"
+#define OTA_URL "http://dl.kettlecompanion.com/kettle/devel/tasmota-kettle-minimal-trampoline.bin.gz"
 #else
 #define OTA_URL "http://dl.kettlecompanion.com/devel/tasmota-minimal-trampoline.bin.gz"
 #endif
@@ -277,7 +277,7 @@
 #ifdef KC_KETTLE
 
 // Starting boil script implementation for model kettle
-#define PRECONFIGURED_SCRIPT ">D\r\nt=0\r\n\r\nr=0\r\ng=0\r\nb=0\r\nlevel=255\r\n>B\r\ndone=0\r\nt=0\r\nr=0\r\ng=0\r\nb=0\r\nlevel=255\r\n>F\r\nif t==0 {\r\n  r=0\r\n  g=0\r\n  b=0\r\n  level=255\r\n -> power2 0\r\n -> color %r%,%g%,%b%\r\n -> power2 1\r\n}\r\nelse {\r\n  if b<255\r\n  and r<255 {\r\n    b=b+5\r\n  } else {\r\n    if b==255\r\n    and r<255 {\r\n      r=r+5\r\n    } else {\r\n      if b>0 {\r\n        b=b-5\r\n      }\r\n      else {\r\n        t = -1\r\n        r = 0\r\n        b = 0\r\n        g = 255\r\n        +> script 0\r\n      }\r\n    }\r\n  }\r\n  -> color %r%,%g%,%b%\r\n}\r\nt = t+1"
+#define PRECONFIGURED_SCRIPT ">D\r\nt=0\r\nr=0\r\ng=0\r\nb=0\r\nlevel=255\r\n>B\r\ndone=0\r\nt=0\r\nr=0\r\ng=0\r\nb=0\r\nlevel=255\r\n>F\r\nif t==0 {\r\nprint Start\r\nr=0\r\ng=0\r\nb=0\r\nlevel=255\r\n-> power2 0\r\n-> dimmer 100\r\n-> hsbcolor 0,100,100\r\n-> channel 100,0,0\r\n-> color %r%,%g%,%b%\r\n-> power2 1\r\n}\r\nelse {\r\nif b<255\r\nand r<255 {\r\nb=b+5\r\n} else {\r\nif b==255\r\nand r<255 {\r\nr=r+5\r\n} else {\r\nif b>0 {\r\nb=b-5\r\n}\r\nelse {\r\nt = -1\r\nr = 0\r\nb = 0\r\ng = 255\r\nprint Stop\r\n+> script 0\r\n}\r\n}\r\n}\r\n-> color %r%,%g%,%b%\r\n}\r\nt = t+1\r\n"
 
 #endif
 
@@ -288,7 +288,7 @@
 
 // Run this rule then turn it off
 #ifdef KC_KETTLE
-#define USER_RULE1 "ON Wifi#Connected DO OTAURL http://dl.kettlecompanion.com/kettle/devel/tasmota.bin.gz ENDON ON Wifi#Connected DO BACKLOG RULE1 0; UPGRADE 1 ENDON\r\nRULE1 1"          // Add rule1 data saved at initial firmware load or when command reset is executed
+#define USER_RULE1 "ON Wifi#Connected DO OTAURL http://dl.kettlecompanion.com/kettle/devel/tasmota-kettle.bin.gz ENDON ON Wifi#Connected DO BACKLOG RULE1 0; UPGRADE 1 ENDON\r\nRULE1 1"          // Add rule1 data saved at initial firmware load or when command reset is executed
 #else
 #define USER_RULE1 "ON Wifi#Connected DO OTAURL http://dl.kettlecompanion.com/devel/tasmota.bin.gz ENDON ON Wifi#Connected DO BACKLOG RULE1 0; UPGRADE 1 ENDON\r\nRULE1 1"          // Add rule1 data saved at initial firmware load or when command reset is executed
 #endif
