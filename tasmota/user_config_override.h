@@ -41,7 +41,12 @@
 \*****************************************************************************************************/
 
 #undef PROJECT
+
+#ifdef KC_KETTLE
+#define PROJECT                "SmartKettle"         // PROJECT is used as the default topic delimiter
+#else
 #define PROJECT                "SmartPlug"         // PROJECT is used as the default topic delimiter
+#endif
 
 // We are currently using a custom template fo rthe Avatar UK 10A Smart Switch
 // so make sure that this is the default when we first power up.
@@ -59,7 +64,11 @@
 // - button enabled
 //#define USER_TEMPLATE "{\"NAME\":\"Gosund UP111\",\"GPIO\":[0,320,0,32,2720,2656,0,0,2624,576,224,0,0,0],\"FLAG\":0,\"BASE\":18}" // Template Set JSON template
 // - button disabled locally
+#ifdef KC_KETTLE
+#define USER_TEMPLATE "{\"NAME\":\"SmartKettle\",\"GPIO\":[0,320,0,0,1376,2656,0,0,2624,576,224,0,0,0],\"FLAG\":0,\"BASE\":18}" // Template Set JSON template
+#else
 #define USER_TEMPLATE "{\"NAME\":\"2NICE UP111\",\"GPIO\":[0,320,0,0,2720,2656,0,0,2624,576,224,0,0,0],\"FLAG\":0,\"BASE\":18}" // Template Set JSON template
+#endif
 
 // This needs a little thinking. In general we want to be able to get into the WiFi manager
 // running as an AP to configure the network. However if there is a network outage (e.g. AP
@@ -87,9 +96,15 @@
 
 // EDIT: Moved to using official one now
 
+// TODO: Change this for different devices
+
 // Use our own build for minimal trampoline to full fat firmware
 #undef OTA_URL
+#ifdef KC_KETTLE
+#define OTA_URL "http://dl.kettlecompanion.com/kettle/devel/tasmota-minimal-trampoline.bin.gz"
+#else
 #define OTA_URL "http://dl.kettlecompanion.com/devel/tasmota-minimal-trampoline.bin.gz"
+#endif
 
 // Are we building a minimal build that will auto-install and auto-trampoline to a full build?
 //#define USE_TRAMPOLINE
@@ -117,19 +132,54 @@
 
 #endif // FIRMWARE_MINIMAL
 
-// For Watson IoT
+#ifdef ESP32
+
+// For cellular
+#define USE_MQTT_TINYGSM            true          // Beta: Cellular support
+//#define MQTT_MODEM_PORT            Serial       // Beta: Arduino serial port to use for MQTT comms.
+//#define TINY_GSM_MODEM_BG96                     // Beta: Compatible with Quectel BG600L
+#define MQTT_MODEM_PORT             Serial1       // Beta: Arduino serial port to use for MQTT comms.
+#define TINY_GSM_MODEM_SIM800                     // Beta: Compatible with SIM800
+#define SIM800L_IP5306_VERSION_20200811
+//#define DUMP_AT_COMMANDS
+#define TINY_GSM_DEBUG Serial
+
+//#define TINY_GSM_TCP_KEEPALIVE_SECS 3600          // Maximum for SIM800 is 7200 but this fails ? (Leave this as default should be 7200)
+
+#define GPRS_APN "internet.cxn"
+#define GPRS_USER ""
+#define GPRS_PASS ""
+//#define GPRS_APN "wap.o2.co.uk"
+//#define GPRS_USER "o2web"
+//#define GPRS_PASS "password"
+
+// Increase keepalive for cellular
+#undef MQTT_KEEPALIVE
+#define MQTT_KEEPALIVE              7200
+#undef TELE_PERIOD
+#define TELE_PERIOD                 7200          // [TelePeriod] Telemetry (0 = disable, 10 - 3600 seconds)
+
+#endif
+
+// DEBUG For KC Cellular unit testing
+#undef CSE_UREF
+#define CSE_UREF                    188           // Custom HW power monitoring IC resistor value
+
+//#undef APP_POWERON_STATE
+//#define APP_POWERON_STATE      POWER_ALL_ALWAYS_ON
+
 
 // We are forwarding the connection via DNS so don't
 // check the actual hostname of the server
 //#define DISABLE_SNI_CHECK
 
-#define MQTT_HOST         "broker-new.kettlecompanion.com"
+#define MQTT_HOST         "mqtt.kettlecompanion.com"
 #define MQTT_PORT         8883
 #undef MQTT_TLS_ENABLED
 #define MQTT_TLS_ENABLED       true             // [SetOption103] Enable TLS mode (requires TLS version)
 
 #ifndef MQTT_CLIENT_ID
-#define MQTT_CLIENT_ID    "dummmy_client_id"
+#define MQTT_CLIENT_ID    "dummy_client_id"
 #endif
 #ifndef MQTT_USER
 #define MQTT_USER         "dummy_mqtt_user"
@@ -144,7 +194,11 @@
 #define MQTT_FULLTOPIC    "%prefix%/%topic%"
 
 #undef MQTT_GRPTOPIC
+#ifdef KC_KETTLE
 #define MQTT_GRPTOPIC          "kettles"        // [GroupTopic] MQTT Group topic
+#else
+#define MQTT_GRPTOPIC          "smartplugs"        // [GroupTopic] MQTT Group topic
+#endif
 
 // Heartbeat currently set to 60s. Could easily take this up to 5 mins or more
 #undef TELE_PERIOD
@@ -156,7 +210,11 @@
 
 // Web / Alexa friendly nam
 #undef FRIENDLY_NAME
+#ifdef KC_KETTLE
+#define FRIENDLY_NAME          "KC_SmartKettle"         // [FriendlyName] Friendlyname up to 32 characters used by webpages and Alexa
+#else
 #define FRIENDLY_NAME          "KC_SmartPlug"         // [FriendlyName] Friendlyname up to 32 characters used by webpages and Alexa
+#endif
 
 // Set the web admin password here
 #undef WEB_PASSWORD
@@ -213,12 +271,27 @@
 // disable rules in the full version so we don't loop constantly
 #undef USE_RULES
 
+// Enable scripting
+#define USE_SCRIPT
+
+#ifdef KC_KETTLE
+
+// Starting boil script implementation for model kettle
+#define PRECONFIGURED_SCRIPT ">D\r\nt=0\r\n\r\nr=0\r\ng=0\r\nb=0\r\nlevel=255\r\n>B\r\ndone=0\r\nt=0\r\nr=0\r\ng=0\r\nb=0\r\nlevel=255\r\n>F\r\nif t==0 {\r\n  r=0\r\n  g=0\r\n  b=0\r\n  level=255\r\n -> power2 0\r\n -> color %r%,%g%,%b%\r\n -> power2 1\r\n}\r\nelse {\r\n  if b<255\r\n  and r<255 {\r\n    b=b+5\r\n  } else {\r\n    if b==255\r\n    and r<255 {\r\n      r=r+5\r\n    } else {\r\n      if b>0 {\r\n        b=b-5\r\n      }\r\n      else {\r\n        t = -1\r\n        r = 0\r\n        b = 0\r\n        g = 255\r\n        +> script 0\r\n      }\r\n    }\r\n  }\r\n  -> color %r%,%g%,%b%\r\n}\r\nt = t+1"
+
+#endif
+
 // RULES - Force upgrade to full on connection
 #ifdef USE_TRAMPOLINE
   #undef USE_SCRIPT
   #define USE_RULES
 
-#define USER_RULE1 "ON Wifi#Connected DO OTAURL http://dl.kettlecompanion.com/devel/tasmota.bin.gz ENDON ON Wifi#Connected DO UPGRADE 1 ENDON\r\nRULE1 1"          // Add rule1 data saved at initial firmware load or when command reset is executed
+// Run this rule then turn it off
+#ifdef KC_KETTLE
+#define USER_RULE1 "ON Wifi#Connected DO OTAURL http://dl.kettlecompanion.com/kettle/devel/tasmota.bin.gz ENDON ON Wifi#Connected DO BACKLOG RULE1 0; UPGRADE 1 ENDON\r\nRULE1 1"          // Add rule1 data saved at initial firmware load or when command reset is executed
+#else
+#define USER_RULE1 "ON Wifi#Connected DO OTAURL http://dl.kettlecompanion.com/devel/tasmota.bin.gz ENDON ON Wifi#Connected DO BACKLOG RULE1 0; UPGRADE 1 ENDON\r\nRULE1 1"          // Add rule1 data saved at initial firmware load or when command reset is executed
+#endif
 
 #endif
 
