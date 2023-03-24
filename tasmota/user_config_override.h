@@ -101,7 +101,7 @@
 // Use our own build for minimal trampoline to full fat firmware
 #undef OTA_URL
 #ifdef KC_KETTLE
-#define OTA_URL "http://dl.kettlecompanion.com/devel/tasmota-kettle-minimal-trampoline.bin.gz"
+#define OTA_URL "http://dl.kettlecompanion.com/devel/tasmota-kettle-min-tramp.bin.gz"
 #else
 #define OTA_URL "http://dl.kettlecompanion.com/devel/tasmota-minimal-trampoline.bin.gz"
 #endif
