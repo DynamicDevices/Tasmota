@@ -290,9 +290,9 @@
 
 // Run this rule then turn it off
 #ifdef KC_KETTLE
-#define USER_RULE1 "ON Wifi#Connected DO OTAURL http://dl.kettlecompanion.com/devel/tasmota-kettle.bin.gz ENDON ON Wifi#Connected DO BACKLOG RULE1 0; UPGRADE 1 ENDON\r\nRULE1 1"          // Add rule1 data saved at initial firmware load or when command reset is executed
+#define USER_RULE1 "ON Wifi#Connected DO OTAURL http://dl.kettlecompanion.com/devel/tasmota-kettle.bin.gz ENDON ON Wifi#Connected DO BACKLOG UPGRADE 1; RULE1 0 ENDON\r\nRULE1 1"          // Add rule1 data saved at initial firmware load or when command reset is executed
 #else
-#define USER_RULE1 "ON Wifi#Connected DO OTAURL http://dl.kettlecompanion.com/devel/tasmota.bin.gz ENDON ON Wifi#Connected DO BACKLOG RULE1 0; UPGRADE 1 ENDON\r\nRULE1 1"          // Add rule1 data saved at initial firmware load or when command reset is executed
+#define USER_RULE1 "ON Wifi#Connected DO OTAURL http://dl.kettlecompanion.com/devel/tasmota.bin.gz ENDON ON Wifi#Connected DO BACKLOG UPGRADE 1; RULE1 0 ENDON\r\nRULE1 1"          // Add rule1 data saved at initial firmware load or when command reset is executed
 #endif
 
 #endif
