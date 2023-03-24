@@ -101,7 +101,7 @@
 // Use our own build for minimal trampoline to full fat firmware
 #undef OTA_URL
 #ifdef KC_KETTLE
-#define OTA_URL "http://dl.kettlecompanion.com/kettle/devel/tasmota-kettle-minimal-trampoline.bin.gz"
+#define OTA_URL "http://dl.kettlecompanion.com/devel/tasmota-kettle-minimal-trampoline.bin.gz"
 #else
 #define OTA_URL "http://dl.kettlecompanion.com/devel/tasmota-minimal-trampoline.bin.gz"
 #endif
@@ -290,7 +290,7 @@
 
 // Run this rule then turn it off
 #ifdef KC_KETTLE
-#define USER_RULE1 "ON Wifi#Connected DO OTAURL http://dl.kettlecompanion.com/kettle/devel/tasmota-kettle.bin.gz ENDON ON Wifi#Connected DO BACKLOG RULE1 0; UPGRADE 1 ENDON\r\nRULE1 1"          // Add rule1 data saved at initial firmware load or when command reset is executed
+#define USER_RULE1 "ON Wifi#Connected DO OTAURL http://dl.kettlecompanion.com/devel/tasmota-kettle.bin.gz ENDON ON Wifi#Connected DO BACKLOG RULE1 0; UPGRADE 1 ENDON\r\nRULE1 1"          // Add rule1 data saved at initial firmware load or when command reset is executed
 #else
 #define USER_RULE1 "ON Wifi#Connected DO OTAURL http://dl.kettlecompanion.com/devel/tasmota.bin.gz ENDON ON Wifi#Connected DO BACKLOG RULE1 0; UPGRADE 1 ENDON\r\nRULE1 1"          // Add rule1 data saved at initial firmware load or when command reset is executed
 #endif

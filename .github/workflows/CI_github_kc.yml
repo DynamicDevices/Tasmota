@@ -107,7 +107,7 @@ jobs:
       with:
         branch: gh-pages # The branch the action should deploy to.
         folder: build_output/firmware  # The folder the action should deploy.
-        target-folder: kettle/devel
+        target-folder: devel
         clean: false
     - name: Deploy Production (if 'kettlecompanion-prod' branch)
       if: ${{ github.ref == 'refs/heads/kettlecompanion-prod' }}
@@ -115,7 +115,7 @@ jobs:
       with:
         branch: gh-pages # The branch the action should deploy to.
         folder: build_output/firmware  # The folder the action should deploy.
-        target-folder: kettle/prod
+        target-folder: prod
         clean: false
   tasmota-minimal-trampoline:
     runs-on: ubuntu-latest
@@ -211,7 +211,7 @@ jobs:
       with:
         branch: gh-pages # The branch the action should deploy to.
         folder: build_output/firmware  # The folder the action should deploy.
-        target-folder: kettle/devel
+        target-folder: devel
         clean: false
     - name: Deploy Production (if 'kettlecompanion-prod' branch)
       if: ${{ github.ref == 'refs/heads/kettlecompanion-prod' }}
@@ -219,7 +219,7 @@ jobs:
       with:
         branch: gh-pages # The branch the action should deploy to.
         folder: build_output/firmware  # The folder the action should deploy.
-        target-folder: kettle/prod
+        target-folder: prod
         clean: false
   tasmota-lite:
     runs-on: ubuntu-latest
@@ -422,7 +422,7 @@ jobs:
       with:
         branch: gh-pages # The branch the action should deploy to.
         folder: build_output/firmware  # The folder the action should deploy.
-        target-folder: kettle/devel
+        target-folder: devel
         clean: false
     - name: Deploy Production (if 'kettlecompanion-prod' branch)
       if: ${{ github.ref == 'refs/heads/kettlecompanion-prod' }}
@@ -430,5 +430,5 @@ jobs:
       with:
         branch: gh-pages # The branch the action should deploy to.
         folder: build_output/firmware  # The folder the action should deploy.
-        target-folder: kettle/prod
+        target-folder: prod
         clean: false
