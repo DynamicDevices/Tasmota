@@ -387,7 +387,7 @@ jobs:
       name: build
     env:
       PLATFORMIO_BUILD_FLAGS: -D MQTT_CLIENT_ID='"${{ secrets.MQTT_CLIENT_ID }}"' -D MQTT_USER='"${{ secrets.MQTT_USER }}"' -D MQTT_PASS='"${{ secrets.MQTT_PASS }}"'
-    needs: tasmota-kettle-min-tramp
+    needs: tasmota-kettle-min-trampoline
     steps:
     - name: Set environment for branch
       run: |
