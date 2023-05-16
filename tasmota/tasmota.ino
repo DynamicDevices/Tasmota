@@ -80,6 +80,10 @@
 #endif  // ESP8266
 #ifdef ESP32
 #include <LittleFS.h>
+
+// FIXME: AJL: This suddenly broke when I brought in the cellular and I don't know why so disabled SD Card
+#undef USE_SDCARD
+
 #ifdef USE_SDCARD
 #include <SD.h>
 #include <SD_MMC.h>

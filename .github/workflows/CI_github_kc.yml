@@ -169,7 +169,7 @@ jobs:
         folder: build_output/firmware  # The folder the action should deploy.
         target-folder: prod
         clean: false
-  tasmota-kettle-minimal-trampoline:
+  tasmota-kettle-min-tramp:
     runs-on: ubuntu-latest
 #    runs-on: [self-hosted, linux]
     environment: 
@@ -199,7 +199,7 @@ jobs:
     - name: Run PlatformIO
       run: |
         export PLATFORMIO_BUILD_FLAGS="${PLATFORMIO_BUILD_FLAGS} -D BUILD_TYPE=${BUILD_TYPE}"
-        platformio run -e tasmota-kettle-minimal-trampoline
+        platformio run -e tasmota-kettle-min-tramp
     - name: Store artifacts
       uses: actions/upload-artifact@v3.1.2
       with:
