@@ -199,7 +199,7 @@ jobs:
     - name: Run PlatformIO
       run: |
         export PLATFORMIO_BUILD_FLAGS="${PLATFORMIO_BUILD_FLAGS} -D BUILD_TYPE=${BUILD_TYPE}"
-        platformio run -e tasmota-kettle-minimal-trampoline
+        platformio run -e tasmota-kettle-min-tramp
     - name: Store artifacts
       uses: actions/upload-artifact@v3.1.2
       with:
