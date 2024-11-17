@@ -331,6 +331,14 @@ int32_t encodeSingleAttribute(SBuffer &buf, double val_d, const char *val_str, u
       buf.add32( *((uint32_t*)&f32) );    // cast float as uint32_t
       break;
 
+    case Zuint48:       // added for energy value
+      {
+        uint64_t u64 = val_d;
+        buf.add32(u64);
+        buf.add8(u64 >> 32);
+      }
+      break;
+
     case Zstring:
     case Zstring16:
       {
@@ -931,7 +939,7 @@ void ZCLFrame::parseReadAttributes(uint16_t shortaddr, Z_attribute_list& attr_li
   Z_attribute_list attr_names;
   while (len >= 2 + i) {
     uint16_t attrid = payload.get16(i);
-    attr_numbers.add(attrid);
+    attr_numbers.add((uint32_t)attrid);
     read_attr_ids[i/2] = attrid;
 
     // find the attribute name
@@ -1000,9 +1008,9 @@ void ZCLFrame::parseReadConfigAttributes(uint16_t shortaddr, Z_attribute_list& a
     }
 
     // find the multiplier
-    uint16_t multiplier = 1;
-    uint16_t divider = 1;
-    int16_t base = 0;
+    uint32_t multiplier = 1;
+    uint32_t divider = 1;
+    int32_t base = 0;
     Z_attribute_match matched_attr = Z_findAttributeMatcherById(shortaddr, cluster, attrid, false);
     if (matched_attr.found()) {
       attr_2.addAttribute(matched_attr.name, true).setBool(true);
@@ -1214,6 +1222,8 @@ void ZCLFrame::syntheticAqaraSensor(Z_attribute_list &attr_list, class Z_attribu
         attr_list.addAttribute(0x0001, 0x0020).setFloat(batteryvoltage);
         uint8_t batterypercentage = toPercentageCR2032(uval32);
         attr_list.addAttribute(0x0001, 0x0021).setUInt(batterypercentage * 2);
+      } else if (0x03 == attrid) {
+        attr_list.addAttributePMEM("AqaraTemperature").copyVal(attr);   // Temperature
       } else if ((nullptr != modelId) && ((0 == getManufCode()) || (0x115F == getManufCode()))) {
         translated = true;
         if (modelId.startsWith(F("lumi.sensor_magnet"))) {   // door / window sensor
@@ -1302,36 +1312,36 @@ void ZCLFrame::syntheticAqaraCubeOrButton(class Z_attribute_list &attr_list, cla
 
   if (modelId.startsWith(F("lumi.sensor_cube"))) {   // only for Aqara cube
     int32_t val = attr.getInt();
-    const __FlashStringHelper *aqara_cube = F("AqaraCube");
-    const __FlashStringHelper *aqara_cube_side = F("AqaraCubeSide");
-    const __FlashStringHelper *aqara_cube_from_side = F("AqaraCubeFromSide");
+    static const char *aqara_cube = PSTR("AqaraCube");
+    static const char *aqara_cube_side = PSTR("AqaraCubeSide");
+    static const char *aqara_cube_from_side = PSTR("AqaraCubeFromSide");
 
     switch (val) {
       case 0:
-        attr_list.addAttribute(aqara_cube).setStr(PSTR("shake"));
+        attr_list.addAttributePMEM(aqara_cube).setStr(PSTR("shake"));
         break;
       case 2:
-        attr_list.addAttribute(aqara_cube).setStr(PSTR("wakeup"));
+        attr_list.addAttributePMEM(aqara_cube).setStr(PSTR("wakeup"));
         break;
       case 3:
-        attr_list.addAttribute(aqara_cube).setStr(PSTR("fall"));
+        attr_list.addAttributePMEM(aqara_cube).setStr(PSTR("fall"));
         break;
       case 64 ... 127:
-        attr_list.addAttribute(aqara_cube).setStr(PSTR("flip90"));
-        attr_list.addAttribute(aqara_cube_side).setInt(val % 8);
-        attr_list.addAttribute(aqara_cube_from_side).setInt((val - 64) / 8);
+        attr_list.addAttributePMEM(aqara_cube).setStr(PSTR("flip90"));
+        attr_list.addAttributePMEM(aqara_cube_side).setInt(val % 8);
+        attr_list.addAttributePMEM(aqara_cube_from_side).setInt((val - 64) / 8);
         break;
       case 128 ... 132:
-        attr_list.addAttribute(aqara_cube).setStr(PSTR("flip180"));
-        attr_list.addAttribute(aqara_cube_side).setInt(val - 128);
+        attr_list.addAttributePMEM(aqara_cube).setStr(PSTR("flip180"));
+        attr_list.addAttributePMEM(aqara_cube_side).setInt(val - 128);
         break;
       case 256 ... 261:
-        attr_list.addAttribute(aqara_cube).setStr(PSTR("slide"));
-        attr_list.addAttribute(aqara_cube_side).setInt(val - 256);
+        attr_list.addAttributePMEM(aqara_cube).setStr(PSTR("slide"));
+        attr_list.addAttributePMEM(aqara_cube_side).setInt(val - 256);
         break;
       case 512 ... 517:
-        attr_list.addAttribute(aqara_cube).setStr(PSTR("tap"));
-        attr_list.addAttribute(aqara_cube_side).setInt(val - 512);
+        attr_list.addAttributePMEM(aqara_cube).setStr(PSTR("tap"));
+        attr_list.addAttributePMEM(aqara_cube_side).setInt(val - 512);
         break;
     }
     attr_list.removeAttribute(&attr);
@@ -1355,21 +1365,21 @@ void ZCLFrame::syntheticAqaraCubeOrButton(class Z_attribute_list &attr_list, cla
     //     presentValue = x + 512 = double tap while side x is on top
   } else if (modelId.startsWith(F("lumi.remote")) || modelId.startsWith(F("lumi.sensor_swit"))) {   // only for Aqara buttons WXKG11LM & WXKG12LM, 'swit' because of #9923
     int32_t val = attr.getInt();
-    const __FlashStringHelper *aqara_click = F("click");    // deprecated
-    const __FlashStringHelper *aqara_action = F("action");  // deprecated
+    static const char *aqara_click = PSTR("click");    // deprecated
+    static const char *aqara_action = PSTR("action");  // deprecated
     Z_attribute & attr_click = attr_list.addAttribute(PSTR("Click"), true);
 
     switch (val) {
       case 0:
-        attr_list.addAttribute(aqara_action).setStr(PSTR("hold"));            // deprecated
+        attr_list.addAttributePMEM(aqara_action).setStr(PSTR("hold"));            // deprecated
         attr_click.setStr(PSTR("hold"));
         break;
       case 1:
-        attr_list.addAttribute(aqara_click).setStr(PSTR("single"));            // deprecated
+        attr_list.addAttributePMEM(aqara_click).setStr(PSTR("single"));            // deprecated
         attr_click.setStr(PSTR("single"));
         break;
       case 2:
-        attr_list.addAttribute(aqara_click).setStr(PSTR("double"));            // deprecated
+        attr_list.addAttributePMEM(aqara_click).setStr(PSTR("double"));            // deprecated
         attr_click.setStr(PSTR("double"));
         break;
       case 3:
@@ -1379,23 +1389,23 @@ void ZCLFrame::syntheticAqaraCubeOrButton(class Z_attribute_list &attr_list, cla
         attr_click.setStr(PSTR("quadruple"));
         break;
       case 16:
-        attr_list.addAttribute(aqara_action).setStr(PSTR("hold"));            // deprecated
+        attr_list.addAttributePMEM(aqara_action).setStr(PSTR("hold"));            // deprecated
         attr_click.setStr(PSTR("hold"));
         break;
       case 17:
-        attr_list.addAttribute(aqara_action).setStr(PSTR("release"));            // deprecated
+        attr_list.addAttributePMEM(aqara_action).setStr(PSTR("release"));            // deprecated
         attr_click.setStr(PSTR("release"));
         break;
       case 18:
-        attr_list.addAttribute(aqara_action).setStr(PSTR("shake"));            // deprecated
+        attr_list.addAttributePMEM(aqara_action).setStr(PSTR("shake"));            // deprecated
         attr_click.setStr(PSTR("shake"));
         break;
       case 255:
-        attr_list.addAttribute(aqara_action).setStr(PSTR("release"));            // deprecated
+        attr_list.addAttributePMEM(aqara_action).setStr(PSTR("release"));            // deprecated
         attr_click.setStr(PSTR("release"));
         break;
       default:
-        attr_list.addAttribute(aqara_click).setUInt(val);
+        attr_list.addAttributePMEM(aqara_click).setUInt(val);
         attr_click.setStr(PSTR("release"));
         break;
     }
@@ -1408,14 +1418,14 @@ void ZCLFrame::syntheticAqaraVibration(class Z_attribute_list &attr_list, class 
     case 0x0055:
       {
         int32_t ivalue = attr.getInt();
-        const __FlashStringHelper * svalue;
+        const char * svalue;
         switch (ivalue) {
-          case 1: svalue = F("vibrate"); break;
-          case 2: svalue = F("tilt"); break;
-          case 3: svalue = F("drop"); break;
-          default: svalue = F("unknown"); break;
+          case 1: svalue = PSTR("vibrate"); break;
+          case 2: svalue = PSTR("tilt"); break;
+          case 3: svalue = PSTR("drop"); break;
+          default: svalue = PSTR("unknown"); break;
         }
-        attr.setStr((const char*)svalue);
+        attr.setStr(svalue);
       }
       break;
     case 0x0503:

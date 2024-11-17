@@ -33,7 +33,7 @@
 #define XNRG_05                    5
 
 const uint8_t PZEM_AC_DEVICE_ADDRESS = 0x01;  // PZEM default address
-const uint32_t PZEM_AC_STABILIZE = 30;        // Number of seconds to stabilize configuration
+const uint32_t PZEM_AC_STABILIZE = 10;        // Number of seconds to stabilize 1 pzem
 
 #include <TasmotaModbus.h>
 TasmotaModbus *PzemAcModbus;
@@ -50,6 +50,7 @@ struct PZEMAC {
 void PzemAcEverySecond(void)
 {
   bool data_ready = PzemAcModbus->ReceiveReady();
+  uint16_t addr;
 
   if (data_ready) {
     uint8_t buffer[30];  // At least 5 + (2 * 10) = 25
@@ -78,11 +79,11 @@ void PzemAcEverySecond(void)
         Energy->frequency[PzemAc.phase] = (float)((buffer[17] << 8) + buffer[18]) / 10.0f;                                              // 50.0 Hz
         Energy->power_factor[PzemAc.phase] = (float)((buffer[19] << 8) + buffer[20]) / 100.0f;                                          // 1.00
         Energy->import_active[PzemAc.phase] = (float)((buffer[15] << 24) + (buffer[16] << 16) + (buffer[13] << 8) + buffer[14]) / 1000.0f;  // 4294967.295 kWh
-        if (PzemAc.phase == Energy->phase_count -1) {
-          if (TasmotaGlobal.uptime > PZEM_AC_STABILIZE) {
-            EnergyUpdateTotal();
-          }
-        }
+      }
+    }
+    if (PzemAc.phase == Energy->phase_count -1) {
+      if (TasmotaGlobal.uptime > (PZEM_AC_STABILIZE * ENERGY_MAX_PHASES)) {
+        EnergyUpdateTotal();
       }
     }
   }
@@ -95,7 +96,8 @@ void PzemAcEverySecond(void)
     }
     PzemAc.send_retry = ENERGY_WATCHDOG;
     if (ADDR_SEND == PzemAc.address_step) {
-      PzemAcModbus->Send(0xF8, 0x06, 0x0002, (uint16_t)PzemAc.address);
+      addr = PzemAc.address;
+      PzemAcModbus->Send(0xF8, 0x06, 0x0002, 1, (uint16_t *) &addr);
       PzemAc.address_step--;
     } else {
       PzemAcModbus->Send(PZEM_AC_DEVICE_ADDRESS + PzemAc.phase, 0x04, 0, 10);
@@ -103,7 +105,7 @@ void PzemAcEverySecond(void)
   }
   else {
     PzemAc.send_retry--;
-    if ((Energy->phase_count > 1) && (0 == PzemAc.send_retry) && (TasmotaGlobal.uptime < PZEM_AC_STABILIZE)) {
+    if ((Energy->phase_count > 1) && (0 == PzemAc.send_retry) && (TasmotaGlobal.uptime < (PZEM_AC_STABILIZE * ENERGY_MAX_PHASES))) {
       Energy->phase_count--;  // Decrement phases if no response after retry within 30 seconds after restart
       if (TasmotaGlobal.discovery_counter) {
         TasmotaGlobal.discovery_counter += ENERGY_WATCHDOG + 1;  // Don't send Discovery yet, delay by 4s + 1s

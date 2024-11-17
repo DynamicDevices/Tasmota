@@ -11,7 +11,7 @@
 # When starting the flasher, normal zigbee operations are aborterd. Restarting
 # normal zigbee functions requires a Tasmota restart.
 #
-# Required condiguration:
+# Required configuration:
 # - Zigbee Rx: must be configured as `Zigbee Rx` or `TCP Rx`
 # - Zigbee Tx: must be configured as `Zigbee Tx` or `TCP Tx`
 # - Zigbee Reset: must be configured as `Zigbee Rst - 1``
@@ -32,13 +32,13 @@
 # - `cc.cmd_get_chip_id()` returns the chip ID
 #
 # - `cc.flash_read(addr, len)` reads `len` bytes from address `addr``
-#   len must be a multiple of 4 and less or equal than 128 bytes
+#   len must be less or equal than 128 bytes
 #   Returns a bytes() object
 #
 # - `cc.flash_crc32(addr, len)` returns the CRC32 of a flash region
 #
 # - `cc.flash_write(addr, data)` writes bytes to the flash
-#   `data` is a bytes() buffer, its len must be a multiple of 4 and less or equal than 128
+#   `data` is a bytes() buffer, its len must be less or equal than 128
 #   This call does not erase the flash, so it must have been erased before.
 #   The bootloader checks that the bytes were correctly written, i.e. that
 #   the appropriate bits were changed from `1` to `0`.
@@ -58,11 +58,10 @@
 
 #- Example
 
-import string
 import cc2652_flasher as cc
 cc.start()
 cc.ping()
-print(string.format("0x%08X", cc.cmd_get_chip_id()))
+print(format("0x%08X", cc.cmd_get_chip_id()))
 # output: 0x3202F000
 
 # Dumping CC2652 flash into filesystem
@@ -82,8 +81,6 @@ class cc2652_flasher
   # init - abort zigbee operations and starts the serial driver
   # args are optional
   def init(rx, tx, rst, bsl)
-    import string
-
     self.debug = false
     self.rx  = (rx  == nil) ? -1 : rx
     self.tx  = (tx  == nil) ? -1 : tx
@@ -96,8 +93,8 @@ class cc2652_flasher
     if self.tx < 0  self.tx = gpio.pin(gpio.TCP_TX) end
     if self.rst < 0 self.rst = gpio.pin(gpio.ZIGBEE_RST, 0) end
     if self.bsl < 0 self.bsl = gpio.pin(gpio.ZIGBEE_RST, 1) end
-    print(string.format("FLH: cc2652_flasher rx=%i tx=%i rst=%i bsl=%i", self.rx, self.tx, self.rst, self.bsl))
-    # tasmota.log(string.format("FLH: cc2652_flasher rx=%i tx=%i rst=%i bsl=%i", self.rx, self.tx, self.rst, self.bsl), 3)
+    print(format("FLH: cc2652_flasher rx=%i tx=%i rst=%i bsl=%i", self.rx, self.tx, self.rst, self.bsl))
+    # tasmota.log(format("FLH: cc2652_flasher rx=%i tx=%i rst=%i bsl=%i", self.rx, self.tx, self.rst, self.bsl), 3)
     if self.rx < 0 || self.tx < 0 || self.rst < 0 || self.bsl < 0
       raise "value_error", "cc2652_flasher unspecified GPIOs"
     end
@@ -251,7 +248,6 @@ class cc2652_flasher
   end
 
   def cmd_memory_read(addr, len)
-    if (len % 4 != 0) raise "value_error", "len must be a multiple of 4" end
     if len > 128      raise "value_error", "len is bigger than 128" end
     var b = bytes("2A")
     b.add(addr, -4)
@@ -264,7 +260,6 @@ class cc2652_flasher
   # does not look to be implemented
   # def cmd_memory_write(addr, data)
   #   var sz = size(data)
-  #   if (sz % 4 != 0) raise "value_error", "len must be a multiple of 4" end
   #   if sz > 128      raise "value_error", "len is bigger than 128" end
   #   var b = bytes("2B")
   #   b.add(addr, -4)
@@ -276,7 +271,6 @@ class cc2652_flasher
   # end
 
   def cmd_download(addr, sz)
-    if (sz % 4 != 0) raise "value_error", "len must be a multiple of 4" end
     if sz > 128      raise "value_error", "len is bigger than 128" end
     var b = bytes("21")
     b.add(addr, -4)
@@ -288,7 +282,6 @@ class cc2652_flasher
 
   def cmd_send_data(data)
     var sz = size(data)
-    if (sz % 4 != 0) raise "value_error", "len must be a multiple of 4" end
     if sz > 128      raise "value_error", "len is bigger than 128" end
     var b = bytes("24")
     b += data
@@ -338,10 +331,7 @@ class cc2652_flasher
 
   # higher level
   def flash_write(addr, data)
-    import string
-
     var sz = size(data)
-    if (sz % 4 != 0) raise "value_error", "len must be a multiple of 4" end
     if sz > 128      raise "value_error", "len is bigger than 128" end
 
     var ret
@@ -351,12 +341,12 @@ class cc2652_flasher
     
     var ack
     ack = self.cmd_get_status()
-    if ack != 0x40    raise "serial_error", string.format("command failed: 0x%02X - 0x%06X (%i)", ack, addr, sz) end
+    if ack != 0x40    raise "serial_error", format("command failed: 0x%02X - 0x%06X (%i)", ack, addr, sz) end
     
     ret = self.cmd_send_data(data)
 
     ack = self.cmd_get_status()
-    if ack != 0x40    raise "serial_error", string.format("command failed: 0x%02X - 0x%06X (%i)", ack, addr, sz) end
+    if ack != 0x40    raise "serial_error", format("command failed: 0x%02X - 0x%06X (%i)", ack, addr, sz) end
 
   end
 

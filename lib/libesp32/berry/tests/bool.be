@@ -36,8 +36,18 @@ assert(bool(3.5) == true)
 assert(bool('') == false)       # changed behavior
 assert(bool('a') == true)
 assert(bool(list) == true)
-assert(bool(list()) == true)
+assert(bool(list()) == false)   # changed behavior
+assert(bool([]) == false)       # changed behavior
+assert(bool([0]) == true)
+assert(bool(map()) == false)    # changed behavior
+assert(bool({}) == false)       # changed behavior
+assert(bool({false:false}) == true)
+assert(bool({nil:nil}) == false)# changed behavior - `nil` key is ignored so the map is empty
 
 import introspect
 assert(bool(introspect.toptr(0x1000)) == true)
 assert(bool(introspect.toptr(0)) == false)
+
+# reproduce bug https://github.com/berry-lang/berry/issues/372
+def f() var a = false var b = true || a return a end
+assert(f() == false)

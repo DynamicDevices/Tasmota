@@ -34,11 +34,11 @@ While fallback or downgrading is common practice it was never supported due to S
 
 ## Supported Core versions
 
-This release will be supported from ESP8266/Arduino library Core version **2.7.4.9** due to reported security and stability issues on previous Core version. This will also support gzipped binaries.
+This release will be supported from ESP8266/Arduino library Core version **2.7.8** due to reported security and stability issues on previous Core version. This will also support gzipped binaries.
 
-This release will be supported from ESP32/Arduino library Core version **2.0.6**.
+This release will be supported from ESP32/Arduino library Core version **v3.1.0.240926**.
 
-Support of ESP8266 Core versions before 2.7.4.9 and ESP32 Core versions before 2.0.6 have been removed.
+Support of ESP8266 Core versions before 2.7.8 and ESP32 Core versions before v3.1.0.240926 have been removed.
 
 ## Support of TLS
 
@@ -55,7 +55,7 @@ Easy initial installation of Tasmota can be performed using the [Tasmota WebInst
 ## Provided Binary Downloads
 
 ### ESP8266 or ESP8285 based
-The following binary downloads have been compiled with ESP8266/Arduino library core version **2.7.4.9**.
+The following binary downloads have been compiled with ESP8266/Arduino library core version **2.7.8**.
 
 - **tasmota.bin** = The Tasmota version with most drivers for 1M+ flash. **RECOMMENDED RELEASE BINARY**
 - **tasmota-4M.bin** = The Tasmota version with most drivers and filesystem for 4M+ flash.
@@ -71,21 +71,25 @@ The following binary downloads have been compiled with ESP8266/Arduino library c
 Above binaries are also available as gzipped version allowing faster uploads.
 
 Latest released binaries can be downloaded from
-- https://github.com/arendst/Tasmota-firmware/tree/main/release-firmware
+- https://github.com/arendst/Tasmota-firmware/tree/firmware/release-firmware
 - http://ota.tasmota.com/tasmota/release
 
 Historical binaries can be downloaded from
-- http://ota.tasmota.com/tasmota/release-12.4.0
+- http://ota.tasmota.com/tasmota/release-14.3.0
 
 The latter links can be used for OTA upgrades too like ``OtaUrl http://ota.tasmota.com/tasmota/release/tasmota.bin.gz``
 
-### ESP32, ESP32-C3, ESP32-S2 and ESP32-S3 based
-The following binary downloads have been compiled with ESP32/Arduino library core version **2.0.6**.
+### ESP32, ESP32-C2, ESP32-C3, ESP32-C6, ESP32-S2 and ESP32-S3 based
+The following binary downloads have been compiled with ESP32/Arduino library core version **v3.1.0.240926**.
 
 - **tasmota32.bin** = The Tasmota version with most drivers including additional sensors and KNX for 4M+ flash.  **RECOMMENDED RELEASE BINARY**
-- **tasmota32xy.bin** = The Tasmota version with most drivers including additional sensors and KNX for ESP32-C3/S2/S3 and 4M+ flash.
-- **tasmota32xycdc.bin** = The Tasmota version with most drivers including additional sensors and KNX for ESP32-C3/S2/S3 with serial over embedded USB CDC only and 4M+ flash.
 - **tasmota32solo1.bin** = The Tasmota version with most drivers including additional sensors and KNX for single core ESP32 and 4M+ flash.
+- **tasmota32s2.bin** = The Tasmota version with most drivers including additional sensors and KNX for ESP32-S2 with serial and 4M+ flash.
+- **tasmota32s2cdc.bin** = The Tasmota version with most drivers including additional sensors and KNX for ESP32-S2 with serial over embedded USB CDC only and 4M+ flash.
+- **tasmota32s3.bin** = The Tasmota version with most drivers including additional sensors and KNX for ESP32-S3 with USB HWCDC and fallback to serial and 4M+ flash.
+- **tasmota32c2.bin** = The Tasmota version with most drivers including additional sensors and KNX for ESP32-C2 with serial and 4M+ flash.
+- **tasmota32c3.bin** = The Tasmota version with most drivers including additional sensors and KNX for ESP32-C2 with USB HWCDC and fallback to serial and 4M+ flash.
+- **tasmota32c6.bin** = The Tasmota version with most drivers including additional sensors and KNX for ESP32-C6 with USB HWCDC and fallback to serial and 4M+ flash.
 - **tasmota32-AD.bin** to **tasmota32-VN.bin** = The Tasmota version in different languages for 4M+ flash.
 - **tasmota32-bluetooth.bin** = The Bluetooth version adds BLE support for 4M+ flash.
 - **tasmota32-display.bin** = The Display version without Energy Monitoring but adds display support for 4M+ flash.
@@ -96,11 +100,11 @@ The following binary downloads have been compiled with ESP32/Arduino library cor
 - **tasmota32-zbbridgepro.bin** - The Sonoff Zigbee Bridge Pro version with CC2652P firmware load support.
 
 Latest released binaries can be downloaded from
-- https://github.com/arendst/Tasmota-firmware/tree/main/release-firmware
+- https://github.com/arendst/Tasmota-firmware/tree/firmware/release-firmware
 - https://ota.tasmota.com/tasmota32/release
 
 Historical binaries can be downloaded from
-- https://ota.tasmota.com/tasmota32/release-12.4.0
+- https://ota.tasmota.com/tasmota32/release-14.3.0
 
 The latter links can be used for OTA upgrades too like ``OtaUrl https://ota.tasmota.com/tasmota32/release/tasmota32.bin``
 
@@ -110,52 +114,96 @@ The latter links can be used for OTA upgrades too like ``OtaUrl https://ota.tasm
 
 [Complete list](BUILDS.md) of available feature and sensors.
 
-## Changelog v12.4.0 Peter
+## Changelog v14.3.0 Robert
 ### Added
-- Command ``DhtDelay<sensor> <high_delay>,<low_delay>`` to allow user control over high and low delay in microseconds [#17944](https://github.com/arendst/Tasmota/issues/17944)
-- Support for up to 3 (ESP8266) or 8 (ESP32) phase modbus energy monitoring device using generic Energy Modbus driver
-- Support for RGB displays [#17414](https://github.com/arendst/Tasmota/issues/17414)
-- Support for IPv6 DNS records (AAAA) and IPv6 ``Ping`` for ESP32 and ESP8266 [#17417](https://github.com/arendst/Tasmota/issues/17417)
-- Support for IPv6 only networks on Ethernet (not yet Wifi)
-- Support for TM1650 display as used in some clocks by Stefan Oskamp [#17594](https://github.com/arendst/Tasmota/issues/17594)
-- Support for PCA9632 4-channel 8-bit PWM driver as light driver by Pascal Heinrich [#17557](https://github.com/arendst/Tasmota/issues/17557)
-- support for SEN5X gas and air quality sensor by Tyeth Gundry [#17736](https://github.com/arendst/Tasmota/issues/17736)
-- Basic support for Shelly Pro 4PM
-- Berry support for ``crypto.SHA256`` [#17430](https://github.com/arendst/Tasmota/issues/17430)
-- Berry crypto add ``EC_P256`` and ``PBKDF2_HMAC_SHA256`` algorithms required by Matter protocol [#17473](https://github.com/arendst/Tasmota/issues/17473)
-- Berry crypto add ``random`` to generate series of random bytes
-- Berry crypto add ``HKDF_HMAC_SHA256``
-- Berry crypto add ``SPAKE2P_Matter`` for Matter support
-- Berry add ``mdns`` advanced features and query
-- Berry `int64.fromstring()` to convert a string to an int64 [#17953](https://github.com/arendst/Tasmota/issues/17953)
-- ESP32 command ``EnergyCols 1..8`` to change number of GUI columns
-- ESP32 command ``EnergyDisplay 1..3`` to change GUI column presentation
-- ESP32 support for eigth energy phases/channels
-- ESP32 support for BMPxxx sensors on two I2C busses [#17643](https://github.com/arendst/Tasmota/issues/17643)
-- ESP32 support for Biomine BioPDU 625x12 [#17857](https://github.com/arendst/Tasmota/issues/17857)
-- ESP32 preliminary support for Matter protocol, milestone 1 (commissioning) by Stephan Hadinger
+- Command ``SetOption69 1`` to enable Serial Bridge inverted Receive [#22000](https://github.com/arendst/Tasmota/issues/22000)
+- Command ``DaliWeb 1`` to enable light control for DALI broadcast address
+- Command ``DaliSend <address>|<address+256>,<command>`` to send command (address+256 is repeat) on DALI bus
+- Command ``DaliQuery <address>|<address+256>,<command>`` to send command (address+256 is repeat) on DALI bus and wait up to DALI_TIMEOUT ms for response
+- HX711 optional calibration precision option on command ``Sensor34 2 <weight in gram> <precision>`` where `<precision>` is 1 to 20 [#13983](https://github.com/arendst/Tasmota/issues/13983)
+- ESP8266 support for one-wire M1601 temperature sensor on DS18x20 GPIO [#21376](https://github.com/arendst/Tasmota/issues/21376)
+- ESP8266 support for I2C CLK on GPIO16 [#22199](https://github.com/arendst/Tasmota/issues/22199)
+- Support for I2C M5Unit (Mini)Scales using HX711 driver
+- Support for DALI on ESP8266
+- Support for RX8010 RTC as used in IOTTIMER [#21376](https://github.com/arendst/Tasmota/issues/21376)
+- Support for BL0906 up to 6 channel energy monitor as used in Athom EM2/EM6 [#22167](https://github.com/arendst/Tasmota/issues/22167)
+- Support for Sonoff SPM v1.3.0 [#13447](https://github.com/arendst/Tasmota/issues/13447)
+- Energy command ``PowerSet 60,230`` to calibrate both Current and Power with known resistive load of 60W at 230V using calibrated Voltage
+- Energy command ``CurrentSet 60,230`` to calibrate both Power and Current with known resistive load of 60W at 230V using calibrated Voltage
+- ESP8266 experimental support for second I2C bus
+- MQTT warning if trying to connect without TLS on a port that normally uses TLS [#22175](https://github.com/arendst/Tasmota/issues/22175)
+- Energy Log level 4 message when (Calculated) Apparent Power is less than Active Power indicating wrong calibration [#20653](https://github.com/arendst/Tasmota/issues/20653)
+- Support nexus protocol and calculation of separation limit to rc-switch library [#21886](https://github.com/arendst/Tasmota/issues/21886)
+- KNX additional KnxTx functions and define KNX_USE_DPT9 [#22071](https://github.com/arendst/Tasmota/issues/22071)
+- SML multi TRX line [#22056](https://github.com/arendst/Tasmota/issues/22056)
+- Misubishi Electric HVAC Heat/Dry/Cool Auto operation mode [#22216](https://github.com/arendst/Tasmota/issues/22216)
+- Misubishi Electric HVAC Bridge to HomeBridge/Homekit locally [#22236](https://github.com/arendst/Tasmota/issues/22236)
+- Misubishi Electric HVAC Air Direction Control [#22241](https://github.com/arendst/Tasmota/issues/22241)
+- Misubishi Electric HVAC prohibit function [#22269](https://github.com/arendst/Tasmota/issues/22269)
+- Misubishi Electric HVAC compressor map and operation power and energy [#22290](https://github.com/arendst/Tasmota/issues/22290)
+- Zigbee Koenkk firmware 20240710 for Sonoff Zigbee ZBPro [#22076](https://github.com/arendst/Tasmota/issues/22076)
+- Berry Zigbee improvements to prepare Matter [#22083](https://github.com/arendst/Tasmota/issues/22083)
+- Berry virtual Energy driver [#22134](https://github.com/arendst/Tasmota/issues/22134)
+- Berry improve `int64` constructor [#22172](https://github.com/arendst/Tasmota/issues/22172)
+- Berry Serial `config` to change parity on-the-fly for RS-485 [#22285](https://github.com/arendst/Tasmota/issues/22285)
+- LVGL port `colorwheel` from LVGL 8 [#22244](https://github.com/arendst/Tasmota/issues/22244)
+- HASPmota `cpicker` and `msgbox` [#22244](https://github.com/arendst/Tasmota/issues/22244)
+- Matter support for Zigbee Temperature, Humidity and Pressure sensors [#22084](https://github.com/arendst/Tasmota/issues/22084)
+- Matter support for Zigbee Occupancy and Light 0/1/2 (OnOff / Dimmer / White Color Temperature) [#22110](https://github.com/arendst/Tasmota/issues/22110)
 
 ### Breaking Changed
-- TM1638 button and led support are handled as virtual switches and relays [#11031](https://github.com/arendst/Tasmota/issues/11031)
+- Berry make `energy` modules changes from #21887 backwards compatible [#22046](https://github.com/arendst/Tasmota/issues/22046)
 
 ### Changed
-- Dht driver from v6 to v7
-- ESP32 Framework (Core) from v2.0.5.3 to v2.0.6 (IPv6 support)
-- Energy totals max supported value from +/-21474.83647 to +/-2147483.647 kWh
-- Removed delays in TasmotaSerial and TasmotaModbus Tx enable switching
-- Keep webserver enabled on command ``upload``
-- Better support for virtual buttons and switches up to a total of 28
-- TuyaMcu support of virtual switches
-- Increase rule event buffer from 100 to 256 characters [#16943](https://github.com/arendst/Tasmota/issues/16943)
-- Tasmota OTA scripts now support both unzipped and gzipped file uploads [#17378](https://github.com/arendst/Tasmota/issues/17378)
-- LVGL allow access to `lv.LAYOUT_GRID` and `lv.LAYOUT_FLEX` [#17948](https://github.com/arendst/Tasmota/issues/17948)
+- ESP8266 platform update from 2024.06.00 to 2024.09.00 and Framework (Arduino Core) from v2.7.7 to v2.7.8 [#22199](https://github.com/arendst/Tasmota/issues/22199)
+- ESP32 platform update from 2024.08.10 to 2024.09.30 and Framework (Arduino Core) from v3.0.4 to v3.1.0.240926 [#22203](https://github.com/arendst/Tasmota/issues/22203)
+- ESP32 LVGL library from v9.1.0 to v9.2.0 [#22031](https://github.com/arendst/Tasmota/issues/22031)
+- GPIOViewer from v1.5.5 to v1.5.6
+- Add command entered to command error and command unknown message
+- Refactored I2C drivers HTU21, BH1750, SHT3x, iAQ and HYT
+- Energy BL09xx command ``CurrentSet`` input changed from Ampere to milliAmpere
+- Command ``DaliDimmer`` range from 0..254 to 0..100
+- Energy force Apparent Power equals Active Power when (Calculated) Apparent Power is less than Active Power [#20653](https://github.com/arendst/Tasmota/issues/20653)
+- Refactor and fix PID sensor (PID_USE_LOCAL_SENSOR) read race condition [#22162](https://github.com/arendst/Tasmota/issues/22162)
+- SCD30 Lowered I2C clock from 100k to 50k [#15438](https://github.com/arendst/Tasmota/issues/15438)
+- HASPmota `delete` instead of `delete()` [#22245](https://github.com/arendst/Tasmota/issues/22245)
 
 ### Fixed
-- Modbus transmit enable GPIO enabled once during write buffer
-- Energy dummy switched voltage and power regression from v12.2.0.2
-- Shutter default motorstop set to 0 [#17403](https://github.com/arendst/Tasmota/issues/17403)
-- Shutter default tilt configuration [#17484](https://github.com/arendst/Tasmota/issues/17484)
-- Orno WE517 modbus serial config 8E1 setting [#17545](https://github.com/arendst/Tasmota/issues/17545)
-- Rename ``tasmota4M.bin`` to ``tasmota-4M.bin`` to solve use of ``tasmota-minimal.bin`` [#17674](https://github.com/arendst/Tasmota/issues/17674)
-- ESP8266 set GPIO's to input on power on fixing relay spikes [#17531](https://github.com/arendst/Tasmota/issues/17531)
-- ESP8266 TLS SNI which would prevent AWS IoT connection [#17936](https://github.com/arendst/Tasmota/issues/17936)
+- DALI received data decoding
+- Compilation exception when metrics not found [#22170](https://github.com/arendst/Tasmota/issues/22170)
+- Crash when calling TasmotaSerial destructor when initialized with incorrect arguments [#22036](https://github.com/arendst/Tasmota/issues/22036)
+- Energy calculation [#20653](https://github.com/arendst/Tasmota/issues/20653)
+- SML trx pin error [#22119](https://github.com/arendst/Tasmota/issues/22119)
+- Shutter timing registers overflow [#21966](https://github.com/arendst/Tasmota/issues/21966)
+- Shutter missing HOLD on shutterbutton [#22108](https://github.com/arendst/Tasmota/issues/22108)
+- Shutter remaining issues on shutterinvert [#22120](https://github.com/arendst/Tasmota/issues/22120)
+- PZEM continue energy monitoring when one phase fails [#21968](https://github.com/arendst/Tasmota/issues/21968)
+- BearSSL panic on ESP8266 in rare conditions [#22017](https://github.com/arendst/Tasmota/issues/22017)
+- ModbusBridge request and response logic [#22075](https://github.com/arendst/Tasmota/issues/22075)
+- Sonoff WTS01 temperature sensor shows incorrect negative temperature [#19373](https://github.com/arendst/Tasmota/issues/19373)
+- Autoconf prevent 'init.bat' from stopping on empty lines [#22158](https://github.com/arendst/Tasmota/issues/22158)
+- Zigbee extend timeout for MCU reboot from 5s to 10s [#22009](https://github.com/arendst/Tasmota/issues/22009)
+- Zigbee avoid disabling console serial on ESP32 and improved log messages [#22082](https://github.com/arendst/Tasmota/issues/22082)
+- Zigbee flashing CC2562P with latest firmware [#22117](https://github.com/arendst/Tasmota/issues/22117)
+- ESP32 Range Extender compile error with core 3.x [#22205](https://github.com/arendst/Tasmota/issues/22205)
+- ESP32 DALI compile error with core 3.x [#22214](https://github.com/arendst/Tasmota/issues/22214)
+- ESP32 Ethernet using EthClockMode 3 [#22248](https://github.com/arendst/Tasmota/issues/22248)
+- ESP32 disable SPI DMA for uDisplay (broken since esp-idf 5.3 (core 3.1.0)) [#22264](https://github.com/arendst/Tasmota/issues/22264)
+- Berry avoid `readbytes()` from crashing when file is too large [#22057](https://github.com/arendst/Tasmota/issues/22057)
+- Berry energy missing attributes [#22116](https://github.com/arendst/Tasmota/issues/22116)
+- Berry I2C to prepare M5Stack I2C STM32 based devices [#22143](https://github.com/arendst/Tasmota/issues/22143)
+- Berry improve `persist` dirty data handling [#22246](https://github.com/arendst/Tasmota/issues/22246)
+- ESP32-S3 uDisplay force cache writes to RGB display [#22222](https://github.com/arendst/Tasmota/issues/22222)
+- LVGL Added OpenHASP icons to font `montserrat-28` [#22048](https://github.com/arendst/Tasmota/issues/22048)
+- LVGL compilation of lv_menu [#22188](https://github.com/arendst/Tasmota/issues/22188)
+- HASPmota broken `changed` event [#22194](https://github.com/arendst/Tasmota/issues/22194)
+- HASPmota error when page '1' is not defined [#22220](https://github.com/arendst/Tasmota/issues/22220)
+- Matter fixed UI bug when no endpoints configured [#22008](https://github.com/arendst/Tasmota/issues/22008)
+- Matter fix when Rules are disabled [#22016](https://github.com/arendst/Tasmota/issues/22016)
+- Matter fail to report Shutter status if no shutter is configured in Tasmota [#22049](https://github.com/arendst/Tasmota/issues/22049)
+- Matter fix Waterleak broken after Berry solidification optimisation #21885 [#22052](https://github.com/arendst/Tasmota/issues/22052)
+
+### Removed
+- ESP8266 Analog input support using energy driver as only one channel is available
+- Berry remove reuse of methods for interface-like code reuse #21500 [#22055](https://github.com/arendst/Tasmota/issues/22055)
+- Berry Zigbee removed test code [#22263](https://github.com/arendst/Tasmota/issues/22263)

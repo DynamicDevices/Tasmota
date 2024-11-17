@@ -19,6 +19,7 @@
 
 #ifdef USE_LIGHT
 #ifdef USE_WS2812
+
 /*********************************************************************************************\
  * WS2812 RGB / RGBW Leds using NeopixelBus library
  *
@@ -33,15 +34,13 @@
  *  6 (11)       yes     no         no          Rainbow
  *  7 (12)       yes     no         no          Fire
  *  8 (13)       yes     no         no          Stairs
+ *  9 (14)       yes     no         no          Clear (= Berry)
+ * 10 (15)       yes     no         no          Optional DDP
 \*********************************************************************************************/
 
 #define XLGT_01             1
 
-#ifdef USE_NETWORK_LIGHT_SCHEMES
 const uint8_t WS2812_SCHEMES = 10;      // Number of WS2812 schemes
-#else
-const uint8_t WS2812_SCHEMES = 9;      // Number of WS2812 schemes
-#endif
 
 const char kWs2812Commands[] PROGMEM = "|"  // No prefix
   D_CMND_LED "|" D_CMND_PIXELS "|" D_CMND_ROTATION "|" D_CMND_WIDTH "|" D_CMND_STEPPIXELS ;
@@ -148,6 +147,8 @@ typedef CONCAT3(NEO_FEATURE_NEO,NEO_FEATURE_TYPE,NEO_FEATURE_FEATURE) selectedNe
 
 #if defined(ESP8266) && defined(USE_WS2812_DMA)
 typedef CONCAT6(NEO_NEO,NEO_CHIP,NEO_PROTO,NEO_INV,NEO_HW,Method)   selectedNeoSpeedType;
+#elif defined(CONFIG_IDF_TARGET_ESP32C2)
+typedef NeoEsp32SpiN800KbpsMethod   selectedNeoSpeedType;
 #else // Dma : different naming scheme
 typedef CONCAT6(NEO_NEO,NEO_CHIP,NEO_PROTO,NEO_HW,NEO_INV,Method)   selectedNeoSpeedType;
 #endif
@@ -172,11 +173,7 @@ WsColor kRainbow[7] = { 255,0,0, 255,128,0, 255,255,0, 0,255,0, 0,0,255, 128,0,2
 WsColor kFire[3] = { 255,0,0, 255,102,0, 255,192,0 };
 WsColor kStairs[2] = { 0,0,0, 255,255,255 };
 
-#ifdef USE_NETWORK_LIGHT_SCHEMES
-ColorScheme kSchemes[WS2812_SCHEMES -2] = {  // Skip clock scheme and DDP scheme
-#else
-ColorScheme kSchemes[WS2812_SCHEMES -1] = {  // Skip clock scheme
-#endif
+ColorScheme kSchemes[WS2812_SCHEMES -2] = {  // Skip clock and clear scheme
   kIncandescent, 2,
   kRgb, 3,
   kChristmas, 2,
@@ -212,6 +209,16 @@ long wsmap(long x, long in_min, long in_max, long out_min, long out_max) {
   return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
 }
 
+void Ws2812LibStripShow(void) {
+  strip->Show();
+
+#if defined(USE_WS2812_DMA) || defined(USE_WS2812_RMT) || defined(USE_WS2812_I2S)
+  // Wait for DMA/RMT/I2S to complete fixes distortion due to analogRead
+//  delay((Settings->light_pixels >> 6) +1);  // 256 / 64 = 4 +1 = 5
+  SystemBusyDelay( (Settings->light_pixels + 31) >> 5);  // (256 + 32) / 32 = 8
+#endif
+}
+
 void Ws2812StripShow(void)
 {
 #if (USE_WS2812_CTYPE > NEO_3LED)
@@ -232,7 +239,7 @@ void Ws2812StripShow(void)
       strip->SetPixelColor(i, c);
     }
   }
-  strip->Show();
+  Ws2812LibStripShow();
 }
 
 int mod(int a, int b)
@@ -544,12 +551,12 @@ void Ws2812DDP(void)
     Ws2812StripShow();
   }
 }
-#endif
+#endif  // USE_NETWORK_LIGHT_SCHEMES
 
 void Ws2812Clear(void)
 {
   strip->ClearTo(0);
-  strip->Show();
+  Ws2812LibStripShow();
   Ws2812.show_next = 1;
 }
 
@@ -575,7 +582,7 @@ void Ws2812SetColor(uint32_t led, uint8_t red, uint8_t green, uint8_t blue, uint
   }
 
   if (!Ws2812.suspend_update) {
-    strip->Show();
+    Ws2812LibStripShow();
     Ws2812.show_next = 1;
   }
 }
@@ -616,7 +623,7 @@ void Ws2812ForceSuspend (void)
 void Ws2812ForceUpdate (void)
 {
   Ws2812.suspend_update = false;
-  strip->Show();
+  Ws2812LibStripShow();
   Ws2812.show_next = 1;
 }
 
@@ -634,9 +641,9 @@ bool Ws2812SetChannels(void)
 void Ws2812ShowScheme(void)
 {
   uint32_t scheme = Settings->light_scheme - Ws2812.scheme_offset;
-  
+
 #ifdef USE_NETWORK_LIGHT_SCHEMES
-  if ((scheme != 9) && (ddp_udp_up)) {
+  if ((scheme != 10) && (ddp_udp_up)) {
     ddp_udp.stop();
     ddp_udp_up = 0;
     AddLog(LOG_LEVEL_DEBUG_MORE, "DDP: UDP Stopped: WS2812 Scheme not DDP");
@@ -649,11 +656,16 @@ void Ws2812ShowScheme(void)
         Ws2812.show_next = 0;
       }
       break;
+    case 9:  // Clear
+      if (Settings->light_scheme != Light.last_scheme) {
+        Ws2812Clear();
+      }
+      break;
 #ifdef USE_NETWORK_LIGHT_SCHEMES
-    case 9:
+    case 10:
       Ws2812DDP();
       break;
-#endif
+#endif  // USE_NETWORK_LIGHT_SCHEMES
     default:
 			if(Settings->light_step_pixels > 0){
 				Ws2812Steps(scheme -1);
@@ -669,16 +681,10 @@ void Ws2812ShowScheme(void)
   }
 }
 
-bool Ws2812ReinitStrip(void)
+bool Ws2812InitStrip(void)
 {
   if (strip != nullptr) {
-    Ws2812Clear();
-    if (!strip->CanShow()) {
-      // we're doing DMA, so wait for a decent amount of time
-      delay(10);
-    }
-    delete strip;
-    strip = nullptr;
+    return true;
   }
 
 #if (USE_WS2812_HARDWARE == NEO_HW_P9813)
@@ -699,9 +705,13 @@ bool Ws2812ReinitStrip(void)
 
 void Ws2812ModuleSelected(void)
 {
-  if (Ws2812ReinitStrip()) {
+  if (Ws2812InitStrip()) {
     Ws2812.scheme_offset = Light.max_scheme +1;
     Light.max_scheme += WS2812_SCHEMES;
+
+#ifdef USE_NETWORK_LIGHT_SCHEMES
+    Light.max_scheme++;
+#endif
 
 #if (USE_WS2812_CTYPE > NEO_3LED)
     TasmotaGlobal.light_type = LT_RGBW;
@@ -711,6 +721,117 @@ void Ws2812ModuleSelected(void)
     TasmotaGlobal.light_driver = XLGT_01;
   }
 }
+
+#ifdef ESP32
+#ifdef USE_BERRY
+/********************************************************************************************/
+// Callbacks for Berry driver
+//
+// Since we dont' want to export all the template stuff, we need to encapsulate the calls
+// in plain functions
+//
+void *Ws2812GetStrip(void) {
+  return strip;
+}
+
+void Ws2812Begin(void) {
+  if (strip) { strip->Begin(); }
+}
+
+void Ws2812Show(void) {
+  if (strip) { strip->Show(); }
+}
+
+uint32_t Ws2812PixelsSize(void) {
+  if (strip) { return strip->PixelCount(); }
+  return 0;
+}
+
+bool Ws2812CanShow(void) {
+  if (strip) { return strip->CanShow(); }
+  return false;
+}
+
+bool Ws2812IsDirty(void) {
+  if (strip) { return strip->IsDirty(); }
+  return false;
+}
+
+void Ws2812Dirty(void) {
+  if (strip) { strip->Dirty(); }
+}
+
+uint8_t * Ws2812Pixels(void) {
+  if (strip) { return strip->Pixels(); }
+  return nullptr;
+}
+
+size_t Ws2812PixelSize(void) {
+  if (strip) { return strip->PixelSize(); }
+  return 0;
+}
+
+size_t Ws2812PixelCount(void) {
+  if (strip) { return strip->PixelCount(); }
+  return 0;
+}
+
+void Ws2812ClearTo(uint8_t r, uint8_t g, uint8_t b, uint8_t w, int32_t from, int32_t to) {
+#if (USE_WS2812_CTYPE > NEO_3LED)
+  RgbwColor lcolor;
+  lcolor.W = w;
+#else
+  RgbColor lcolor;
+#endif
+
+  lcolor.R = r;
+  lcolor.G = g;
+  lcolor.B = b;
+  if (strip) {
+    if (from < 0) {
+      strip->ClearTo(lcolor);
+    } else {
+      strip->ClearTo(lcolor, from, to);
+    }
+  }
+}
+
+void Ws2812SetPixelColor(uint32_t idx, uint8_t r, uint8_t g, uint8_t b, uint8_t w)
+{
+#if (USE_WS2812_CTYPE > NEO_3LED)
+  RgbwColor lcolor;
+  lcolor.W = w;
+#else
+  RgbColor lcolor;
+#endif
+
+  lcolor.R = r;
+  lcolor.G = g;
+  lcolor.B = b;
+  if (strip) {
+    strip->SetPixelColor(idx, lcolor);
+  }
+}
+
+uint32_t Ws2812GetPixelColor(uint32_t idx) {
+#if (USE_WS2812_CTYPE > NEO_3LED)
+  RgbwColor lcolor;
+#else
+  RgbColor lcolor;
+#endif
+  if (strip) {
+    lcolor = strip->GetPixelColor(idx);
+#if (USE_WS2812_CTYPE > NEO_3LED)
+    return (lcolor.W << 24) | (lcolor.R << 16) | (lcolor.G << 8) | lcolor.B;
+#else
+    return (lcolor.R << 16) | (lcolor.G << 8) | lcolor.B;
+#endif
+  }
+  return 0;
+}
+
+#endif  // ESP32
+#endif  // USE_BERRY
 
 /********************************************************************************************/
 
@@ -740,10 +861,16 @@ void CmndLed(void)
 void CmndPixels(void)
 {
   if ((XdrvMailbox.payload > 0) && (XdrvMailbox.payload <= WS2812_MAX_LEDS)) {
+/*
     Settings->light_pixels = XdrvMailbox.payload;
     Settings->light_rotation = 0;
-    Ws2812ReinitStrip();
+    Ws2812ReinitStrip();   -- does not work with latest NeoPixelBus driver
     Light.update = true;
+*/
+    Ws2812Clear();                     // Clear all known pixels
+    Settings->light_pixels = XdrvMailbox.payload;
+    Settings->light_rotation = 0;
+    TasmotaGlobal.restart_flag = 2;    // reboot instead
   }
   ResponseCmndNumber(Settings->light_pixels);
 }
@@ -752,7 +879,7 @@ void CmndStepPixels(void)
 {
   if ((XdrvMailbox.payload >= 0) && (XdrvMailbox.payload <= 255)) {
     Settings->light_step_pixels = (XdrvMailbox.payload > WS2812_MAX_LEDS) ? WS2812_MAX_LEDS :  XdrvMailbox.payload;
-    Ws2812ReinitStrip();
+    // Ws2812ReinitStrip();   -- not sure it's actually needed
     Light.update = true;
   }
   ResponseCmndNumber(Settings->light_step_pixels);
@@ -797,7 +924,7 @@ size_t Ws2812StripGetPixelSize(void) {
 // return true if strip was dirty and an actual refresh was triggered
 bool Ws2812StripRefresh(void) {
   if (strip->IsDirty()) {
-    strip->Show();
+    Ws2812LibStripShow();
     return true;
   } else {
     return false;

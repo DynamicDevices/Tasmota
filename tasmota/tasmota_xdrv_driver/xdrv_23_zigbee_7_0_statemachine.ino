@@ -425,7 +425,27 @@ static const Zigbee_Instruction zb_prog[] PROGMEM = {
     ZI_ON_ERROR_GOTO(ZIGBEE_LABEL_ABORT)
     ZI_ON_TIMEOUT_GOTO(ZIGBEE_LABEL_ABORT)
     ZI_ON_RECV_UNEXPECTED(&ZNP_Recv_Default)
+
+    ZI_LOG(LOG_LEVEL_INFO, D_LOG_ZIGBEE "Loading Zigbee data")
+    ZI_CALL(&Z_Prepare_Storage, 0)
+    ZI_CALL(&Z_Load_Devices, 0)
+    ZI_CALL(&Z_Load_Data, 0)
+    ZI_CALL(&Z_Set_Save_Data_Timer, 0)
+    ZI_CALL(&Z_ZbAutoload, 0)
+#ifndef USE_ZIGBEE_DEBUG
     ZI_WAIT(15500)                             // wait for 15 seconds for Tasmota to stabilize
+#else
+    ZI_WAIT(30000)                             // wait for cumulated 5 minutes
+    ZI_WAIT(30000)
+    ZI_WAIT(30000)
+    ZI_WAIT(30000)
+    ZI_WAIT(30000)
+    ZI_WAIT(30000)
+    ZI_WAIT(30000)
+    ZI_WAIT(30000)
+    ZI_WAIT(30000)
+    ZI_WAIT(30000)
+#endif
 
     //ZI_MQTT_STATE(ZIGBEE_STATUS_BOOT, "Booting")
     ZI_LOG(LOG_LEVEL_INFO, D_LOG_ZIGBEE "rebooting ZNP device")
@@ -433,7 +453,7 @@ static const Zigbee_Instruction zb_prog[] PROGMEM = {
     ZI_CALL(&ZNP_Reset_Device, 0)         // LOW = reset
     ZI_WAIT(100)                          // wait for .1 second
     ZI_CALL(&ZNP_Reset_Device, 1)         // HIGH = release reset
-    ZI_WAIT_RECV_FUNC(5000, ZBR_RESET, &ZNP_Reboot)             // timeout 5s
+    ZI_WAIT_RECV_FUNC(10000, ZBR_RESET, &ZNP_Reboot)             // timeout 5s
     ZI_WAIT(100)
     ZI_LOG(LOG_LEVEL_DEBUG, kCheckingDeviceConfiguration)     // Log Debug: checking device configuration
     ZI_SEND(ZBS_VERSION)                      // check ZNP software version
@@ -535,11 +555,6 @@ static const Zigbee_Instruction zb_prog[] PROGMEM = {
     ZI_MQTT_STATE(ZIGBEE_STATUS_OK, kStarted)
     ZI_LOG(LOG_LEVEL_INFO, kZigbeeStarted)
     ZI_CALL(&Z_State_Ready, 1)                    // Now accept incoming messages
-    ZI_CALL(&Z_Prepare_Storage, 0)
-    ZI_CALL(&Z_Load_Devices, 0)
-    ZI_CALL(&Z_Load_Data, 0)
-    ZI_CALL(&Z_Set_Save_Data_Timer, 0)
-    ZI_CALL(&Z_ZbAutoload, 0)
     ZI_CALL(&Z_Query_Bulbs, 0)
 
   ZI_LABEL(ZIGBEE_LABEL_MAIN_LOOP)
@@ -737,7 +752,7 @@ ZBM(ZBS_SET_CONCENTRATOR, EZSP_setConcentrator, 0x00 /*high*/, 0x00 /*false*/, 0
 ZBM(ZBR_SET_CONCENTRATOR, EZSP_setConcentrator, 0x00 /*high*/, 0x00 /*ok*/)           // 100000
 
 // setInitialSecurityState
-#define EZ_SECURITY_MODE  EMBER_TRUST_CENTER_GLOBAL_LINK_KEY | EMBER_PRECONFIGURED_NETWORK_KEY_MODE | EMBER_HAVE_NETWORK_KEY | EMBER_HAVE_PRECONFIGURED_KEY
+#define EZ_SECURITY_MODE  EMBER_TRUST_CENTER_GLOBAL_LINK_KEY | EMBER_HAVE_PRECONFIGURED_KEY | EMBER_HAVE_NETWORK_KEY | EMBER_NO_FRAME_COUNTER_RESET | EMBER_REQUIRE_ENCRYPTED_KEY
 ZBR(ZBS_SET_SECURITY,     EZSP_setInitialSecurityState, 0x00 /*high*/,
                           Z_B0(EZ_SECURITY_MODE), Z_B1(EZ_SECURITY_MODE),
                           // preConfiguredKey
@@ -748,6 +763,14 @@ ZBR(ZBS_SET_SECURITY,     EZSP_setInitialSecurityState, 0x00 /*high*/,
                           0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00, /*trustcenter*/
                           )
 ZBM(ZBR_SET_SECURITY,     EZSP_setInitialSecurityState, 0x00 /*high*/, 0x00 /*status*/)
+
+#define EMBER_JOINER_GLOBAL_LINK_KEY 		0x0010
+#define EMBER_NWK_LEAVE_REQUEST_NOT_ALLOWED 0x0100
+
+#define EZ_EXT_SECURITY   EMBER_JOINER_GLOBAL_LINK_KEY | EMBER_NWK_LEAVE_REQUEST_NOT_ALLOWED
+ZBM(ZBS_SET_VALUE_EXTERNAL, EZSP_setValue, 0x00,/*high*/ EZSP_VALUE_EXTENDED_SECURITY_BITMASK, 2, Z_B0(EZ_EXT_SECURITY), Z_B1(EZ_EXT_SECURITY))
+ZBM(ZBR_SET_VALUE_EXTERNAL, EZSP_setValue, 0x00,/*high*/ 0x00/*status*/)
+
 
 // setIndividual policies
 ZBM(ZBS_SET_POLICY_00,    EZSP_setPolicy, 0x00 /*high*/, EZSP_TRUST_CENTER_POLICY,
@@ -873,7 +896,27 @@ static const Zigbee_Instruction zb_prog[] PROGMEM = {
     ZI_ON_ERROR_GOTO(ZIGBEE_LABEL_ABORT)
     ZI_ON_TIMEOUT_GOTO(ZIGBEE_LABEL_ABORT)
     ZI_ON_RECV_UNEXPECTED(&EZ_Recv_Default)
+    
+    ZI_LOG(LOG_LEVEL_INFO, D_LOG_ZIGBEE "Loading Zigbee data")
+    ZI_CALL(&Z_Prepare_Storage, 0)
+    ZI_CALL(&Z_Load_Devices, 0)
+    ZI_CALL(&Z_Load_Data, 0)
+    ZI_CALL(&Z_Set_Save_Data_Timer, 0)
+    ZI_CALL(&Z_ZbAutoload, 0)
+#ifndef USE_ZIGBEE_DEBUG
     ZI_WAIT(15500)                             // wait for 15 seconds for Tasmota to stabilize
+#else
+    ZI_WAIT(30000)                             // wait for cumulated 5 minutes
+    ZI_WAIT(30000)
+    ZI_WAIT(30000)
+    ZI_WAIT(30000)
+    ZI_WAIT(30000)
+    ZI_WAIT(30000)
+    ZI_WAIT(30000)
+    ZI_WAIT(30000)
+    ZI_WAIT(30000)
+    ZI_WAIT(30000)
+#endif
 
     // Hardware reset
     ZI_LOG(LOG_LEVEL_INFO, kResettingDevice)     // Log Debug: resetting EZSP device
@@ -882,7 +925,7 @@ static const Zigbee_Instruction zb_prog[] PROGMEM = {
     ZI_CALL(&EZ_Reset_Device, 1)         // HIGH = release reset
 
     // wait for device to start
-    ZI_WAIT_UNTIL(5000, ZBR_RSTACK)     // wait for RSTACK message
+    ZI_WAIT_UNTIL(10000, ZBR_RSTACK)     // wait for RSTACK message
 
     // Init device and probe version
     ZI_SEND(ZBS_VERSION)                ZI_WAIT_RECV_FUNC(5000, ZBR_VERSION, &EZ_ReceiveCheckVersion)       // check EXT PAN ID
@@ -954,6 +997,7 @@ static const Zigbee_Instruction zb_prog[] PROGMEM = {
     ZI_ON_ERROR_GOTO(ZIGBEE_LABEL_ABORT)
     // set encryption keys
     ZI_SEND(ZBS_SET_SECURITY)           ZI_WAIT_RECV(2500, ZBR_SET_SECURITY)
+    ZI_SEND(ZBS_SET_VALUE_EXTERNAL)     ZI_WAIT_RECV(2500, ZBR_SET_VALUE_EXTERNAL)
     // formNetwork
     ZI_SEND(ZBS_FORM_NETWORK)           ZI_WAIT_RECV(2500, ZBR_FORM_NETWORK)
     ZI_WAIT_RECV(5000, ZBR_NETWORK_UP)    // wait for network to start
@@ -969,15 +1013,10 @@ static const Zigbee_Instruction zb_prog[] PROGMEM = {
     ZI_LOG(LOG_LEVEL_INFO, kZigbeeGroup0)
     ZI_SEND(ZBS_SET_MCAST_ENTRY)        ZI_WAIT_RECV(2500, ZBR_SET_MCAST_ENTRY)
 
-  // ZI_LABEL(ZIGBEE_LABEL_READY)
+  ZI_LABEL(ZIGBEE_LABEL_READY)
     ZI_MQTT_STATE(ZIGBEE_STATUS_OK, kStarted)
     ZI_LOG(LOG_LEVEL_INFO, kZigbeeStarted)
     ZI_CALL(&Z_State_Ready, 1)                    // Now accept incoming messages
-    ZI_CALL(&Z_Prepare_Storage, 0)
-    ZI_CALL(&Z_Load_Devices, 0)
-    ZI_CALL(&Z_Load_Data, 0)
-    ZI_CALL(&Z_Set_Save_Data_Timer, 0)
-    ZI_CALL(&Z_ZbAutoload, 0)
     ZI_CALL(&Z_Query_Bulbs, 0)
 
   ZI_LABEL(ZIGBEE_LABEL_MAIN_LOOP)
@@ -1079,6 +1118,7 @@ void ZigbeeStateMachine_Run(void) {
     }
     if (zigbee.pc < 0) {
       zigbee.state_machine = false;
+      zigbee.active = false;
       return;
     }
 
@@ -1124,6 +1164,7 @@ void ZigbeeStateMachine_Run(void) {
         zigbee.state_machine = false;
         if (cur_d8) {
           AddLog(LOG_LEVEL_ERROR, PSTR(D_LOG_ZIGBEE "Stopping (%d)"), cur_d8);
+          zigbee.active = false;
         }
         break;
       case ZGB_INSTR_CALL:

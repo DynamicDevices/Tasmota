@@ -46,6 +46,20 @@ class Matter_TLV
   ]
 
   # type values (enum like)
+  #
+  # Type|Description
+  # :----|:---
+  # I1 I2 I4|Signed integer of at most (1/2/4) bytes (as 32 bits signed Berry type)
+  # U1 U2 U4|Unsiged integer of at motst (1/2/4) bytes (as 32 bits signed Berry type, be careful when comparing. Use `matter.Counter.is_greater(a,b)`)
+  # I8 U8|Signed/insigned 8 bytes. You can pass `bytes(8)`, `int64()` or `int`. Type is collapsed to a lower type if possible when encoding.
+  # BOOL|boolean, takes `true` and `false`. Abstracts the internal `BTRUE` and `BFALSE` that you don't need to use
+  # FLOAT|32 bites float
+  # UTF1 UTF2|String as UTF, size is encoded as 1 or 2 bytes automatically
+  # B1 B2|raw `bytes()`, size is encoded as 1 or 2 bytes automatically
+  # NULL|takes only `nil` value
+  # STRUCT<BR>ARRAY<BR>LIST<BR>EOC|(internal) Use through abstractions
+  # DOUBLE<BR>UTF4 UTF8<BR>B4 B8|Unsuppored in Tasmota
+
   static var I1     = 0x00
   static var I2     = 0x01
   static var I4     = 0x02
@@ -72,6 +86,7 @@ class Matter_TLV
   static var ARRAY  = 0x16
   static var LIST   = 0x17
   static var EOC    = 0x18
+  static var RAW    = 0xFF  # encodes an anonymous raw value (already encoded in TLV to save memory)
 
   #################################################################################
   # Matter_TLV_item class
@@ -79,6 +94,9 @@ class Matter_TLV
   static class Matter_TLV_item
     # we keep a shortcut reference to the Matter_TLV class
     static var TLV = Matter_TLV
+    static var is_list = false
+    static var is_array = false
+    static var is_struct = false
     # parent tag to inherit vendor/profile/tag
     var parent
     var next_idx              # next idx in buffer (when parsing)
@@ -99,6 +117,46 @@ class Matter_TLV
     end
 
     #############################################################
+    # reset - allows reuse of the object
+    def reset(parent)
+      var n = nil
+      self.parent = parent
+      self.next_idx = n
+      self.tag_vendor = n
+      self.tag_profile = n
+      self.tag_number = n
+      self.tag_sub = n
+      self.typ = n
+      self.val = n
+    end
+    
+    #############################################################
+    # set value, equivalent to create_TLV() without allocation
+    #
+    def set(t, value)
+      self.reset()
+      if value != nil || t == 0x14 #-t == matter.TLV.NULL-#   # put the actual number for performance
+        self.typ = t
+        self.val = value
+        return self
+      end
+    end
+
+    #############################################################
+    # set value, equivalent to create_TLV() without allocation
+    #
+    # if value is `nil` replace with TLV.NULL
+    def set_or_nil(t, value)
+      self.reset()
+      if (value == nil)   t = 0x14  end   # force TLV.NULL
+      if value != nil || t == 0x14 #-t == matter.TLV.NULL-#   # put the actual number for performance
+        self.typ = t
+        self.val = value
+        return self
+      end
+    end
+    
+    #############################################################
     # neutral converter
     def to_TLV()
       return self
@@ -107,7 +165,7 @@ class Matter_TLV
     #############################################################
     # create simple TLV
     static def create_TLV(t, value)
-      if value != nil
+      if value != nil || t == 0x14 #-t == matter.TLV.NULL-#   # put the actual number for performance
         var v = _class()      # parent is nil
         v.typ = t
         v.val = value
@@ -120,41 +178,65 @@ class Matter_TLV
     #
     # We are trying to follow the official Matter way of printing TLV
     # Ex: '42U' or '1 = 42U' or '0xFFF1::0xDEED:0xAA55FEED = 42U'
-    def tostring()
-      import string
+    def tostring(no_tag)
       # var s = "<instance: Matter_TLV_item("
       var s = ""
       try       # any exception raised in `tostring()` causes a crash, so better catch it here
 
-        if self.tag_profile == -1
-          s += "Matter::"
-          if self.tag_number != nil   s += string.format("0x%08X ", self.tag_number) end
-        else
-          if self.tag_vendor != nil   s += string.format("0x%04X::", self.tag_vendor) end
-          if self.tag_profile != nil   s += string.format("0x%04X:", self.tag_profile) end
-          if self.tag_number != nil   s += string.format("0x%08X ", self.tag_number) end
-          if self.tag_sub != nil   s += string.format("%i ", self.tag_sub) end
+        if no_tag != true
+          if self.tag_profile == -1
+            s += "Matter::"
+            if self.tag_number != nil   s += format("0x%08X ", self.tag_number) end
+          else
+            if self.tag_vendor != nil   s += format("0x%04X::", self.tag_vendor) end
+            if self.tag_profile != nil   s += format("0x%04X:", self.tag_profile) end
+            if self.tag_number != nil   s += format("0x%08X ", self.tag_number) end
+            if self.tag_sub != nil   s += format("%i ", self.tag_sub) end
+          end
+          if size(s) > 0    s += "= " end
         end
 
-        if size(s) > 0    s += "= " end
-
         # print value
-        if type(self.val) == 'int'        s += string.format("%i", self.val)
+        if type(self.val) == 'int'        s += format("%i", self.val)
           if self.typ >= self.TLV.U1 && self.typ <= self.TLV.U8   s += "U" end
         elif type(self.val) == 'bool'     s += self.val ? "true" : "false"
         elif self.val == nil              s += "null"
-        elif type(self.val) == 'real'     s += string.format("%g", self.val)
-        elif type(self.val) == 'string'   s += string.format('"%s"', self.val)
+        elif type(self.val) == 'real'     s += format("%g", self.val)
+        elif type(self.val) == 'string'   s += format('"%s"', self.val)
         elif isinstance(self.val, int64)  s += self.val.tostring()
           if self.typ >= self.TLV.U1 && self.typ <= self.TLV.U8   s += "U" end
         elif type(self.val) == 'instance'
-          s += string.format("%s", self.val.tohex())
+          s += format("%s", self.val.tohex())
         end
         
       except .. as e, m
         return e + " " + m
       end
       return s
+    end
+
+    # simplified version of tostring() for simple values
+    def to_str_val()
+      # print value
+      if type(self.val) == 'int'
+        if self.typ >= self.TLV.U1 && self.typ <= self.TLV.U8
+          return str(self.val) + "U"
+        else
+          return str(self.val)
+        end
+      elif type(self.val) == 'bool'     return self.val ? "true" : "false"
+      elif self.val == nil              return "null"
+      elif type(self.val) == 'real'     return str(self.val)
+      elif type(self.val) == 'string'   return self.val
+      elif isinstance(self.val, int64)
+        if self.typ >= self.TLV.U1 && self.typ <= self.TLV.U8
+          return self.val.tostring() + "U"
+        else
+          return self.val.tostring()
+        end
+      elif type(self.val) == 'instance'
+        return self.tostring(true)
+      end
     end
 
     #############################################################
@@ -173,8 +255,7 @@ class Matter_TLV
       var item_len = TLV._len[item_type]
     
       if item_len == 8                              # i64 / u64 / double
-        self.val = int64()
-        self.val.frombytes(b, idx)
+        self.val = int64.frombytes(b, idx)
         idx += 8
       elif item_type == TLV.BFALSE || item_type == TLV.BTRUE   # bool
         self.val =  (item_type == TLV.BTRUE)
@@ -194,9 +275,9 @@ class Matter_TLV
       elif item_type == TLV.NULL                       # null
         # do nothing
       elif item_type == TLV.EOC
-        tasmota.log("MTR: unexpected eoc", 3)
+        log("MTR: unexpected eoc", 3)
       else
-        tasmota.log("MTR: unexpected type: " + str(item_type), 3)
+        log("MTR: unexpected type: " + str(item_type), 3)
       end
       self.next_idx = idx
       return idx
@@ -206,9 +287,18 @@ class Matter_TLV
     # encode TLV
     #
     # appends to the bytes() object
-    def encode(b)
+    def tlv2raw(b)
       var TLV = self.TLV
       if b == nil   b = bytes() end     # start new buffer if none passed
+
+      if self.typ == TLV.RAW  b..self.val return b   end
+
+      # special case for U8/I8 if we have an int, simplify to smaller size
+      if (self.typ == TLV.I8 || self.typ == TLV.U8) && (type(self.val) == 'int')    # don't change if instance of `int64`
+        if self.typ == TLV.I8     self.typ = TLV.I4         # we can safely cast to I4
+        else                      self.typ = TLV.U4         # or to U4, and let further reduction happen below
+        end
+      end
 
       # special case for bool
       # we need to change the type according to the value
@@ -261,7 +351,11 @@ class Matter_TLV
         elif isinstance(i64, int64)
           i64 = i64.tobytes()             # bytes(8)
         else
-          i64 = int64(int(i64)).tobytes()  # bytes(8)
+          if (self.typ == TLV.I8)             # signed
+            i64 = int64(int(i64)).tobytes()   # bytes(8)
+          else                                # unsigned
+            i64 = int64.fromu32(int(i64)).tobytes()   # bytes(8)
+          end
         end
         b .. i64
       elif self.typ == TLV.BFALSE || self.typ == TLV.BTRUE
@@ -295,6 +389,85 @@ class Matter_TLV
       end
 
       return b
+    end
+
+    #############################################################
+    # compute the length in bytes of encoded TLV without actually
+    # allocating buffers (faster and no memory fragmentation)
+    #
+    # returns a number of bytes
+    def encode_len()
+      var TLV = self.TLV
+      var len = 0
+
+      if self.typ == TLV.RAW  return size(self.val)   end
+
+      # special case for bool
+      # we need to change the type according to the value
+      if self.typ == TLV.BFALSE || self.typ == TLV.BTRUE
+        self.typ = bool(self.val) ? TLV.BTRUE : TLV.BFALSE
+      # try to compress ints
+      elif self.typ >= TLV.I2 && self.typ <= TLV.I4
+        var i = int(self.val)
+        if   i <= 127 && i >= -128      self.typ = TLV.I1
+        elif i <= 32767 && i >= -32768  self.typ = TLV.I2
+        end
+      elif self.typ >= TLV.U2 && self.typ <= TLV.U4
+        var i = int(self.val)
+        if   i <= 255 && i >= 0         self.typ = TLV.U1
+        elif i <= 65535 && i >= 0       self.typ = TLV.U2
+        end
+      elif self.typ >= TLV.B1 && self.typ <= TLV.B8       # encode length as minimum possible
+        if size(self.val) <= 255
+          self.typ = TLV.B1
+        elif size(self.val) <= 65535
+          self.typ = TLV.B2
+        else
+          self.typ = TLV.B4     # B4 is unlikely, B8 is impossible
+        end
+      elif self.typ >= TLV.UTF1 && self.typ <= TLV.UTF8
+        if size(self.val) <= 255
+          self.typ = TLV.UTF1
+        elif size(self.val) <= 65535
+          self.typ = TLV.UTF2
+        else
+          self.typ = TLV.UTF4     # UTF4 is unlikely, UTF8 is impossible
+        end
+      end
+
+      # encode tag and type
+      len += self._encode_tag_len()
+      # encode value
+
+      if self.typ == TLV.I1 || self.typ == TLV.U1
+        len += 1
+      elif self.typ == TLV.I2 || self.typ == TLV.U2
+        len += 2
+      elif self.typ == TLV.I4 || self.typ == TLV.U4
+        len += 4
+      elif self.typ == TLV.I8 || self.typ == TLV.U8
+        len += 8
+      elif self.typ == TLV.BFALSE || self.typ == TLV.BTRUE
+        # push nothing
+      elif self.typ == TLV.FLOAT
+        len += 4
+      elif self.typ == TLV.DOUBLE
+        raise "value_error", "Unsupported type TLV.DOUBLE"
+      elif self.typ == TLV.UTF1
+        len += 1 + size(self.val)
+      elif self.typ == TLV.UTF2
+        len += 2 + size(self.val)
+      elif self.typ == TLV.B1
+        len += 1 + size(self.val)
+      elif self.typ == TLV.B2
+        len += 2 + size(self.val)
+      elif self.typ == TLV.NULL
+        # push nothing
+      else
+        raise "value_error", "unsupported type " + str(self.typ)
+      end
+
+      return len
     end
 
     #############################################################
@@ -338,6 +511,39 @@ class Matter_TLV
         b.add(self.tag_sub, 1)
       else    # anonymous tag
         b.add(0x00 + self.typ, 1)
+      end
+    end
+
+    #############################################################
+    # internal_function
+    # compute len of Tag+Type as the first bytes
+    def _encode_tag_len()
+      var tag_number = self.tag_number != nil ? self.tag_number : 0
+      var tag_huge = (tag_number >= 65536) || (tag_number < 0)
+      var tag_control = 0x00
+      if self.tag_vendor != nil
+        # full encoding
+        if tag_huge
+          return 9
+        else
+          return 7
+        end
+      elif self.tag_profile == -1       # Matter Common profile
+        if tag_huge
+          return 5
+        else
+          return 3
+        end
+      elif self.tag_profile != nil
+        if tag_huge
+          return 5
+        else
+          return 3
+        end
+      elif self.tag_sub != nil
+        return 2
+      else    # anonymous tag
+        return 1
       end
     end
 
@@ -428,7 +634,10 @@ class Matter_TLV
 # class Matter_TLV_struct var _ end
 
   static class Matter_TLV_list : Matter_TLV_item
-    static var is_struct = false
+    # inherited
+    static var is_list = true
+    # static var is_array = false
+    # static var is_struct = false
 
     #################################################################################
     def init(parent)
@@ -438,26 +647,26 @@ class Matter_TLV
     end
 
     #################################################################################
-    def tostring()
-      return self.tostring_inner(false, "[[", "]]")
+    def tostring(no_tag)
+      return self.tostring_inner(false, "[[", "]]", no_tag)
     end
 
-    def tostring_inner(sorted, pre, post)
-      import string
+    def tostring_inner(sorted, pre, post, no_tag)
       var s = ""
       try
 
-        if self.tag_profile == -1
-          s += "Matter::"
-          if self.tag_number != nil   s += string.format("0x%08X ", self.tag_number) end
-        else
-          if self.tag_vendor != nil   s += string.format("0x%04X::", self.tag_vendor) end
-          if self.tag_profile != nil   s += string.format("0x%04X:", self.tag_profile) end
-          if self.tag_number != nil   s += string.format("0x%08X ", self.tag_number) end
-          if self.tag_sub != nil   s += string.format("%i ", self.tag_sub) end
+        if no_tag != true
+          if self.tag_profile == -1
+            s += "Matter::"
+            if self.tag_number != nil   s += format("0x%08X ", self.tag_number) end
+          else
+            if self.tag_vendor != nil   s += format("0x%04X::", self.tag_vendor) end
+            if self.tag_profile != nil   s += format("0x%04X:", self.tag_profile) end
+            if self.tag_number != nil   s += format("0x%08X ", self.tag_number) end
+            if self.tag_sub != nil   s += format("%i ", self.tag_sub) end
+          end
+          if size(s) > 0    s += "= " end
         end
-
-        if size(s) > 0    s += "= " end
 
         s += pre
 
@@ -477,6 +686,11 @@ class Matter_TLV
       return s
     end
 
+    # simplified version of tostring() for simple values
+    def to_str_val()
+      return self.tostring(true)
+    end
+
     #################################################################################
     def parse(b, idx)
       # iterate until end of struct
@@ -494,22 +708,25 @@ class Matter_TLV
     end
 
     #############################################################
-    # encode TLV
-    #
-    # appends to the bytes() object
-    def _encode_inner(b, is_struct)
+    # encode to bytes
+    def tlv2raw(b)
       if b == nil   b = bytes() end
       # encode tag and type
       self._encode_tag(b)
       # sort values
-      var val_list = self.val.copy()
-      if is_struct
+      var val_list = self.val
+      if self.is_struct
+        val_list = val_list.copy()
         self.sort(val_list)
       end
 
       # output each one after the other
       for v : val_list
-        v.encode(b)
+        if isinstance(v, bytes)
+          b .. v
+        else
+          v.tlv2raw(b)
+        end
       end
 
       # add 'end of container'
@@ -519,9 +736,22 @@ class Matter_TLV
     end
 
     #############################################################
-    # encode to bytes
-    def encode(b)
-      return self._encode_inner(b, self.is_struct)
+    # compute the length in bytes of encoded TLV without actually
+    # allocating buffers (faster and no memory fragmentation)
+    #
+    # returns a number of bytes
+    def encode_len()
+      # tag and type
+      var len = self._encode_tag_len()
+      # output each one after the other, order doesn't infulence size
+      var idx = 0
+      while idx < size(self.val)
+        len += self.val[idx].encode_len()
+        idx += 1
+      end
+      # add 'end of container'
+      len += 1
+      return len
     end
 
     #############################################################
@@ -587,9 +817,13 @@ class Matter_TLV
     # returns `self` to allow calls to be chained
     def add_obj(tag, obj)
       if obj != nil
-        var value = obj.to_TLV()
-        value.tag_sub = tag
-        self.val.push(value)
+        if isinstance(obj, bytes)
+          self.val.push(obj)
+        else
+          var value = obj.to_TLV()
+          value.tag_sub = tag
+          self.val.push(value)
+        end
       end
       return self
     end
@@ -621,6 +855,8 @@ class Matter_TLV
   # Matter_TLV_struct class
   #################################################################################
   static class Matter_TLV_struct : Matter_TLV_list
+    static var is_list = false
+  # static var is_array = false
     static var is_struct = true
 
     def init(parent)
@@ -630,8 +866,8 @@ class Matter_TLV
     end
 
     #############################################################
-    def tostring()
-      return self.tostring_inner(true, "{", "}")
+    def tostring(no_tag)
+      return self.tostring_inner(true, "{", "}", no_tag)
     end
   end
 
@@ -639,6 +875,10 @@ class Matter_TLV
   # Matter_TLV_array class
   #################################################################################
   static class Matter_TLV_array : Matter_TLV_list
+    static var is_list = false
+    static var is_array = true
+  # static var is_struct = false
+
     def init(parent)
       super(self).init(parent)
       self.typ = self.TLV.ARRAY
@@ -646,8 +886,8 @@ class Matter_TLV
     end
 
     #############################################################
-    def tostring()
-      return self.tostring_inner(false, "[", "]")
+    def tostring(no_tag)
+      return self.tostring_inner(false, "[", "]", no_tag)
     end
 
     #############################################################
@@ -754,123 +994,3 @@ end
 # add to matter
 import matter
 matter.TLV = Matter_TLV
-
-#-
-
-# Test
-import matter
-
-#load("Matter_TLV.be")
-
-var m
-m = matter.TLV.parse(bytes("2502054C"))
-assert(m.tostring() == "2 = 19461U")
-assert(m.encode() == bytes("2502054C"))
-
-m = matter.TLV.parse(bytes("0001"))
-assert(m.tostring() == "1")
-assert(m.encode() == bytes("0001"))
-
-m = matter.TLV.parse(bytes("08"))
-assert(m.tostring() == "false")
-assert(m.encode() == bytes("08"))
-m = matter.TLV.parse(bytes("09"))
-assert(m.tostring() == "true")
-assert(m.encode() == bytes("09"))
-
-m = matter.TLV.parse(bytes("01FFFF"))
-assert(m.tostring() == "-1")
-assert(m.encode() == bytes("00FF"))
-m = matter.TLV.parse(bytes("05FFFF"))
-assert(m.tostring() == "65535U")
-assert(m.encode() == bytes("05FFFF"))
-
-m = matter.TLV.parse(bytes("0A0000C03F"))
-assert(m.tostring() == "1.5")
-assert(m.encode() == bytes("0A0000C03F"))
-
-m = matter.TLV.parse(bytes("0C06466f6f626172"))
-assert(m.tostring() == '"Foobar"')
-assert(m.encode() == bytes("0C06466f6f626172"))
-
-m = matter.TLV.parse(bytes("1006466f6f626172"))
-assert(m.tostring() == "466F6F626172")
-assert(m.encode() == bytes("1006466f6f626172"))
-
-m = matter.TLV.parse(bytes("e4f1ffeddeedfe55aa2a"))
-assert(m.tostring() == "0xFFF1::0xDEED:0xAA55FEED = 42U")
-assert(m.encode() == bytes("e4f1ffeddeedfe55aa2a"))
-
-
-m = matter.TLV.parse(bytes("300120D2DAEE8760C9B1D1B25E0E2E4DD6ECA8AEF6193C0203761356FCB06BBEDD7D66"))
-assert(m.tostring() == "1 = D2DAEE8760C9B1D1B25E0E2E4DD6ECA8AEF6193C0203761356FCB06BBEDD7D66")
-assert(m.encode() == bytes("300120D2DAEE8760C9B1D1B25E0E2E4DD6ECA8AEF6193C0203761356FCB06BBEDD7D66"))
-
-# context specific
-m = matter.TLV.parse(bytes("24012a"))
-assert(m.tostring() == "1 = 42U")
-assert(m.encode() == bytes("24012a"))
-
-m = matter.TLV.parse(bytes("4401002a"))
-assert(m.tostring() == "Matter::0x00000001 = 42U")
-assert(m.encode() == bytes("4401002a"))
-
-# int64
-m = matter.TLV.parse(bytes("030102000000000000"))
-assert(m.tostring() == "513")
-assert(m.encode() == bytes("030102000000000000"))
-
-m = matter.TLV.parse(bytes("070102000000000000"))
-assert(m.tostring() == "513U")
-assert(m.encode() == bytes("070102000000000000"))
-
-m = matter.TLV.parse(bytes("03FFFFFFFFFFFFFFFF"))
-assert(m.tostring() == "-1")
-assert(m.encode() == bytes("03FFFFFFFFFFFFFFFF"))
-
-m = matter.TLV.parse(bytes("07FFFFFFFFFFFFFF7F"))
-assert(m.tostring() == "9223372036854775807U")
-assert(m.encode() == bytes("07FFFFFFFFFFFFFF7F"))
-
-# structure
-m = matter.TLV.parse(bytes("1518"))
-assert(m.tostring() == "{}")
-assert(m.encode() == bytes("1518"))
-
-m = matter.TLV.parse(bytes("15300120D2DAEE8760C9B1D1B25E0E2E4DD6ECA8AEF6193C0203761356FCB06BBEDD7D662502054C240300280418"))
-assert(m.tostring() == "{1 = D2DAEE8760C9B1D1B25E0E2E4DD6ECA8AEF6193C0203761356FCB06BBEDD7D66, 2 = 19461U, 3 = 0U, 4 = false}")
-assert(m.encode() == bytes("15300120D2DAEE8760C9B1D1B25E0E2E4DD6ECA8AEF6193C0203761356FCB06BBEDD7D662502054C240300280418"))
-
-m = matter.TLV.parse(bytes("15300120D2DAEE8760C9B1D1B25E0E2E4DD6ECA8AEF6193C0203761356FCB06BBEDD7D662502054C240300280435052501881325022C011818"))
-assert(m.tostring() == "{1 = D2DAEE8760C9B1D1B25E0E2E4DD6ECA8AEF6193C0203761356FCB06BBEDD7D66, 2 = 19461U, 3 = 0U, 4 = false, 5 = {1 = 5000U, 2 = 300U}}")
-assert(m.encode() == bytes("15300120D2DAEE8760C9B1D1B25E0E2E4DD6ECA8AEF6193C0203761356FCB06BBEDD7D662502054C240300280435052501881325022C011818"))
-
-# list
-m = matter.TLV.parse(bytes("1718"))
-assert(m.tostring() == "[[]]")
-assert(m.encode() == bytes("1718"))
-
-m = matter.TLV.parse(bytes("17000120002a000200032000ef18"))
-assert(m.tostring() == "[[1, 0 = 42, 2, 3, 0 = -17]]")
-assert(m.encode() == bytes("17000120002a000200032000ef18"))
-
-
-# array
-m = matter.TLV.parse(bytes("1618"))
-assert(m.tostring() == "[]")
-assert(m.encode() == bytes("1618"))
-
-m = matter.TLV.parse(bytes("160000000100020003000418"))
-assert(m.tostring() == "[0, 1, 2, 3, 4]")
-assert(m.encode() == bytes("160000000100020003000418"))
-
-# mix
-m = matter.TLV.parse(bytes("16002a02f067fdff15180a33338f410c0648656c6c6f2118"))
-assert(m.tostring() == '[42, -170000, {}, 17.9, "Hello!"]')
-assert(m.encode() == bytes("16002a02f067fdff15180a33338f410c0648656c6c6f2118"))
-
-m = matter.TLV.parse(bytes("153600172403312504FCFF18172402002403302404001817240200240330240401181724020024033024040218172402002403302404031817240200240328240402181724020024032824040418172403312404031818280324FF0118"))
-assert(m.tostring() == '{0 = [[[3 = 49U, 4 = 65532U]], [[2 = 0U, 3 = 48U, 4 = 0U]], [[2 = 0U, 3 = 48U, 4 = 1U]], [[2 = 0U, 3 = 48U, 4 = 2U]], [[2 = 0U, 3 = 48U, 4 = 3U]], [[2 = 0U, 3 = 40U, 4 = 2U]], [[2 = 0U, 3 = 40U, 4 = 4U]], [[3 = 49U, 4 = 3U]]], 3 = false, 255 = 1U}')
-assert(m.encode() == bytes("153600172403312504FCFF18172402002403302404001817240200240330240401181724020024033024040218172402002403302404031817240200240328240402181724020024032824040418172403312404031818280324FF0118"))
-
--#

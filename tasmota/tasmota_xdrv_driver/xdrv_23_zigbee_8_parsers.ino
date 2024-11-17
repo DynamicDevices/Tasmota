@@ -1395,15 +1395,21 @@ void Z_SendSimpleDescReq(uint16_t shortaddr, uint16_t groupaddr, uint16_t cluste
 //    Iterate among
 //
 void Z_SendDeviceInfoRequest(uint16_t shortaddr) {
-  ZCLFrame zcl(4);   // message is 4 bytes
+  ZCLFrame zcl(12);   // message is 12 bytes
   zcl.shortaddr = shortaddr;
-  zcl.cluster = 0;
+  zcl.cluster = 0x0000;
   zcl.cmd = ZCL_READ_ATTRIBUTES;
   zcl.clusterSpecific = false;
   zcl.needResponse = true;
   zcl.direct = false;   // discover route
   zcl.payload.add16(0x0005);
   zcl.payload.add16(0x0004);
+  // Tuya needs a magic spell reading more attributes
+  // cf https://github.com/zigpy/zha-device-handlers/issues/2042
+  zcl.payload.add16(0x0000);  // Manufacturer Name
+  zcl.payload.add16(0x0001);  // Application Version
+  zcl.payload.add16(0x0007);  // Power Source
+  zcl.payload.add16(0xfffe);  // Unknown
   zigbeeZCLSendCmd(zcl);
 }
 
@@ -2268,10 +2274,10 @@ void ZCLFrame::autoResponder(const uint16_t *attr_list_ids, size_t attr_len) {
         attr.setUInt((Rtc.utc_time > START_VALID_TIME) ? 0x02 : 0x00);
         break;
       case 0x000A0002:    // TimeZone
-        attr.setUInt(Settings->toffset[0] * 60);
+        attr.setUInt(Rtc.time_timezone * 60);
         break;
       case 0x000A0007:    // LocalTime    // TODO take DST
-        attr.setUInt(Settings->toffset[0] * 60 + ((Rtc.utc_time > START_VALID_TIME) ? Rtc.utc_time - 946684800 : Rtc.utc_time));
+        attr.setUInt(Rtc.time_timezone * 60 + ((Rtc.utc_time > START_VALID_TIME) ? Rtc.utc_time - 946684800 : Rtc.utc_time));
         break;
     }
     if (!attr.isNone()) {

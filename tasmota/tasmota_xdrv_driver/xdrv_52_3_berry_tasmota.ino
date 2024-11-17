@@ -171,16 +171,29 @@ extern "C" {
   int32_t l_rtc(struct bvm *vm);
   int32_t l_rtc(struct bvm *vm) {
     int32_t top = be_top(vm); // Get the number of arguments
-    if (top == 1) {  // no argument (instance only)
+    if (top >= 1 && be_isstring(vm, 1)) {  // argument is name
+      be_pushnil(vm);
+      be_pushvalue(vm, 1);
+      // (-2) nil, (-1) string -> if key matches then update (-2)
+    } else {
       be_newobject(vm, "map");
-      be_map_insert_int(vm, "utc", Rtc.utc_time);
-      be_map_insert_int(vm, "local", Rtc.local_time);
-      be_map_insert_int(vm, "restart", Rtc.restart_time);
-      be_map_insert_int(vm, "timezone", Rtc.time_timezone);
-      be_pop(vm, 1);
-      be_return(vm);
+      // (-2) map instance, (-1) map
     }
-    be_raise(vm, kTypeError, nullptr);
+    be_map_insert_int(vm, "utc", Rtc.utc_time);
+    be_map_insert_int(vm, "local", Rtc.local_time);
+    be_map_insert_int(vm, "restart", Rtc.restart_time);
+    be_map_insert_int(vm, "timezone", Rtc.time_timezone);
+    be_map_insert_int(vm, "config_time", Settings->cfg_timestamp);
+    be_pop(vm, 1);
+    be_return(vm);
+  }
+
+  // Berry: tasmota.rtc_utc() -> int
+  //
+  int32_t l_rtc_utc(struct bvm *vm);
+  int32_t l_rtc_utc(struct bvm *vm) {
+    be_pushint(vm, Rtc.utc_time);
+    be_return(vm);
   }
 
   // Berry: tasmota.memory() -> map
@@ -188,28 +201,32 @@ extern "C" {
   int32_t l_memory(struct bvm *vm);
   int32_t l_memory(struct bvm *vm) {
     int32_t top = be_top(vm); // Get the number of arguments
-    if (top == 1) {  // no argument (instance only)
+    if (top >= 1 && be_isstring(vm, 1)) {  // argument is name
+      be_pushnil(vm);
+      be_pushvalue(vm, 1);
+      // (-2) nil, (-1) string -> if key matches then update (-2)
+    } else {
       be_newobject(vm, "map");
-      be_map_insert_int(vm, "flash", ESP_getFlashChipMagicSize() / 1024);
-      be_map_insert_int(vm, "flash_real", ESP.getFlashChipSize() / 1024);
-      be_map_insert_int(vm, "program", ESP_getSketchSize() / 1024);
-      be_map_insert_int(vm, "program_free", ESP_getFreeSketchSpace() / 1024);
-      be_map_insert_int(vm, "heap_free", ESP_getFreeHeap() / 1024);
-      be_map_insert_int(vm, "frag", ESP_getHeapFragmentation());
-      // give info about stack size
-      be_map_insert_int(vm, "stack_size", SET_ESP32_STACK_SIZE / 1024);
-      be_map_insert_int(vm, "stack_low", uxTaskGetStackHighWaterMark(nullptr) / 1024);
-      if (UsePSRAM()) {
-        be_map_insert_int(vm, "psram", ESP.getPsramSize() / 1024);
-        be_map_insert_int(vm, "psram_free", ESP.getFreePsram() / 1024);
-      }
-      // IRAM information
-      int32_t iram_free = (int32_t)heap_caps_get_free_size(MALLOC_CAP_32BIT) - (int32_t)heap_caps_get_free_size(MALLOC_CAP_8BIT);
-      be_map_insert_int(vm, "iram_free", iram_free / 1024);
-      be_pop(vm, 1);
-      be_return(vm);
+      // (-2) map instance, (-1) map
     }
-    be_raise(vm, kTypeError, nullptr);
+    be_map_insert_int(vm, "flash", ESP_getFlashChipMagicSize() / 1024);
+    be_map_insert_int(vm, "flash_real", ESP.getFlashChipSize() / 1024);
+    be_map_insert_int(vm, "program", ESP_getSketchSize() / 1024);
+    be_map_insert_int(vm, "program_free", ESP_getFreeSketchSpace() / 1024);
+    be_map_insert_int(vm, "heap_free", ESP_getFreeHeap() / 1024);
+    be_map_insert_int(vm, "frag", ESP_getHeapFragmentation());
+    // give info about stack size
+    be_map_insert_int(vm, "stack_size", SET_ESP32_STACK_SIZE / 1024);
+    be_map_insert_real(vm, "stack_low", ((float)uxTaskGetStackHighWaterMark(nullptr)) / 1024);
+    if (UsePSRAM()) {
+      be_map_insert_int(vm, "psram", ESP.getPsramSize() / 1024);
+      be_map_insert_int(vm, "psram_free", ESP.getFreePsram() / 1024);
+    }
+    // IRAM information
+    int32_t iram_free = (int32_t)heap_caps_get_free_size(MALLOC_CAP_32BIT) - (int32_t)heap_caps_get_free_size(MALLOC_CAP_8BIT);
+    be_map_insert_int(vm, "iram_free", iram_free / 1024);
+    be_pop(vm, 1);
+    be_return(vm);
   }
 
   // Berry: tasmota.wifi() -> map
@@ -217,38 +234,42 @@ extern "C" {
   int32_t l_wifi(struct bvm *vm);
   int32_t l_wifi(struct bvm *vm) {
     int32_t top = be_top(vm); // Get the number of arguments
-    if (top == 1) {  // no argument (instance only)
+    if (top >= 1 && be_isstring(vm, 1)) {  // argument is name
+      be_pushnil(vm);
+      be_pushvalue(vm, 1);
+      // (-2) nil, (-1) string -> if key matches then update (-2)
+    } else {
       be_newobject(vm, "map");
-      be_map_insert_str(vm, "mac", WiFi.macAddress().c_str());
-      be_map_insert_bool(vm, "up", WifiHasIP());
-      if (Settings->flag4.network_wifi) {
-        int32_t rssi = WiFi.RSSI();
-        bool show_rssi = false;
-#ifdef USE_IPV6
-        String ipv6_addr = WifiGetIPv6Str();
-        if (ipv6_addr != "") {
-          be_map_insert_str(vm, "ip6", ipv6_addr.c_str());
-          show_rssi = true;
-        }
-        ipv6_addr = WifiGetIPv6LinkLocalStr();
-        if (ipv6_addr != "") {
-          be_map_insert_str(vm, "ip6local", ipv6_addr.c_str());
-          show_rssi = true;
-        }
-#endif // USE_IPV6
-        if (static_cast<uint32_t>(WiFi.localIP()) != 0) {
-          be_map_insert_str(vm, "ip", IPAddress((uint32_t)WiFi.localIP()).toString().c_str());   // quick fix for IPAddress bug
-          show_rssi = true;
-        }
-        if (show_rssi) {
-          be_map_insert_int(vm, "rssi", rssi);
-          be_map_insert_int(vm, "quality", WifiGetRssiAsQuality(rssi));
-        }
-      }
-      be_pop(vm, 1);
-      be_return(vm);
+      // (-2) map instance, (-1) map
     }
-    be_raise(vm, kTypeError, nullptr);
+    be_map_insert_str(vm, "mac", WiFiHelper::macAddress().c_str());
+    be_map_insert_bool(vm, "up", WifiHasIP());
+    if (Settings->flag4.network_wifi) {
+      int32_t rssi = WiFi.RSSI();
+      bool show_rssi = false;
+#ifdef USE_IPV6
+      String ipv6_addr = WifiGetIPv6Str();
+      if (ipv6_addr != "") {
+        be_map_insert_str(vm, "ip6", ipv6_addr.c_str());
+        show_rssi = true;
+      }
+      ipv6_addr = WifiGetIPv6LinkLocalStr();
+      if (ipv6_addr != "") {
+        be_map_insert_str(vm, "ip6local", ipv6_addr.c_str());
+        show_rssi = true;
+      }
+#endif // USE_IPV6
+      if (static_cast<uint32_t>(WiFi.localIP()) != 0) {
+        be_map_insert_str(vm, "ip", IPAddress((uint32_t)WiFi.localIP()).toString().c_str());   // quick fix for IPAddress bug
+        show_rssi = true;
+      }
+      if (show_rssi) {
+        be_map_insert_int(vm, "rssi", rssi);
+        be_map_insert_int(vm, "quality", WifiGetRssiAsQuality(rssi));
+      }
+    }
+    be_pop(vm, 1);
+    be_return(vm);
   }
 
   // Berry: tasmota.eth() -> map
@@ -256,34 +277,38 @@ extern "C" {
   int32_t l_eth(struct bvm *vm);
   int32_t l_eth(struct bvm *vm) {
     int32_t top = be_top(vm); // Get the number of arguments
-    if (top == 1) {  // no argument (instance only)
+    if (top >= 1 && be_isstring(vm, 1)) {  // argument is name
+      be_pushnil(vm);
+      be_pushvalue(vm, 1);
+      // (-2) nil, (-1) string -> if key matches then update (-2)
+    } else {
       be_newobject(vm, "map");
+      // (-2) map instance, (-1) map
+    }
 #ifdef USE_ETHERNET
-      be_map_insert_bool(vm, "up", EthernetHasIP());
-      String eth_mac = EthernetMacAddress().c_str();
-      if (eth_mac != "00:00:00:00:00:00") {
-        be_map_insert_str(vm, "mac", eth_mac.c_str());
-      }
-      if (static_cast<uint32_t>(EthernetLocalIP()) != 0) {
-        be_map_insert_str(vm, "ip", IPAddress((uint32_t)EthernetLocalIP()).toString().c_str());   // quick fix for IPAddress bug
-      }
+    be_map_insert_bool(vm, "up", EthernetHasIP());
+    String eth_mac = EthernetMacAddress().c_str();
+    if (eth_mac != "00:00:00:00:00:00") {
+      be_map_insert_str(vm, "mac", eth_mac.c_str());
+    }
+    if (static_cast<uint32_t>(EthernetLocalIP()) != 0) {
+      be_map_insert_str(vm, "ip", IPAddress((uint32_t)EthernetLocalIP()).toString().c_str());   // quick fix for IPAddress bug
+    }
 #ifdef USE_IPV6
-      String ipv6_addr = EthernetGetIPv6Str();
-      if (ipv6_addr != "") {
-        be_map_insert_str(vm, "ip6", ipv6_addr.c_str());
-      }
-      ipv6_addr = EthernetGetIPv6LinkLocalStr();
-      if (ipv6_addr != "") {
-        be_map_insert_str(vm, "ip6local", ipv6_addr.c_str());
-      }
+    String ipv6_addr = EthernetGetIPv6Str();
+    if (ipv6_addr != "") {
+      be_map_insert_str(vm, "ip6", ipv6_addr.c_str());
+    }
+    ipv6_addr = EthernetGetIPv6LinkLocalStr();
+    if (ipv6_addr != "") {
+      be_map_insert_str(vm, "ip6local", ipv6_addr.c_str());
+    }
 #endif // USE_IPV6
 #else // USE_ETHERNET
-      be_map_insert_bool(vm, "up", bfalse);
+    be_map_insert_bool(vm, "up", bfalse);
 #endif // USE_ETHERNET
-      be_pop(vm, 1);
-      be_return(vm);
-    }
-    be_raise(vm, kTypeError, nullptr);
+    be_pop(vm, 1);
+    be_return(vm);
   }
 
   // Berry: tasmota.hostname() -> string
@@ -380,14 +405,99 @@ extern "C" {
   // ESP object
   int32_t l_yield(bvm *vm);
   int32_t l_yield(bvm *vm) {
-    return be_call_c_func(vm, (void*) &BrTimeoutYield, NULL, "-");
+    BrTimeoutYield();
+    be_return_nil(vm);
   }
 
   // Berry: tasmota.scale_uint(int * 5) -> int
   //
   int32_t l_scaleuint(struct bvm *vm);
   int32_t l_scaleuint(struct bvm *vm) {
-    return be_call_c_func(vm, (void*) &changeUIntScale, "i", "-iiiii");
+    int32_t top = be_top(vm); // Get the number of arguments
+    if (top == 5 && be_isint(vm, 1) && be_isint(vm, 2) && be_isint(vm, 3) && be_isint(vm, 4) && be_isint(vm, 5)) {
+      int32_t val = be_toint(vm, 1);
+      int32_t from_min = be_toint(vm, 2);
+      int32_t from_max = be_toint(vm, 3);
+      int32_t to_min = be_toint(vm, 4);
+      int32_t to_max = be_toint(vm, 5);
+      int32_t scaled = changeUIntScale(val, from_min, from_max, to_min, to_max);
+      be_pushint(vm, scaled);
+      be_return(vm);
+    }
+    be_raise(vm, kTypeError, nullptr);
+  }
+
+  // Berry: tasmota.scale_int(int * 5) -> int
+  //
+  int32_t l_scaleint(struct bvm *vm);
+  int32_t l_scaleint(struct bvm *vm) {
+    int32_t top = be_top(vm); // Get the number of arguments
+    if (top == 5 && be_isint(vm, 1) && be_isint(vm, 2) && be_isint(vm, 3) && be_isint(vm, 4) && be_isint(vm, 5)) {
+      int32_t val = be_toint(vm, 1);
+      int32_t from_min = be_toint(vm, 2);
+      int32_t from_max = be_toint(vm, 3);
+      int32_t to_min = be_toint(vm, 4);
+      int32_t to_max = be_toint(vm, 5);
+      int32_t scaled = changeIntScale(val, from_min, from_max, to_min, to_max);
+      be_pushint(vm, scaled);
+      be_return(vm);
+    }
+    be_raise(vm, kTypeError, nullptr);
+  }
+
+  /*
+  Implements the 5-order polynomial approximation to sin(x).
+  @param i   angle (with 2^15 units/circle)
+  @return    16 bit fixed point Sine value (4.12) (ie: +4096 = +1 & -4096 = -1)
+
+  The result is accurate to within +- 1 count. ie: +/-2.44e-4.
+  */
+  int16_t fpsin(int16_t i)
+  {
+      /* Convert (signed) input to a value between 0 and 8192. (8192 is pi/2, which is the region of the curve fit). */
+      /* ------------------------------------------------------------------- */
+      i <<= 1;
+      uint8_t c = i<0; //set carry for output pos/neg
+
+      if(i == (i|0x4000)) // flip input value to corresponding value in range [0..8192)
+          i = (1<<15) - i;
+      i = (i & 0x7FFF) >> 1;
+      /* ------------------------------------------------------------------- */
+
+      /* The following section implements the formula:
+      = y * 2^-n * ( A1 - 2^(q-p)* y * 2^-n * y * 2^-n * [B1 - 2^-r * y * 2^-n * C1 * y]) * 2^(a-q)
+      Where the constants are defined as follows:
+      */
+      // enum {A1=3370945099UL, B1=2746362156UL, C1=292421UL};
+      // enum {n=13, p=32, q=31, r=3, a=12};
+
+      uint32_t y = (292421UL*((uint32_t)i))>>13;
+      y = 2746362156UL - (((uint32_t)i*y)>>3);
+      y = (uint32_t)i * (y>>13);
+      y = (uint32_t)i * (y>>13);
+      y = 3370945099UL - (y>>(32-31));
+      y = (uint32_t)i * (y>>13);
+      y = (y+(1UL<<(31-12-1)))>>(31-12); // Rounding
+
+      return c ? -y : y;
+  }
+
+  // Berry: tasmota.sine_int(int) -> int
+  //
+  // Input: 8192 is pi/2
+  // Output: -4096 is -1, 4096 is +1
+  //
+  // https://www.nullhardware.com/blog/fixed-point-sine-and-cosine-for-embedded-systems/
+  int32_t l_sineint(struct bvm *vm);
+  int32_t l_sineint(struct bvm *vm) {
+    int32_t top = be_top(vm); // Get the number of arguments
+    if (top == 1 && be_isint(vm, 1)) {
+      int32_t val = be_toint(vm, 1);
+
+      be_pushint(vm, fpsin(val));
+      be_return(vm);
+    }
+    be_raise(vm, kTypeError, nullptr);
   }
 
   int32_t l_respCmnd(bvm *vm);
@@ -453,81 +563,245 @@ extern "C" {
   }
 
   // Find for an operator in the string
-  // takes a string, an offset to start the search from, and works in 2 modes.
-  // mode1 (false): loog for the first char of an operato
-  // mode2 (true): finds the last char of the operator
+  // returns -1 if not found, or returns start in low 16 bits, end in high 16 bits
+  //
+  // Detects the following operators: `=`, `==`, `!=`, `!==`, `<`, `<=`, `>`, `>=`, `$<`, `$>`, `$!`, `$|`, `$^`, `|`
   int32_t tasm_find_op(bvm *vm);
   int32_t tasm_find_op(bvm *vm) {
     int32_t top = be_top(vm); // Get the number of arguments
-    bool second_phase = false;
     int32_t ret = -1;
     if (top >= 2 && be_isstring(vm, 2)) {
       const char *c = be_tostring(vm, 2);
-      if (top >= 3) {
-        second_phase = be_tobool(vm, 3);
-      }
+      // new version, two phases in 1, return start in low 16 bits, end in high 16 bits
 
-      if (!second_phase) {
-        int32_t idx = 0;
-        // search for `=`, `==`, `!=`, `!==`, `<`, `<=`, `>`, `>=`
-        while (*c && ret < 0) {
-          switch (c[0]) {
-            case '=':
-            case '<':
-            case '>':
-              ret = idx;
-              break;   // anything starting with `=`, `<` or `>` is a valid operator
-            case '!':
-              if (c[1] == '=') {
-                ret = idx; // needs to start with `!=`
-              }
-              break;
-            default:
-              break;
-          }
-          c++;
-          idx++;
-        }
-      } else {
-        // second phase
+      int32_t idx_start = -1;
+      int32_t idx = 0;
+      int32_t idx_end = -1; 
+      // search for `=`, `==`, `!=`, `!==`, `<`, `<=`, `>`, `>=`, `$<`, `$>`, `$!`, `$|`, `$^`, `|`
+      while (*c && idx_start < 0) {
         switch (c[0]) {
+          case '=':
           case '<':
           case '>':
-          case '=':
-            if (c[1] != '=') { ret = 1; }    // `<` or `>` or `=`
-            else             { ret = 2; }    // `<=` or `>=` or `==`
+            idx_start = idx;
+            if (c[1] == '=') { idx_end = idx_start + 2; }     // `<=` or `>=` or `==`
+            else             { idx_end = idx_start + 1; }     // `<` or `>` or `=`
             break;
           case '!':
-            if (c[1] != '=') { ; }         // this is invalid if isolated `!`
-            if (c[2] != '=') { ret = 2; }    // `!=`
-            else             { ret = 3; }    // `!==`
+            if (c[1] == '=') {                                // this is invalid if isolated `!`
+              idx_start = idx;
+              if (c[2] != '=') { idx_end = idx_start + 2; }   // `!=`
+              else             { idx_end = idx_start + 3; }   // `!==`
+            }
+            break;
+          case '$':
+            switch (c[1]) {
+              case '<':
+              case '>':
+              case '!':
+              case '|':
+              case '^':
+                idx_start = idx;                              // `$<`, `$>`, `$!`, `$|`, `$^`
+                idx_end = idx_start + 2;
+                break;
+              default:
+                break;
+            }
+            break;
+          case '|':
+            idx_start = idx;                                  // `|`
+            idx_end = idx_start + 1;
             break;
           default:
             break;
         }
+        c++;
+        idx++;
+      }
+
+      if (idx_start >= 0 && idx_end >= idx_start) {
+        ret = ((idx_end & 0x7FFF) << 16) | (idx_start & 0x7FFF);
       }
     }
     be_pushint(vm, ret);
     be_return(vm);
   }
+
+  int32_t be_Tasmota_version(void) {
+    return Settings->version;
+  }
+
   /*
 
-  # test patterns
-  assert(tasmota._find_op("aaa#bbc==23",false) == 7)
-  assert(tasmota._find_op("==23",true) == 2)
-  assert(tasmota._find_op(">23",true) == 1)
-  assert(tasmota._find_op("aaa#bbc!23",false) == -1)
+  # test patterns for all-in-one version
+  assert(tasmota._find_op("aaa#bbc==23") == 0x80007)
+  assert(tasmota._find_op("az==23") == 0x30002)
+  assert(tasmota._find_op("a>23") == 0x10001)
+  assert(tasmota._find_op("aaa#bbc!23") == -1)
 
   */
 
-  // web append with decimal conversion
+  // String utilities
+  // From https://stackoverflow.com/questions/68816324/substring-exists-in-string-in-c
+  //
+  // changed to case-insensitive version
+  static const char* substr_i(const char *haystack, const char *needle) {
+    do {
+      const char *htmp = haystack;
+      const char *ntmp = needle;
+      while (toupper(*htmp) == toupper(*ntmp) && *ntmp) {
+        htmp++;
+        ntmp++;
+      }
+      if (!*ntmp) {
+        return haystack;  // Beginning of match
+      }
+    } while (*haystack++);
+
+    return NULL;
+  }
+
+  static bool startswith_i(const char *haystack, const char *needle) {
+    const char *htmp = haystack;
+    const char *ntmp = needle;
+    while (toupper(*htmp) == toupper(*ntmp) && *ntmp) {
+      htmp++;
+      ntmp++;
+    }
+    return !*ntmp;
+  }
+
+  static bool endswith_i(const char *haystack, const char *needle) {
+    size_t h_len = strlen(haystack);
+    size_t n_len = strlen(needle);
+    if (h_len >= n_len) {
+      const char *htmp = haystack + h_len - n_len;
+      const char *ntmp = needle;
+      return (strcasecmp(htmp, ntmp) == 0);
+    }
+    return false;
+  }
+
+  // Apply a string operator, without allocating any object (no pressure on GC)
+  //
+  // `tasmota._apply_str_op(op, a, b)`
+  // Args:
+  // op: operator (int)
+  //    1: `==` (equals) case insensitive
+  //    2: `!==` or `$!` (not equals) case insensitive
+  //    3: `$<` (starts with) case insensitive
+  //    4: `$>` (ends with) case insensitive
+  //    5: `$|` (contains) case insensitive
+  //    6: `$^` (does not contain) case insensitive
+  //  a: first string
+  //  b: second string
+  //
+  int32_t tasm_apply_str_op(bvm *vm);
+  int32_t tasm_apply_str_op(bvm *vm) {
+    int32_t top = be_top(vm); // Get the number of arguments
+    bbool ret = bfalse;
+    if (top >= 4 && be_isint(vm, 2) && be_isstring(vm, 3) && be_isstring(vm, 4)) {
+      int32_t op = be_toint(vm, 2);
+      const char *a = be_tostring(vm, 3);
+      const char *b = be_tostring(vm, 4);
+
+      switch (op) {
+        case 1:           // `==` (equals) case insensitive
+          ret = (strcasecmp(a, b) == 0);
+          break;
+        case 2:           // `!==` or `$!` (not equals) case insensitive
+          ret = (strcasecmp(a, b) != 0);
+          break;
+        case 3:           // `$<` (starts with) case insensitive
+          ret = startswith_i(a, b);
+          break;
+        case 4:           // `$>` (ends with) case insensitive
+          ret = endswith_i(a, b);
+          break;
+        case 5:           // `$|` (contains) case insensitive
+          ret = (substr_i(a, b) != NULL);
+          break;
+        case 6:           // `$^` (does not contain) case insensitive
+          ret = (substr_i(a, b) == NULL);
+          break;
+      }
+    }
+    be_pushbool(vm, ret);
+    be_return(vm);
+  }
+  /*
+  
+  # unit tests
+  # equals
+  assert(tasmota._apply_str_op(1, "aa", "AA") == true)
+  assert(tasmota._apply_str_op(1, "aa", "AAA") == false)
+  assert(tasmota._apply_str_op(1, "a", "AA") == false)
+  assert(tasmota._apply_str_op(1, "", "AA") == false)
+  assert(tasmota._apply_str_op(1, "aa", "") == false)
+  assert(tasmota._apply_str_op(1, "", "") == true)
+
+  # not equals
+  assert(tasmota._apply_str_op(2, "aa", "AA") == false)
+  assert(tasmota._apply_str_op(2, "aa", "AAA") == true)
+  assert(tasmota._apply_str_op(2, "a", "AA") == true)
+  assert(tasmota._apply_str_op(2, "", "AA") == true)
+  assert(tasmota._apply_str_op(2, "aa", "") == true)
+  assert(tasmota._apply_str_op(2, "", "") == false)
+
+  # starts with
+  assert(tasmota._apply_str_op(3, "aabbcc", "AA") == true)
+  assert(tasmota._apply_str_op(3, "aaabbcc", "AA") == true)
+  assert(tasmota._apply_str_op(3, "abbaacc", "AA") == false)
+  assert(tasmota._apply_str_op(3, "aabbcc", "a") == true)
+  assert(tasmota._apply_str_op(3, "aabbcc", "") == true)
+  assert(tasmota._apply_str_op(3, "", "") == true)
+  assert(tasmota._apply_str_op(3, "", "a") == false)
+
+  assert(tasmota._apply_str_op(3, "azeaze", "az") == true)
+  assert(tasmota._apply_str_op(3, "azeaze", "ze") == false)
+
+  # ends with
+  assert(tasmota._apply_str_op(4, "azeaze", "az") == false)
+  assert(tasmota._apply_str_op(4, "azeaze", "ze") == true)
+  assert(tasmota._apply_str_op(4, "azeaze", "") == true)
+  assert(tasmota._apply_str_op(4, "", "aa") == false)
+  assert(tasmota._apply_str_op(4, "aa", "aa") == true)
+  assert(tasmota._apply_str_op(4, "aabaa", "aa") == true)
+
+  # contains
+  assert(tasmota._apply_str_op(5, "azeaze", "az") == true)
+  assert(tasmota._apply_str_op(5, "azeaze", "ze") == true)
+  assert(tasmota._apply_str_op(5, "azeaze", "") == true)
+  assert(tasmota._apply_str_op(5, "azeaze", "e") == true)
+  assert(tasmota._apply_str_op(5, "azeaze", "a") == true)
+  assert(tasmota._apply_str_op(5, "azeaze", "z") == true)
+  assert(tasmota._apply_str_op(5, "azertyuiop", "tyui") == true)
+  assert(tasmota._apply_str_op(5, "azertyuiop", "azr") == false)
+  assert(tasmota._apply_str_op(5, "", "aze") == false)
+
+  # not contains
+  assert(tasmota._apply_str_op(6, "azeaze", "az") == false)
+  assert(tasmota._apply_str_op(6, "azeaze", "ze") == false)
+  assert(tasmota._apply_str_op(6, "azeaze", "") == false)
+  assert(tasmota._apply_str_op(6, "azeaze", "e") == false)
+  assert(tasmota._apply_str_op(6, "azeaze", "a") == false)
+  assert(tasmota._apply_str_op(6, "azeaze", "z") == false)
+  assert(tasmota._apply_str_op(6, "azertyuiop", "tyui") == false)
+  assert(tasmota._apply_str_op(6, "azertyuiop", "azr") == true)
+  assert(tasmota._apply_str_op(6, "", "aze") == true)
+
+  */
+
+  // web append without decimal conversion
   int32_t l_webSend(bvm *vm);
   int32_t l_webSend(bvm *vm) {
     int32_t top = be_top(vm); // Get the number of arguments
     if (top == 2 && be_isstring(vm, 2)) {
       const char *msg = be_tostring(vm, 2);
       be_pop(vm, top);  // avoid Error be_top is non zero message
+#ifdef USE_WEBSERVER
       WSContentSend_P(PSTR("%s"), msg);
+#endif  // USE_WEBSERVER
       be_return_nil(vm); // Return nil when something goes wrong
     }
     be_raise(vm, kTypeError, nullptr);
@@ -540,10 +814,40 @@ extern "C" {
     if (top == 2 && be_isstring(vm, 2)) {
       const char *msg = be_tostring(vm, 2);
       be_pop(vm, top);  // avoid Error be_top is non zero message
+#ifdef USE_WEBSERVER
       WSContentSend_PD(PSTR("%s"), msg);
+      WSContentSeparator(0);
+#endif  // USE_WEBSERVER
       be_return_nil(vm); // Return nil when something goes wrong
     }
     be_raise(vm, kTypeError, nullptr);
+  }
+
+  // get webcolors
+  int32_t l_webcolor(bvm *vm);
+  int32_t l_webcolor(bvm *vm) {
+    char tmp[16];
+    int32_t top = be_top(vm); // Get the number of arguments
+    if (top >= 1 && be_isint(vm, 1)) {  // argument is int
+      int32_t idx = be_toint(vm, 1);
+      if (idx >= 0 && idx < COL_LAST) {
+        snprintf_P(tmp, sizeof(tmp), PSTR("#%06x"), WebColor(idx));
+        be_pushstring(vm, tmp);
+        be_return(vm);
+      } else {
+        be_return_nil(vm);
+      }
+    } else {
+      be_newobject(vm, "list");
+      for (uint32_t i = 0; i < COL_LAST; i++) {
+        snprintf_P(tmp, sizeof(tmp), PSTR("#%06x"), WebColor(i));
+        be_pushstring(vm, tmp);
+        be_data_push(vm, -2);
+        be_pop(vm, 1);
+      }
+      be_pop(vm, 1);
+      be_return(vm);
+    }
   }
 
   // get power
@@ -551,17 +855,25 @@ extern "C" {
   int32_t l_getpower(bvm *vm) {
     power_t pow = TasmotaGlobal.power;
     int32_t top = be_top(vm); // Get the number of arguments
-    if (top == 2 && be_isint(vm, 2)) {
-      pow = be_toint(vm, 2);
-    }
-    be_newobject(vm, "list");
-    for (uint32_t i = 0; i < TasmotaGlobal.devices_present; i++) {
-      be_pushbool(vm, bitRead(pow, i));
-      be_data_push(vm, -2);
+    if (top >= 2 && be_isint(vm, 2)) {
+      int32_t idx = be_toint(vm, 2);
+      if (idx >= 0 && idx < TasmotaGlobal.devices_present) {
+        be_pushbool(vm, bitRead(pow, idx));
+        be_return(vm);
+      } else {
+        be_return_nil(vm);
+      }
+    } else {
+      // no parameter, return an array of all values
+      be_newobject(vm, "list");
+      for (uint32_t i = 0; i < TasmotaGlobal.devices_present; i++) {
+        be_pushbool(vm, bitRead(pow, i));
+        be_data_push(vm, -2);
+        be_pop(vm, 1);
+      }
       be_pop(vm, 1);
+      be_return(vm); // Return
     }
-    be_pop(vm, 1);
-    be_return(vm); // Return
   }
 
   int32_t l_setpower(bvm *vm);
@@ -625,6 +937,23 @@ extern "C" {
  *
 \*********************************************************************************************/
 extern "C" {
+  // Berry: `loglevel() -> int`
+  // or
+  // Berry: `loglevel(int) -> bool`
+  // return the highest log level currently in place
+  int32_t l_loglevel(struct bvm *vm);
+  int32_t l_loglevel(struct bvm *vm) {
+    int32_t top = be_top(vm); // Get the number of arguments
+    uint32_t highest_loglevel = HighestLogLevel();
+    if (top >= 2 && be_isint(vm, 2)) {
+      int32_t log_level = be_toint(vm, 2);
+      be_pushbool(vm, log_level <= highest_loglevel);
+    } else {
+      be_pushint(vm, HighestLogLevel());
+    }
+    be_return(vm);
+  }
+
   // Berry: `log(msg:string [,log_level:int]) ->nil`
   // Logs the string at LOG_LEVEL_INFO (loglevel=2)
   // We allow this function to be called as a method or a direct function
@@ -705,24 +1034,25 @@ extern "C" {
  * Tasmota Log Reader
  *
 \*********************************************************************************************/
-
-uint32_t* tlr_init(void) {
-  uint32_t* idx = new uint32_t();
-  *idx = 0;
-  return idx;
-}
-char* tlr_get_log(uint32_t* idx, int32_t log_level) {
-  // bool GetLog(uint32_t req_loglevel, uint32_t* index_p, char** entry_pp, size_t* len_p) {
-  if (log_level < 0 || log_level > 4) { log_level = 2; }    // default to LOG_LEVEL_INFO
-  char* line;
-  size_t len;
-  if (GetLog(log_level, idx, &line, &len) && len > 0) {
-    char* s = (char*) malloc(len+1);
-    memmove(s, line, len);
-    s[len] = 0;
-    return s;   // caller will free()
-  } else {
-    return NULL;
+extern "C" {
+  uint32_t* tlr_init(void) {
+    uint32_t* idx = new uint32_t();
+    *idx = 0;
+    return idx;
+  }
+  char* tlr_get_log(uint32_t* idx, int32_t log_level) {
+    // bool GetLog(uint32_t req_loglevel, uint32_t* index_p, char** entry_pp, size_t* len_p) {
+    if (log_level < 0 || log_level > 4) { log_level = 2; }    // default to LOG_LEVEL_INFO
+    char* line;
+    size_t len;
+    if (GetLog(log_level, idx, &line, &len) && len > 0) {
+      char* s = (char*) malloc(len+1);
+      memmove(s, line, len);
+      s[len] = 0;
+      return s;   // caller will free()
+    } else {
+      return NULL;
+    }
   }
 }
 

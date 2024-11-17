@@ -441,7 +441,7 @@ void TasmotaClient_Show(void) {
   if ((TClient.type) && (TClientSettings.features.func_json_append)) {
     TasmotaClient_sendCmnd(CMND_GET_JSON, 0);
 
-    char buffer[100];
+    char buffer[250];  // Keep size below 255 to stay within 8-bits index and len
     uint8_t len = TasmotaClient_receiveData(buffer, sizeof(buffer) -1);
 
     buffer[len] = '\0';
@@ -558,6 +558,9 @@ bool Xdrv31(uint32_t function) {
       break;
     case FUNC_COMMAND:
       result = DecodeCommand(kTasmotaClientCommands, TasmotaClientCommand);
+      break;
+    case FUNC_ACTIVE:
+      result = true;
       break;
   }
   return result;

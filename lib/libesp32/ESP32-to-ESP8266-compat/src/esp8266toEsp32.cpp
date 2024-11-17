@@ -16,6 +16,7 @@
 #ifdef ESP32
 
 #include "Arduino.h"
+#include "esp_idf_version.h"
 #include "esp8266toEsp32.h"
 #include "driver/ledc.h"
 
@@ -33,7 +34,11 @@ enum LoggingLevels {LOG_LEVEL_NONE, LOG_LEVEL_ERROR, LOG_LEVEL_INFO, LOG_LEVEL_D
 #else
 #define LEDC_DEFAULT_CLK        LEDC_AUTO_CLK
 #endif
-#define LEDC_MAX_BIT_WIDTH      SOC_LEDC_TIMER_BIT_WIDE_NUM
+#if (ESP_IDF_VERSION_MAJOR >= 5)
+  #define LEDC_MAX_BIT_WIDTH      SOC_LEDC_TIMER_BIT_WIDTH
+#else
+  #define LEDC_MAX_BIT_WIDTH      SOC_LEDC_TIMER_BIT_WIDE_NUM
+#endif
 
 // define our limits to ease any change from esp-idf
 #define MAX_TIMERS              LEDC_TIMER_MAX            // 4 timers for all ESP32 variants
@@ -43,16 +48,14 @@ enum LoggingLevels {LOG_LEVEL_NONE, LOG_LEVEL_ERROR, LOG_LEVEL_INFO, LOG_LEVEL_D
 
 
 // replicated from `tasmota.h`
-#if defined(CONFIG_IDF_TARGET_ESP32)
-  const uint8_t MAX_PWMS = 16;            // ESP32: 16 ledc PWM channels in total - TODO for now
-#elif defined(CONFIG_IDF_TARGET_ESP32S2)
-  const uint8_t MAX_PWMS = 8;             // ESP32S2: 8 ledc PWM channels in total
-#elif defined(CONFIG_IDF_TARGET_ESP32S3)
-  const uint8_t MAX_PWMS = 8;             // ESP32S2: 8 ledc PWM channels in total
-#elif defined(CONFIG_IDF_TARGET_ESP32C3)
-  const uint8_t MAX_PWMS = 6;             // ESP32C3: 6 ledc PWM channels in total
+#if CONFIG_IDF_TARGET_ESP32
+const uint8_t MAX_PWMS = 16;              // ESP32: 16 ledc PWM channels in total - TODO for now
+#elif CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
+const uint8_t MAX_PWMS = 8;               // ESP32S2/S3: 8 ledc PWM channels in total
+#elif CONFIG_IDF_TARGET_ESP32C2 || CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32C6
+const uint8_t MAX_PWMS = 6;               // ESP32C2/C3/C6: 6 ledc PWM channels in total
 #else
-  const uint8_t MAX_PWMS = 5;             // Unknown - revert to 5 PWM max
+const uint8_t MAX_PWMS = 5;               // Unknown - revert to 5 PWM max
 #endif
 
 // current configuration of timers: frequency and resolution
@@ -207,7 +210,7 @@ void analogWriteFreqRange(int32_t freq, int32_t range, int32_t pin) {
   _analogInit();      // make sure the mapping array is initialized
   uint32_t timer0_freq = timer_freq_hz[0];          // global values
   uint8_t  timer0_res = timer_duty_resolution[0];
-  
+
   int32_t timer = 0;
   int32_t res = timer0_res;
   if (pin < 0) {
@@ -233,7 +236,7 @@ void analogWriteFreqRange(int32_t freq, int32_t range, int32_t pin) {
       if (timer != 0) {
         ledcSetTimer(chan, 0);
         timer = 0;
-      } 
+      }
       // else nothing to change
     } else {
       // specific (non-global) values, require a specific timer
@@ -293,7 +296,7 @@ int32_t analogAttach(uint32_t pin, bool output_invert) {    // returns ledc chan
     AddLog(LOG_LEVEL_INFO, "PWM: no more PWM (ledc) channel for GPIO %i", pin);
     return -1;
   }
-  
+
   // new channel attached to pin
   pin_to_channel[pin] = chan + 1;
 
@@ -320,6 +323,18 @@ int32_t analogAttach(uint32_t pin, bool output_invert) {    // returns ledc chan
   return chan;
 }
 
+void analogDetachAll(void) {
+  for (uint32_t pin = 0; pin < SOC_GPIO_PIN_COUNT; pin++) { 
+    if (pin_to_channel[pin] > 0) {
+#if ESP_IDF_VERSION_MAJOR < 5
+      ledcDetachPin(pin);
+#else
+      ledcDetach(pin);
+#endif
+    }
+  }
+}
+
 extern "C" uint32_t ledcReadFreq2(uint8_t chan) {
 // extern "C" uint32_t __wrap_ledcReadFreq(uint8_t chan) {
   if (chan > MAX_PWMS) {
@@ -337,6 +352,25 @@ uint8_t ledcReadResolution(uint8_t chan) {
   int32_t timer = pwm_timer[chan];
   int32_t res = timer_duty_resolution[timer];
   return res;
+}
+
+int32_t ledcReadDutyResolution(uint8_t pin) {
+  int32_t chan = analogGetChannel2(pin);
+  if (chan >= 0) {
+    return (1 << ledcReadResolution(chan));
+  }
+  return -1;
+}
+
+// Version of ledcRead that works for both Core2 and Core3
+// Return -1 if pin is not configured as PWM
+int32_t ledcRead2(uint8_t pin) {
+  int32_t chan = analogGetChannel2(pin);
+  if (chan >= 0) {
+    uint8_t group=(chan/8), channel=(chan%8);
+    return ledc_get_duty((ledc_mode_t)group, (ledc_channel_t)channel);
+  }
+  return -1;
 }
 
 // void analogWrite(uint8_t pin, int val);

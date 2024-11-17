@@ -1,8 +1,6 @@
-#! ../../libesp32/berry/berry -s -g
+#!/usr/bin/env -S ../../libesp32/berry/berry -s -g
 #
 # Berry solidify files
-#
-# `../berry/berry -s -g`
 
 import os
 import global
@@ -49,7 +47,7 @@ def parse_file(fname, prefix_out)
   # output solidified
   var fname_h = string.split(fname, '.be')[0] + '.h'  # take whatever is before the first '.be'
   var fout = open(prefix_out + "solidified_" + fname_h, "w")
-  fout.write(string.format("/* Solidification of %s */\n", fname_h))
+  fout.write(format("/* Solidification of %s */\n", fname_h))
   fout.write("/********************************************************************\\\n")
   fout.write("* Generated code, don't edit                                         *\n")
   fout.write("\\********************************************************************/\n")
@@ -69,6 +67,11 @@ def parse_file(fname, prefix_out)
       o = o.(subname)
       cl_name = obj_name
       obj_name = subname
+      if   (type(o) == 'class')
+        obj_name = 'class_' + obj_name
+      elif (type(o) == 'module')
+        obj_name = 'module_' + obj_name
+      end
     end
     solidify.dump(o, weak, fout, cl_name)
   end

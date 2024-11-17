@@ -23,7 +23,6 @@ typedef const void* be_constptr;
       .v.nf = (const void*) &ctype_func_def##_f,                  \
       .type = BE_CTYPE_FUNC                                       \
   }
-typedef const void* be_constptr;
   #define be_const_static_ctype_func(_f) {                        \
       .v.nf = (const void*) &ctype_func_def##_f,                  \
       .type = BE_CTYPE_FUNC | BE_STATIC                           \
@@ -88,6 +87,7 @@ extern "C" {
 
 void be_raisef(bvm *vm, const char *except, const char *msg, ...);
 
+extern void be_map_insert_nil(bvm *vm, const char *key);
 extern void be_map_insert_int(bvm *vm, const char *key, bint value);
 extern void be_map_insert_bool(bvm *vm, const char *key, bbool value);
 extern void be_map_insert_real(bvm *vm, const char *key, breal value);
@@ -107,6 +107,8 @@ extern intptr_t be_convert_single_elt(bvm *vm, int idx, const char * arg_type, i
 extern int be_check_arg_type(bvm *vm, int arg_start, int argc, const char * arg_type, intptr_t p[8]);
 extern int be_call_c_func(bvm *vm, const void * func, const char * return_type, const char * arg_type);
 extern int be_call_ctype_func(bvm *vm, const void *definition);     /* handler for Berry vm */
+
+extern void be_cb_deinit(bvm *vm);   /* remove all callbacks from the VM (just before shutdown of VM) */
 
 #ifdef __cplusplus
 }

@@ -25,14 +25,14 @@
 
 /*******************************************************************************************\
  * ESP32/S2/S3/C3... PWM analog support
- * 
+ *
  * The following supersedes Arduino framework and provides more granular control:
  * - fine grained phase control (in addition to duty cycle)
  * - fine control of PWM frequency and resolution per GPIO
- * 
+ *
  * By default, all PWM are using the same timer called Timer 0.
  * Changes in frequency of resolution apply to all PWM using Timer 0.
- * 
+ *
  * You can specify a different a different resolution/frequency for
  * specific GPIOs, this will internally assign a new timer to the GPIO.
  * The limit is 3 specific values in addition to the global value.
@@ -45,6 +45,7 @@
 
 extern "C" uint32_t ledcReadFreq2(uint8_t chan);
 uint8_t ledcReadResolution(uint8_t chan);
+
 //
 // analogAttach - attach a GPIO to a hardware PWM
 //
@@ -53,7 +54,13 @@ uint8_t ledcReadResolution(uint8_t chan);
 // was not yet attached.
 //
 // Returns: hardware channel number, or -1 if it failed
-int analogAttach(uint32_t pin, bool output_invert = false);   // returns the ledc channel, or -1 if failed. This is implicitly called by analogWrite if the channel was not already allocated
+int32_t analogAttach(uint32_t pin, bool output_invert = false);   // returns the ledc channel, or -1 if failed. This is implicitly called by analogWrite if the channel was not already allocated
+
+//
+// analogDetachAll - detach all attached GPIOs from a hardware PWM
+//
+// This solves ghost PWM activity on reconfigured GPIOs after a restart
+void analogDetachAll(void);
 
 // change both freq and range
 // `0`: set to global value
@@ -98,6 +105,18 @@ void analogWrite(uint8_t pin, int val);
 // Extended version that also allows to change phase
 extern void analogWritePhase(uint8_t pin, uint32_t duty, uint32_t phase = 0);
 
+//
+// ledcReadDutyResolution - read the resolution
+//
+// return -1 if pin is not assigned to ledc
+int32_t ledcReadDutyResolution(uint8_t pin);
+
+//
+// ledcRead2 - read the value of PWM
+//
+// return -1 if pin is not assigned to ledc
+int32_t ledcRead2(uint8_t pin);
+
 // return the channel assigned to a GPIO, or -1 if none
 extern int32_t analogGetChannel2(uint32_t pin);
 
@@ -126,10 +145,15 @@ uint32_t analogGetTimerFrequency(uint8_t timer);
 
 #define ESPhttpUpdate httpUpdate
 
+#if ESP_IDF_VERSION_MAJOR >= 5
+#include "rom/ets_sys.h"
+#else
 #define os_delay_us ets_delay_us
+#endif
+
 // Serial minimal type to hold the config
 typedef int SerConfu8;
-typedef int SerialConfig;
+//typedef int SerialConfig;  // Will be replaced enum in esp32_hal-uart.h (#7926)
 
 //
 // UDP
@@ -158,6 +182,14 @@ typedef int SerialConfig;
 // LWIP STuff
 
 #define STATION_IF 0
+
+
+// ESP32 needed define to support IDF 5.2 based Arduino builds
+
+// Name has changed
+#ifdef LCD_CAM_LCD_UPDATE_M
+#define LCD_CAM_LCD_UPDATE_REG LCD_CAM_LCD_UPDATE_M
+#endif // LCD_CAM_LCD_UPDATE_M
 
 #endif // ESP32
 #endif // __ESP8266TOESP32_H__

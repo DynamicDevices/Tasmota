@@ -28,7 +28,7 @@
  * Use online command StateText to translate ON, OFF, HOLD and TOGGLE.
  * Use online command Prefix to translate cmnd, stat and tele.
  *
- * Updated until v9.4.0.1 - Last update 04.02.2023
+ * Updated until v9.4.0.1 - Last update 27.07.2024
 \*********************************************************************/
 
 #define LANGUAGE_MODULE_NAME         // Enable to display "Module Generic" (ie Spanish), Disable to display "Generic Module" (ie English)
@@ -51,12 +51,15 @@
 #define D_DECIMAL_SEPARATOR "."
 
 // Common
+#define D_ABSOLUTE_HUMIDITY    "Umidità ass"
 #define D_ADMIN                "Admin"
 #define D_AIR_QUALITY          "Qualità dell'aria"
 #define D_AP                   "AP"                   // Access Point
 #define D_AS                   "come"
 #define D_AUTO                 "AUTO"
+#define D_BATTERY              "Batteria"
 #define D_BATT                 "Batt"                 // Short for Battery
+#define D_BATTERY_CHARGE       "Carica"               // Battery charge in %
 #define D_BLINK                "Lampeggia"
 #define D_BLINKOFF             "Lampeggia OFF"
 #define D_BOOT_COUNT           "Numero boot"
@@ -73,6 +76,7 @@
 #define D_COMMAND              "Comando"
 #define D_CONNECTED            "Connesso"
 #define D_CORS_DOMAIN          "Dominio CORS"
+#define D_COLOR                "Colore"
 #define D_COUNT                "Conteggio"
 #define D_COUNTER              "Contatore"
 #define D_CT_POWER             "Alimentazione CT"
@@ -103,6 +107,7 @@
 #define D_FALLBACK_TOPIC       "Topic Riserva"
 #define D_FALSE                "Falso"
 #define D_FILE                 "File"
+#define D_FILE_SYSTEM_SIZE     "Dimensione file system"
 #define D_FLOW_RATE            "Flusso dati"
 #define D_FRAGMENTATION        "framm."      // Lower case abbreviated version of fragmentation used in "memory fragmentation"
 #define D_FRAME_RATE           "Frequenza fotogrammi"
@@ -115,6 +120,7 @@
 #define D_GROUP                "Gruppo"
 #define D_HOST                 "Host"
 #define D_HALL_EFFECT          "Effetto hall"
+#define D_HEATINDEX            "Indice calore"
 #define D_HOSTNAME             "Nome host"
 #define D_HUMIDITY             "Umidità"
 #define D_ILLUMINANCE          "Illuminazione"
@@ -133,6 +139,7 @@
 #define D_MULTI_PRESS          "multi-pressione"
 #define D_NOISE                "Rumore"
 #define D_NONE                 "Nessuno"
+#define D_NOX                  "NOx"
 #define D_O2                   "Ossigeno"
 #define D_OFF                  "OFF"
 #define D_OFFLINE              "Offline"
@@ -148,6 +155,7 @@
 #define D_POWER_FACTOR         "Fattore di potenza"
 #define D_POWERUSAGE           "Potenza"
 #define D_POWERUSAGE_ACTIVE    "Potenza attiva"
+#define D_POWERUSAGE_ACTIVE_TOTAL "Potenza attiva totale"
 #define D_POWERUSAGE_APPARENT  "Potenza apparente"
 #define D_POWERUSAGE_REACTIVE  "Potenza reattiva"
 #define D_PRESSURE             "Pressione"
@@ -161,7 +169,6 @@
 #define D_RESTART              "Riavvia"
 #define D_RESTARTING           "Riavvio"
 #define D_RESTART_REASON       "Causa riavvio"
-#define D_RESTORE              "ripristino"
 #define D_RETAINED             "salvato"
 #define D_RULE                 "Regola"
 #define D_SAVE                 "Salva"
@@ -184,7 +191,9 @@
 #define D_TRANSMIT             "Trasmessi"
 #define D_TRUE                 "Vero"
 #define D_TVOC                 "TVOC"
-#define D_UPGRADE              "aggiornamento"
+#define D_TWILIGHT_ASTRONOMICAL "astronomico"
+#define D_TWILIGHT_CIVIL       "civile"
+#define D_TWILIGHT_NAUTICAL    "nautico"
 #define D_UPLOAD               "Caricamento"
 #define D_UPTIME               "Tempo accensione"
 #define D_USED                 "usati"
@@ -201,6 +210,7 @@
 #define D_UV_LEVEL             "Livello UV"
 #define D_UV_POWER             "Intensità UV"
 #define D_VERSION              "Versione"
+#define D_VOC                  "VOC"
 #define D_VOLTAGE              "Tensione"
 #define D_VOLUME               "Volume"
 #define D_WEIGHT               "Peso"
@@ -267,7 +277,8 @@
 #define D_CONFIGURATION        "Impostazioni"
 #define D_INFORMATION          "Informazioni"
 #define D_FIRMWARE_UPGRADE     "Aggiorna firmware"
-#define D_MANAGEMENT           "Console"
+#define D_MANAGEMENT           "Strumenti"
+#define D_GPIO_VIEWER          "Visualizzatore GPIO"
 #define D_CONSOLE              "Console"
 #define D_CONFIRM_RESTART      "Conferma riavvio"
 
@@ -281,6 +292,7 @@
 #define D_RESET_CONFIGURATION          "Impostazioni predefinite"
 #define D_BACKUP_CONFIGURATION         "Salva impostazioni"
 #define D_RESTORE_CONFIGURATION        "Carica impostazioni"
+#define D_START_RESTORE                "Avvia ripristino"
 #define D_MAIN_MENU                    "Menu principale"
 
 #define D_MODULE_PARAMETERS  "Parametri modulo"
@@ -298,6 +310,7 @@
 #define D_REFRESH_TO_SCAN_AGAIN          "Aggiorna per nuova scansione"
 #define D_DUPLICATE_ACCESSPOINT          "Access Point duplicato"
 #define D_SKIPPING_LOW_QUALITY           "Ignorato a causa di bassa qualità"
+#define D_MODE                           "Modalità"
 #define D_RSSI                           "RSSI"
 #define D_WEP                            "WEP"
 #define D_WPA_PSK                        "WPA PSK"
@@ -520,22 +533,44 @@
 #define D_CONFIGURE_DALI                  "DALI - Config"
 
 // xdrv_03_energy.ino
-#define D_ENERGY_TODAY      "Energia - oggi"
-#define D_ENERGY_YESTERDAY  "Energia  - ieri"
-#define D_ENERGY_TOTAL      "Energia - totale"
+#define D_ENERGY_TODAY                    "Energia - oggi"
+#define D_ENERGY_YESTERDAY                "Energia - ieri"
+#define D_ENERGY_TOTAL                    "Energia - totale"
+
+// xsns_100_ina3221.ino
+#define  D_UNIT_CHARGE                    "Ah"
+#define  D_CHARGE                         "Carica"
+#define  D_ENERGY                         "Energia"
 
 // xdrv_27_shutter.ino
-#define D_OPEN              "Apri"
-#define D_CLOSE             "Chiudi"
-#define D_DOMOTICZ_SHUTTER  "Serranda"
+#define D_OPEN                            "Apri"
+#define D_CLOSE                           "Chiudi"
+#define D_DOMOTICZ_SHUTTER                "Serranda"
 
 // xdrv_28_pcf8574.ino
-#define D_CONFIGURE_PCF8574   "PCF8574"
-#define D_PCF8574_PARAMETERS  "Parametri PCF8574"
-#define D_INVERT_PORTS        "Inverti porte"
-#define D_DEVICE              "Dispositivo"
-#define D_DEVICE_INPUT        "Ingresso"
-#define D_DEVICE_OUTPUT       "Uscita"
+#define D_CONFIGURE_PCF8574               "PCF8574"
+#define D_PCF8574_PARAMETERS              "Parametri PCF8574"
+#define D_INVERT_PORTS                    "Inverti porte"
+#define D_DEVICE                          "Dispositivo"
+#define D_DEVICE_INPUT                    "Ingresso"
+#define D_DEVICE_OUTPUT                   "Uscita"
+
+// xdrv_39_thermostat.ino, xdrv_85_esp32_ble_eq3_trv.ino
+#define D_THERMOSTAT                  "Termostato"
+#define D_THERMOSTAT_SET_POINT        "Temperatura impostata"
+#define D_THERMOSTAT_SENSOR           "Temperatura attuale"
+#define D_THERMOSTAT_GRADIENT         "Gradiente temperatura"
+#define D_THERMOSTAT_DUTY_CYCLE       "Ciclo lavoro"
+#define D_THERMOSTAT_VALVE_POSITION   "Posizione valvola"
+#define D_THERMOSTAT_CYCLE_TIME       "Tempo ciclo"
+#define D_THERMOSTAT_PI_AUTOTUNE      "Regolazione automatica  PI"
+#define D_THERMOSTAT_CONTROL_METHOD   "Metodo controllo"
+#define D_THERMOSTAT_RAMP_UP          "Rampa"
+#define D_THERMOSTAT_PI               "PI"
+#define D_THERMOSTAT_AUTOTUNE         "Regolazione automatica"
+#define D_THERMOSTAT_RAMP_UP_HYBRID   "Rampa (ibrida)"
+#define D_THERMOSTAT_PI_HYBRID        "PI (ibdrida)"
+#define D_THERMOSTAT_AUTOTUNE_HYBRID  "Regolazione automatica (ibrida)"
 
 // xsns_05_ds18b20.ino
 #define D_SENSOR_BUSY       "Sensore occupato"
@@ -629,6 +664,24 @@
 #define D_SIGNALSTRENGTH   "Livello segnale"
 #define D_CHIPTEMPERATURE  "Temperatura chip"
 
+// xsns_60_GPS
+#define D_LATITUDE             "Latitudine"
+#define D_LONGITUDE            "Longitudine"
+#define D_HORIZONTAL_ACCURACY  "Precisione orizzontale"
+#define D_ALTITUDE             "Altitudine"
+#define D_VERTICAL_ACCURACY    "Precisione verticale"
+#define D_SPEED                "Velocità"
+#define D_SPEED_ACCURACY       "Precisione velocità"
+#define D_HEADING              "Direzione"
+#define D_HEADING_ACCURACY     "Precisione direzione"
+#define D_SAT_FIX              "Aggancio satelliti"
+#define D_SAT_FIX_NO_FIX       "Nessuno"
+#define D_SAT_FIX_DEAD_RECK    "Navigazione stimata"
+#define D_SAT_FIX_2D           "2D"
+#define D_SAT_FIX_3D           "3D"
+#define D_SAT_FIX_GPS_DEAD     "GPS e navigazione stimata"
+#define D_SAT_FIX_TIME         "Solo corrzione orario"
+
 // tasmota_template.h - keep them as short as possible to be able to fit them in GUI drop down box
 #define D_SENSOR_NONE                   "Nessuno"
 #define D_SENSOR_USER                   "Utente"
@@ -647,6 +700,8 @@
 #define D_SENSOR_I2S_BCLK_IN            "I2S - WS IN"
 #define D_SENSOR_I2S_DIN                "I2S - DIN"
 #define D_SENSOR_I2S_DOUT               "I2S - DOUT"
+#define D_SENSOR_I2S_DAC                "I2S - DAC"
+#define D_SENSOR_HDMI_CEC               "HDMI CEC"
 #define D_SENSOR_WS2812                 "WS2812"
 #define D_SENSOR_DFR562                 "Riproduttore MP3"
 #define D_SENSOR_DFR562_BUSY            "MP3 occupato"
@@ -663,6 +718,7 @@
 #define D_SENSOR_IRRECV                 "IR - RX"
 #define D_SENSOR_MHZ_RX                 "MHZ - RX"
 #define D_SENSOR_MHZ_TX                 "MHZ - TX"
+#define D_SENSOR_HC8_RX                 "HC8 - RX"
 #define D_SENSOR_PZEM004_RX             "PZEM004 - RX"
 #define D_SENSOR_PZEM016_RX             "PZEM016 - RX"
 #define D_SENSOR_PZEM017_RX             "PZEM017 - RX"
@@ -674,6 +730,10 @@
 #define D_SENSOR_SPI_MISO               "SPI - MISO"
 #define D_SENSOR_SPI_MOSI               "SPI - MOSI"
 #define D_SENSOR_SPI_CLK                "SPI - CLK"
+#define D_SENSOR_SDIO_CMD               "SDIO - CMD"
+#define D_GPIO_TS_SPI_CS                "TS - SPI CS"
+#define D_GPIO_TS_RST                   "TS - RST"
+#define D_GPIO_TS_IRQ                   "TS - IRQ"
 #define D_SENSOR_SDIO_CMD               "SDIO - CMD"
 #define D_SENSOR_SDIO_CLK               "SDIO - CLK"
 #define D_SENSOR_SDIO_D0                "SDIO - D0"
@@ -745,6 +805,15 @@
 #define D_SENSOR_MAX31855_CLK           "MX31855 - CLK"
 #define D_SENSOR_MAX31855_DO            "MX31855 - DO"
 #define D_SENSOR_MAX31865_CS            "MX31865 - CS"
+#define D_GPIO_RN2XX3_TX                "RN2XX3 - TX"
+#define D_GPIO_RN2XX3_RX                "RN2XX3 - RX"
+#define D_GPIO_RN2XX3_RST               "RN2XX3 - Rst"
+#define D_GPIO_ASR650X_TX               "ASR650X - Tx"
+#define D_GPIO_ASR650X_RX               "ASR650X - Rx"
+#define D_GPIO_LORA_CS                  "LoRa - CS"
+#define D_GPIO_LORA_RST                 "LoRa - Rst"
+#define D_GPIO_LORA_BUSY                "LoRa - Busy"
+#define D_GPIO_LORA_DI                  "LoRa - DIO"    // Suffix "0","1","2"
 #define D_SENSOR_NRG_SEL                "HLWBL - SEL"     // Suffix "i"
 #define D_SENSOR_NRG_CF1                "HLWBL - CF1"
 #define D_SENSOR_HLW_CF                 "HLW8012 - CF"
@@ -756,6 +825,9 @@
 #define D_SENSOR_CSE7761_RX             "CSE7761 - RX"
 #define D_SENSOR_CSE7766_TX             "CSE7766 - TX"
 #define D_SENSOR_CSE7766_RX             "CSE7766 - RX"
+#define D_SENSOR_BL0906_RX              "BL0906 - RX"
+#define D_SENSOR_BL0939_RX              "BL0939 - RX"
+#define D_SENSOR_BL0942_RX              "BL0942 - RX"
 #define D_SENSOR_HM330X_SET             "HM330X - SET"
 #define D_SENSOR_PN532_TX               "PN532 - TX"
 #define D_SENSOR_PN532_RX               "PN532 - RX"
@@ -797,6 +869,8 @@
 #define D_SENSOR_OUTPUT_LO              "Uscita - Lo"
 #define D_SENSOR_AS608_TX               "AS608 - TX"
 #define D_SENSOR_AS608_RX               "AS608 - RX"
+#define D_SENSOR_GM861_TX               "GM861 - TX"
+#define D_SENSOR_GM861_RX               "GM861 - RX"
 #define D_SENSOR_DDS2382_TX             "DDS238-2 - TX"
 #define D_SENSOR_DDS2382_RX             "DDS238-2 - RX"
 #define D_SENSOR_DDSU666_TX             "DDSU666 - TX"
@@ -821,8 +895,6 @@
 #define D_SENSOR_LE01MR_RX              "LE-01MR - RX"
 #define D_SENSOR_LE01MR_TX              "LE-01MR - TX"
 #define D_SENSOR_BL0940_RX              "BL0940 - RX"
-#define D_SENSOR_BL0939_RX              "BL0939 - RX"
-#define D_SENSOR_BL0942_RX              "BL0942 - RX"
 #define D_SENSOR_CC1101_GDO0            "CC1101 - GDO0"
 #define D_SENSOR_CC1101_GDO2            "CC1101 - GDO2"
 #define D_SENSOR_HRXL_RX                "HRXL - RX"
@@ -842,6 +914,8 @@
 #define D_SENSOR_ADC_JOYSTICK           "ADC - Joystick"
 #define D_SENSOR_ADC_PH                 "ADC - pH"
 #define D_SENSOR_ADC_MQ                 "ADC - MQ"
+#define D_SENSOR_ADC_VOLTAGE            "ADC - Voltaggio"
+#define D_SENSOR_ADC_CURRENT            "ADC - Corrente"
 #define D_GPIO_WEBCAM_PWDN              "Webcam - PWDN"
 #define D_GPIO_WEBCAM_RESET             "Webcam - RESET"
 #define D_GPIO_WEBCAM_XCLK              "Webcam - XCLK"
@@ -858,6 +932,7 @@
 #define D_SENSOR_ETH_PHY_MDC            "ETH - MDC"
 #define D_SENSOR_ETH_PHY_MDIO           "ETH - MDIO"
 #define D_SENSOR_TCP_TXD                "TCP - TX"
+#define D_SENSOR_TCP_TXD_EN             "TCP - TX En"
 #define D_SENSOR_TCP_RXD                "TCP - RX"
 #define D_SENSOR_IEM3000_TX             "iEM3000 - TX"
 #define D_SENSOR_IEM3000_RX             "iEM3000 - RX"
@@ -895,6 +970,9 @@
 #define D_SENSOR_ZEROCROSS              "Impulsi ZC"
 #define D_SENSOR_HALLEFFECT             "Effetto hall"
 #define D_SENSOR_EPD_DATA               "EPD - Dati"
+#define D_SENSOR_PCF8574_INT            "PCF8574 - Int"
+#define D_SENSOR_MCP23XXX_INT           "MCP23xxx - Int"
+#define D_SENSOR_MCP23SXX_CS            "MCP23Sxx - CS"
 #define D_SENSOR_MCP2515_CS             "MCP2515 - CS"
 #define D_SENSOR_HRG15_RX               "HRG15 - RX"
 #define D_SENSOR_HRG15_TX               "HRG15 - TX"
@@ -911,6 +989,7 @@
 #define D_GPIO_DINGTIAN_SDI             "Dingtian - SDI"
 #define D_GPIO_DINGTIAN_Q7              "Dingtian - Q7"
 #define D_GPIO_DINGTIAN_PL              "Dingtian - PL"
+#define D_GPIO_DINGTIAN_OE              "Dingtian - OE"
 #define D_GPIO_DINGTIAN_RCK             "Dingtian - RCK"
 #define D_SENSOR_CM11_TX                "CM110x - TX"
 #define D_SENSOR_CM11_RX                "CM110x - RX"
@@ -922,6 +1001,9 @@
 #define D_SENSOR_BIOPDU_PZEM0XX_TX      "BioPDU PZEM0XX - TX"
 #define D_SENSOR_BIOPDU_PZEM016_RX      "BioPDU PZEM016 - RX"
 #define D_SENSOR_BIOPDU_BIT             "BioPDU Bit"
+#define D_SENSOR_LOX_O2_RX              "LoxO2 - RX"
+#define D_GPIO_MAGIC_SWITCH             "MagicSwitch"
+#define D_SENSOR_WOOLIIS_RX             "Wooliis - RX"
 
 // Units
 #define D_UNIT_AMPERE                     "A"
@@ -934,6 +1016,7 @@
 #define D_UNIT_HOUR                       "o"
 #define D_UNIT_GALLONS                    "gal"
 #define D_UNIT_GALLONS_PER_MIN            "g/m"
+#define D_UNIT_GRAM_PER_CUBIC_METER       "g/m³"
 #define D_UNIT_INCH_MERCURY               "inHg"
 #define D_UNIT_INCREMENTS                 "inc"
 #define D_UNIT_KELVIN                     "K"
@@ -945,6 +1028,7 @@
 #define D_UNIT_LITERS                     "L"
 #define D_UNIT_LITERS_PER_MIN             "L/m"
 #define D_UNIT_LUX                        "lx"
+#define D_UNIT_METER                      "m"
 #define D_UNIT_MICROGRAM_PER_CUBIC_METER  "µg/m³"
 #define D_UNIT_MICROMETER                 "µm"
 #define D_UNIT_MICROSECOND                "µs"
@@ -1180,5 +1264,20 @@
 #define D_NEOPOOL_PH_HIGH                 "troppo alto"       // ph Alarms
 #define D_NEOPOOL_PH_LOW                  "troppo basso"
 #define D_NEOPOOL_PUMP_TIME_EXCEEDED      "tempo pompa superato"
+
+// xsns_106_gdk101.ino
+//#define D_AVG_RAD_DOSE                  "Average Radiation Dose"
+#define D_AVG_RAD_DOSE                    "Radiazioni"
+#define D_UNIT_US_H                       "µSv/h"
+
+// ixrv92_pipsolar.ino
+#define D_SENSOR_PIPSOLAR_TX              "Pipsolar - TX"
+#define D_SENSOR_PIPSOLAR_RX              "Pipsolar - RX"
+
+// xsns_115_wooliis.ino
+#define D_IMPORT                          "Importa"
+#define D_EXPORT                          "Esporta"
+#define D_CHARGING                        "In carica"
+#define D_CAPACITY                        "Capacità"
 
 #endif  // _LANGUAGE_IT_IT_H_

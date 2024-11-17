@@ -31,14 +31,22 @@ static uint8_t ip_bytes[16] = {};
 extern "C" const void* matter_get_ip_bytes(const char* ip_str, size_t* ret_len) {
   IPAddress ip;
   if (ip.fromString(ip_str)) {
-    if (ip.isV4()) {
+#ifdef USE_IPV6
+    if (ip.type() == IPv4) {
       uint32_t ip_32 = ip;
       memcpy(ip_bytes, &ip_32, 4);
       *ret_len = 4;
     } else {
-      memcpy(ip_bytes, ip.raw6(), 16);
+      ip_addr_t ip_addr;
+      ip.to_ip_addr_t(&ip_addr);
+      memcpy(ip_bytes, &ip_addr.u_addr.ip6, 16);
       *ret_len = 16;
     }
+#else
+    uint32_t ip_32 = ip;
+    memcpy(ip_bytes, &ip_32, 4);
+    *ret_len = 4;
+#endif
     return ip_bytes;
   } else {
     *ret_len = 0;

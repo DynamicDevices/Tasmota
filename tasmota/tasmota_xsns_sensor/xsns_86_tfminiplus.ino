@@ -97,6 +97,9 @@ void TfmpInit(void)
                 {
                     ClaimSerial();
                 }
+#ifdef ESP32
+                AddLog(LOG_LEVEL_DEBUG, PSTR("TFM: Serial UART%d"), TfmpSerial->getUart());
+#endif
                 tfminiplus_sensor.ready = true;
                 TfmpSerial->flush();
             }
@@ -191,7 +194,7 @@ void TfmpShow(bool json) {
     float distance = (float)tfminiplus_sensor.distance;  // cm
 
     if (json) {
-        ResponseAppend_P(PSTR(",\"%s\":{\"" D_JSON_DISTANCE "\":\"%1_f\",\"" D_JSON_SIGNALSTRENGTH "\":\"%d\",\"" D_JSON_CHIPTEMPERATURE "\":%d}"),
+        ResponseAppend_P(PSTR(",\"%s\":{\"" D_JSON_DISTANCE "\":%1_f,\"" D_JSON_SIGNALSTRENGTH "\":%d,\"" D_JSON_CHIPTEMPERATURE "\":%d}"),
             sensor_name, &distance, tfminiplus_sensor.sigstrength, tfminiplus_sensor.chiptemp);
 #ifdef USE_DOMOTICZ
         if (0 == TasmotaGlobal.tele_period) {

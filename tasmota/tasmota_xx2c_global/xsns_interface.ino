@@ -456,7 +456,7 @@ bool (* const xsns_func_ptr[])(uint32_t) = {  // Sensor Function Pointers for si
 #endif
 
 #ifdef XSNS_109
-  &Xsns109
+  &Xsns109,
 #endif
 
 #ifdef XSNS_110
@@ -1094,21 +1094,18 @@ void XsnsSensorState(uint32_t sensor_list) {
  * Function call to all xsns
 \*********************************************************************************************/
 
-bool XsnsNextCall(uint32_t function, uint8_t &xsns_index) {
-  if (0 == xsns_present) {
-    xsns_index = 0;
-    return false;
-  }
+bool XsnsCallNextJsonAppend(void) {
+  static int xsns_index = -1;
 
-  xsns_index++;
-  if (xsns_index == xsns_present) { xsns_index = 0; }
-  uint32_t max_disabled = xsns_present;
-  while ((!XsnsEnabled(0, xsns_index) || ((FUNC_WEB_SENSOR == function) && !XsnsEnabled(1, xsns_index))) && max_disabled--) {  // Perform at least one sensor
+  do {
     xsns_index++;
-    if (xsns_index == xsns_present) { xsns_index = 0; }
-  }
-
-  return xsns_func_ptr[xsns_index](function);
+    if (xsns_index == xsns_present) { 
+      xsns_index = -1;
+      return false;
+    }
+  } while (!XsnsEnabled(0, xsns_index));
+  xsns_func_ptr[xsns_index](FUNC_JSON_APPEND);
+  return true;
 }
 
 bool XsnsCall(uint32_t function) {
@@ -1116,15 +1113,23 @@ bool XsnsCall(uint32_t function) {
 
 //  DEBUG_TRACE_LOG(PSTR("SNS: %d"), function);
 
+#ifdef USE_PROFILE_FUNCTION
   uint32_t profile_driver_start = millis();
+#endif  // USE_PROFILE_FUNCTION
 
   for (uint32_t x = 0; x < xsns_present; x++) {
     if (XsnsEnabled(0, x)) {  // Skip disabled sensor
       if ((FUNC_WEB_SENSOR == function) && !XsnsEnabled(1, x)) { continue; }  // Skip web info for disabled sensors
 
+#ifdef USE_PROFILE_FUNCTION
       uint32_t profile_function_start = millis();
+#endif  // USE_PROFILE_FUNCTION
 
       result = xsns_func_ptr[x](function);
+
+#ifdef USE_WEBSERVER
+      if (FUNC_WEB_SENSOR == function) { WSContentSeparator(1); }  // Show separator if needed
+#endif // USE_WEBSERVER
 
 #ifdef USE_PROFILE_FUNCTION
 #ifdef XFUNC_PTR_IN_ROM

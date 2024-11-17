@@ -8,16 +8,23 @@
 *.o
 *.gcno
 *.gcda
+dependencies.lock
 
 ## Project files ######
+managed_components
 .platformio
 .pio
 .clang_complete
 .gcc-flags.json
 .cache
+.dummy
+sdkconfig.*
 data
 unpacked_fs
+unpacked_boards
 tasmota/user_config_override.h
+variants
+variants3
 build
 build_output/*
 firmware.map
@@ -26,6 +33,7 @@ tasmota/tasmota.ino.cpp
 platformio_override.ini
 platformio_tasmota_cenv.ini
 platformio_tasmota_user_env.ini
+platformio_tasmota_core3_env.ini
 lib/libesp32/berry/generate/*
 lib/libesp32/berry/berry
 
@@ -35,5 +43,10 @@ lib/libesp32/berry/berry
 .vscode/c_cpp_properties.json
 .vscode/launch.json
 .vscode/settings.json
+.vscode/extensions.json
 *.bak
 *.code-workspace
+
+## Python virtual environments for Platformio ##
+venv
+.venv

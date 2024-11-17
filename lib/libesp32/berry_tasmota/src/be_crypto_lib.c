@@ -1,9 +1,9 @@
 /********************************************************************
- * Berry module `webserver`
+ * Berry module `crypto`
  * 
- * To use: `import webserver`
+ * To use: `import crypto`
  * 
- * Allows to respond to HTTP request
+ * Allows to use crypto functions
  *******************************************************************/
 #include "be_constobj.h"
 #include "be_mapping.h"
@@ -11,9 +11,13 @@
 extern int be_class_crypto_member(bvm *vm);
 extern int m_crypto_random(bvm *vm);
 
+extern int m_rsa_rsassa_pkcs1_v1_5(bvm *vm);
+
 extern int m_aes_ccm_init(bvm *vm);
-extern int m_aes_ccm_encryt(bvm *vm);
-extern int m_aes_ccm_decryt(bvm *vm);
+extern int m_aes_ccm_encrypt(bvm *vm);
+extern int m_aes_ccm_encrypt1(bvm *vm);
+extern int m_aes_ccm_decrypt(bvm *vm);
+extern int m_aes_ccm_decrypt1(bvm *vm);
 extern int m_aes_ccm_tag(bvm *vm);
 
 extern int m_aes_gcm_init(bvm *vm);
@@ -24,6 +28,9 @@ extern int m_aes_gcm_tag(bvm *vm);
 extern int m_aes_ctr_init(bvm *vm);
 extern int m_aes_ctr_run(bvm *vm);
 extern int m_aes_ctr_tag(bvm *vm);
+
+extern int m_aes_cbc_encrypt1(bvm *vm);
+extern int m_aes_cbc_decrypt1(bvm *vm);
 
 extern int m_ec_p256_pubkey(bvm *vm);
 extern int m_ec_p256_sharedkey(bvm *vm);
@@ -56,9 +63,11 @@ extern const bclass be_class_md5;
 #include "solidify/solidified_crypto_pbkdf2_hmac_sha256.h"
 #include "solidify/solidified_crypto_spake2p_matter.h"
 
+#include "be_fixed_be_class_rsa.h"
 #include "be_fixed_be_class_aes_ccm.h"
 #include "be_fixed_be_class_aes_gcm.h"
 #include "be_fixed_be_class_aes_ctr.h"
+#include "be_fixed_be_class_aes_cbc.h"
 #include "be_fixed_be_class_ec_p256.h"
 #include "be_fixed_be_class_ec_c25519.h"
 #include "be_fixed_be_class_sha256.h"
@@ -67,21 +76,13 @@ extern const bclass be_class_md5;
 #include "be_fixed_be_class_hkdf_sha256.h"
 #include "be_fixed_crypto.h"
 
-// Enable all the crypto required by Matter
-#ifdef USE_BERRY_CRYPTO_SPAKE2P_MATTER
-  #undef USE_BERRY_CRYPTO_EC_P256
-  #define USE_BERRY_CRYPTO_EC_P256
-  #undef USE_BERRY_CRYPTO_HMAC_SHA256
-  #define USE_BERRY_CRYPTO_HMAC_SHA256
-  #undef USE_BERRY_CRYPTO_HKDF_SHA256
-  #define USE_BERRY_CRYPTO_HKDF_SHA256
-  #undef USE_BERRY_CRYPTO_AES_CCM
-  #define USE_BERRY_CRYPTO_AES_CCM
-#endif
-
 const be_const_member_t be_crypto_members[] = {
   // name with prefix '/' indicates a Berry class
   // entries need to be sorted (ignoring the prefix char)
+#ifdef USE_BERRY_CRYPTO_AES_CBC
+  { "/AES_CBC", (intptr_t) &be_class_aes_cbc },
+#endif // USE_BERRY_CRYPTO_AES_CBC
+
 #ifdef USE_BERRY_CRYPTO_AES_CCM
   { "/AES_CCM", (intptr_t) &be_class_aes_ccm },
 #endif // USE_BERRY_CRYPTO_AES_CTR
@@ -116,6 +117,10 @@ const be_const_member_t be_crypto_members[] = {
   { "/PBKDF2_HMAC_SHA256", (intptr_t) &be_class_pbkdf2_hmac_sha256 },
 #endif // USE_BERRY_CRYPTO_PBKDF2_HMAC_SHA256
 
+#ifdef USE_BERRY_CRYPTO_RSA
+  { "/RSA", (intptr_t) &be_class_rsa },
+#endif // USE_BERRY_CRYPTO_PBKDF2_HMAC_SHA256
+
 #ifdef USE_BERRY_CRYPTO_SHA256
   { "/SHA256", (intptr_t) &be_class_sha256 },
 #endif // USE_BERRY_CRYPTO_SHA256
@@ -130,14 +135,21 @@ const size_t be_crypto_members_size = sizeof(be_crypto_members)/sizeof(be_crypto
 
 /* @const_object_info_begin
 
+class be_class_rsa (scope: global, name: RSA) {
+    rs256, static_func(m_rsa_rsassa_pkcs1_v1_5)
+}
+
 class be_class_aes_ccm (scope: global, name: AES_CCM) {
     .p1, var
     .p2, var
 
     init, func(m_aes_ccm_init)
-    encrypt, func(m_aes_ccm_encryt)
-    decrypt, func(m_aes_ccm_decryt)
+    encrypt, func(m_aes_ccm_encrypt)
+    decrypt, func(m_aes_ccm_decrypt)
     tag, func(m_aes_ccm_tag)
+
+    decrypt1, static_func(m_aes_ccm_decrypt1)
+    encrypt1, static_func(m_aes_ccm_encrypt1)
 }
 
 class be_class_aes_gcm (scope: global, name: AES_GCM) {
@@ -156,6 +168,11 @@ class be_class_aes_ctr (scope: global, name: AES_CTR) {
     init, func(m_aes_ctr_init)
     encrypt, func(m_aes_ctr_run)
     decrypt, func(m_aes_ctr_run)
+}
+
+class be_class_aes_cbc (scope: global, name: AES_CBC) {
+    decrypt1, static_func(m_aes_cbc_decrypt1)
+    encrypt1, static_func(m_aes_cbc_encrypt1)
 }
 
 class be_class_ec_p256 (scope: global, name: EC_P256) {

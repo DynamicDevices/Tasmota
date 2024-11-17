@@ -125,7 +125,7 @@ void Ld1410HandleConfigData(void) {
     LD2410.max_moving_distance_gate = LD2410.buffer[12];
     LD2410.max_static_distance_gate = LD2410.buffer[13];
     for (uint32_t i = 0; i <= LD2410_MAX_GATES; i++) {
-      LD2410. moving_sensitivity[i] = LD2410.buffer[14 +i];
+      LD2410.moving_sensitivity[i] = LD2410.buffer[14 +i];
       LD2410.static_sensitivity[i] = LD2410.buffer[23 +i];
     }
     LD2410.no_one_duration = LD2410.buffer[33] << 8 | LD2410.buffer[32];
@@ -407,6 +407,9 @@ void Ld2410Detect(void) {
     LD2410Serial = new TasmotaSerial(Pin(GPIO_LD2410_RX), Pin(GPIO_LD2410_TX), 2);
     if (LD2410Serial->begin(256000)) {
       if (LD2410Serial->hardwareSerial()) { ClaimSerial(); }
+#ifdef ESP32
+      AddLog(LOG_LEVEL_DEBUG, PSTR("LD2: Serial UART%d"), LD2410Serial->getUart());
+#endif
 
       LD2410.retry = 4;
       LD2410.step = 12;

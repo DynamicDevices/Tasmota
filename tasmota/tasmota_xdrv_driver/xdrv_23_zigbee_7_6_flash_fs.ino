@@ -17,7 +17,7 @@
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifdef USE_ZIGBEE
+#if defined(USE_ZIGBEE) || defined(USE_BERRY)
 
 #ifdef ESP32
 #include <vfs_api.h>
@@ -40,6 +40,12 @@ public:
   FlashFileImpl(const char* str) {
     _buf = str;
     _len = strlen_P(str);
+    _seek = 0;
+  }
+
+  FlashFileImpl(const void* buf, size_t len) {
+    _buf = (const char*)buf;
+    _len = len;
     _seek = 0;
   }
 
@@ -108,7 +114,6 @@ public:
   }
 
   #ifdef ESP32
-  #if ESP_ARDUINO_VERSION > ESP_ARDUINO_VERSION_VAL(2, 0, 5)
   bool seekDir(long position){
     return false;
     // ignore
@@ -118,7 +123,11 @@ public:
     return "";
     // ignore
   }
-  #endif
+  String getNextFileName(bool *isDir)
+  {
+    return "";
+    // ignore
+    }
   #endif // ESP32
 
   const char* name() const {

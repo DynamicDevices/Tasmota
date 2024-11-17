@@ -24,13 +24,26 @@
 #include "esp8266toEsp32.h"
 #endif
 
+#ifdef USE_ESP32_S3
+#include "esp_cache.h"
+#endif // USE_ESP32_S3
+
+#include "tasmota_options.h"
+
 
 extern int Cache_WriteBack_Addr(uint32_t addr, uint32_t size);
 
 
 //#define UDSP_DEBUG
 
+#ifndef UDSP_LBSIZE
+#define UDSP_LBSIZE 256
+#endif
+
 #define renderer_swap(a, b) { int16_t t = a; a = b; b = t; }
+
+enum LoggingLevels {LOG_LEVEL_NONE, LOG_LEVEL_ERROR, LOG_LEVEL_INFO, LOG_LEVEL_DEBUG, LOG_LEVEL_DEBUG_MORE};
+extern void AddLog(uint32_t loglevel, PGM_P formatP, ...);
 
 const uint16_t udisp_colors[]={UDISP_BLACK,UDISP_WHITE,UDISP_RED,UDISP_GREEN,UDISP_BLUE,UDISP_CYAN,UDISP_MAGENTA,\
   UDISP_YELLOW,UDISP_NAVY,UDISP_DARKGREEN,UDISP_DARKCYAN,UDISP_MAROON,UDISP_PURPLE,UDISP_OLIVE,\
@@ -74,6 +87,21 @@ uDisplay::~uDisplay(void) {
     }
   }
 
+#ifdef USE_UNIVERSAL_TOUCH
+  if (ut_init_code) {
+    free(ut_init_code);
+  }
+  if (ut_touch_code) {
+    free(ut_touch_code);
+  }
+  if (ut_getx_code) {
+    free(ut_getx_code);
+  }
+  if (ut_gety_code) {
+    free(ut_gety_code);
+  }
+#endif // USE_UNIVERSAL_TOUCH
+
 #ifdef USE_ESP32_S3
   if (_dmadesc) {
     heap_caps_free(_dmadesc);
@@ -104,6 +132,7 @@ uDisplay::uDisplay(char *lp) : Renderer(800, 600) {
   lutftime = 350;
   lut3time = 10;
   busy_pin = -1;
+  spec_init = -1;
   ep_mode = 0;
   fg_col = 1;
   bg_col = 0;
@@ -118,22 +147,24 @@ uDisplay::uDisplay(char *lp) : Renderer(800, 600) {
   epc_full_cnt = 0;
   lut_num = 0;
   lvgl_param.data = 0;
-  lvgl_param.fluslines = 40;
+  lvgl_param.flushlines = 40;
   rot_t[0] = 0;
   rot_t[1] = 1;
   rot_t[2] = 2;
   rot_t[3] = 3;
   epcoffs_full = 0;
   epcoffs_part = 0;
+  interface = 0;
 
   for (uint32_t cnt = 0; cnt < MAX_LUTS; cnt++) {
     lut_cnt[cnt] = 0;
     lut_cmd[cnt] = 0xff;
     lut_array[cnt] = 0;
   }
+
   lut_partial = 0;
   lut_full = 0;
-  char linebuff[128];
+  char linebuff[UDSP_LBSIZE];
   while (*lp) {
 
     uint16_t llen = strlen_ln(lp);
@@ -153,10 +184,73 @@ uDisplay::uDisplay(char *lp) : Renderer(800, 600) {
         lp1++;
         section = *lp1++;
         if (section == 'I') {
+          
           if (*lp1 == 'C') {
             allcmd_mode = 1;
             lp1++;
           }
+          
+          if (*lp1 == 'S') {
+            // pecial case RGB with software SPI init clk,mosi,cs,reset
+            lp1++;
+            if (interface == _UDSP_RGB) { 
+              // collect line and send directly
+              lp1++;
+              spi_nr = 4;
+              spec_init = _UDSP_SPI;
+              spi_dc = -1;
+              spi_miso = -1;
+              spi_clk = next_val(&lp1);
+              spi_mosi = next_val(&lp1);
+              spi_cs = next_val(&lp1);
+              reset = next_val(&lp1);
+
+              pinMode(spi_cs, OUTPUT);
+              digitalWrite(spi_cs, HIGH);
+
+              pinMode(spi_clk, OUTPUT);
+              digitalWrite(spi_clk, LOW);
+
+              pinMode(spi_mosi, OUTPUT);
+              digitalWrite(spi_mosi, LOW);
+
+              if (reset >= 0) {
+                pinMode(reset, OUTPUT);
+                digitalWrite(reset, HIGH);
+                delay(50);
+                reset_pin(50, 200);
+              }
+#ifdef UDSP_DEBUG
+              Serial.printf("SSPI_MOSI  : %d\n", spi_mosi);
+              Serial.printf("SSPI_SCLK  : %d\n", spi_clk);
+              Serial.printf("SSPI_CS  : %d\n", spi_cs);
+              Serial.printf("DSP RESET : %d\n", reset);
+#endif
+            }
+          } else if (*lp1 == 'I') {
+            // pecial case RGB with i2c init, bus nr, i2c addr
+            lp1++;
+            if (interface == _UDSP_RGB) { 
+              // collect line and send directly
+              lp1++;
+              wire_n = next_val(&lp1);
+              i2caddr = next_hex(&lp1);
+#ifdef UDSP_DEBUG
+              Serial.printf("I2C_INIT bus : %d\n", wire_n);
+              Serial.printf("I2C_INIT addr : %02x\n", i2caddr);
+#endif
+              if (wire_n == 1) {
+                wire = &Wire;
+              } else {
+#if SOC_HP_I2C_NUM > 1
+                wire = &Wire1;
+#else
+                wire = &Wire;
+#endif
+              }
+              spec_init = _UDSP_I2C;
+            }
+          }         
         } else if (section == 'L') {
           if (*lp1 >= '1' && *lp1 <= '5') {
             lut_num = (*lp1 & 0x07);
@@ -178,8 +272,9 @@ uDisplay::uDisplay(char *lp) : Renderer(800, 600) {
           lut_cmd[0] = next_hex(&lp1);
         }
         if (*lp1 == ',') lp1++;
+        
       }
-      if (*lp1 != ':' && *lp1 != '\n' && *lp1 != ' ') {   // Add space char
+      if (*lp1 && *lp1 != ':' && *lp1 != '\n' && *lp1 != ' ') {   // Add space char
         switch (section) {
           case 'H':
             // header line
@@ -196,6 +291,10 @@ uDisplay::uDisplay(char *lp) : Renderer(800, 600) {
               col_type = uCOLOR_BW;
             } else {
               col_type = uCOLOR_COLOR;
+              if (bpp == 16) {
+                fg_col = GetColorFromIndex(fg_col);
+                bg_col = GetColorFromIndex(bg_col);
+              }
             }
             str2c(&lp1, ibuff, sizeof(ibuff));
             if (!strncmp(ibuff, "I2C", 3)) {
@@ -274,11 +373,9 @@ uDisplay::uDisplay(char *lp) : Renderer(800, 600) {
             splash_font = next_val(&lp1);
             splash_size = next_val(&lp1);
             fg_col = next_val(&lp1);
-            if (bpp == 16) {
-              fg_col = GetColorFromIndex(fg_col);
-            }
             bg_col = next_val(&lp1);
             if (bpp == 16) {
+              fg_col = GetColorFromIndex(fg_col);
               bg_col = GetColorFromIndex(bg_col);
             }
             splash_xp = next_val(&lp1);
@@ -286,18 +383,52 @@ uDisplay::uDisplay(char *lp) : Renderer(800, 600) {
             break;
           case 'I':
             // init data
-            if (interface == _UDSP_I2C) {
-              dsp_cmds[dsp_ncmds++] = next_hex(&lp1);
-              if (!str2c(&lp1, ibuff, sizeof(ibuff))) {
-                dsp_cmds[dsp_ncmds++] = strtol(ibuff, 0, 16);
-              }
-            } else {
+            if (interface == _UDSP_RGB && spec_init > 0) {
+              // special case RGB with SPI or I2C init
+              // collect line and send directly
+              dsp_ncmds = 0;
               while (1) {
                 if (dsp_ncmds >= sizeof(dsp_cmds)) break;
                 if (!str2c(&lp1, ibuff, sizeof(ibuff))) {
                   dsp_cmds[dsp_ncmds++] = strtol(ibuff, 0, 16);
                 } else {
                   break;
+                }
+              }
+              if (spec_init == _UDSP_SPI) {
+                interface = spec_init;
+                send_spi_icmds(dsp_ncmds);
+              } else {
+                if (dsp_ncmds == 2) {
+                  wire->beginTransmission(i2caddr);
+                  wire->write(dsp_cmds[0]);
+                  wire->write(dsp_cmds[1]);
+                  wire->endTransmission();
+#ifdef UDSP_DEBUG
+                  Serial.printf("reg = %02x, val = %02x\n", dsp_cmds[0], dsp_cmds[1]);
+#endif
+                } else {
+                  delay(dsp_cmds[0]);
+#ifdef UDSP_DEBUG
+                  Serial.printf("delay = %d ms\n", dsp_cmds[0]);
+#endif
+                }
+              }
+              interface = _UDSP_RGB;
+            } else {
+              if (interface == _UDSP_I2C) {
+                dsp_cmds[dsp_ncmds++] = next_hex(&lp1);
+                if (!str2c(&lp1, ibuff, sizeof(ibuff))) {
+                  dsp_cmds[dsp_ncmds++] = strtol(ibuff, 0, 16);
+                }
+              } else {
+                while (1) {
+                  if (dsp_ncmds >= sizeof(dsp_cmds)) break;
+                  if (!str2c(&lp1, ibuff, sizeof(ibuff))) {
+                    dsp_cmds[dsp_ncmds++] = strtol(ibuff, 0, 16);
+                  } else {
+                    break;
+                  }
                 }
               }
             }
@@ -466,8 +597,14 @@ uDisplay::uDisplay(char *lp) : Renderer(800, 600) {
             lut3time = next_val(&lp1);
             break;
           case 'B':
-            lvgl_param.fluslines = next_val(&lp1);
+            lvgl_param.flushlines = next_val(&lp1);
             lvgl_param.data = next_val(&lp1);
+            // temporary fix to disable DMA due to a problem in esp-idf 5.3
+#ifdef ESP32
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 3, 0)
+            lvgl_param.use_dma = false;
+#endif
+#endif
             break;
           case 'M':
             rotmap_xmin = next_val(&lp1);
@@ -478,9 +615,68 @@ uDisplay::uDisplay(char *lp) : Renderer(800, 600) {
           case 'b':
             bpmode = next_val(&lp1);
             break;
+#ifdef USE_UNIVERSAL_TOUCH
+          case 'U':
+            if (!strncmp(lp1, "TI", 2)) {
+              // init
+              ut_wire = 0;
+              ut_reset = -1;
+              ut_irq = -1;
+              lp1 += 3;
+              str2c(&lp1, ut_name, sizeof(ut_name));
+              if (*lp1 == 'I') {
+                // i2c mode
+                lp1++;
+                uint8_t ut_mode = *lp1 & 0xf;
+                lp1 += 2;
+                ut_i2caddr = next_hex(&lp1);
+                ut_reset = next_val(&lp1);
+                ut_irq = next_val(&lp1);
+
+                if (ut_mode == 1) {
+                  ut_wire = &Wire;
+                } else {
+#if SOC_HP_I2C_NUM > 1
+                  ut_wire = &Wire1;
+#else
+                  ut_wire = &Wire;
+#endif
+                }
+              } else if (*lp1 == 'S') {
+                // spi mode
+                lp1++;
+                ut_spi_nr = *lp1 & 0xf;
+                lp1 += 2;
+                ut_spi_cs = next_val(&lp1);
+                ut_reset = next_val(&lp1);
+                ut_irq = next_val(&lp1);
+                pinMode(ut_spi_cs, OUTPUT);
+                digitalWrite(ut_spi_cs, HIGH);
+                ut_spiSettings = SPISettings(2000000, MSBFIRST, SPI_MODE0);
+              } else {
+                // simple resistive touch
+                lp1++;
+              }
+              ut_trans(&lp, &ut_init_code);
+            } else if (!strncmp(lp1, "TT", 2)) {
+              lp1 += 2;
+              // touch
+              ut_trans(&lp, &ut_touch_code);
+            } else if (!strncmp(lp1, "TX", 2)) {
+              lp1 += 2;
+              // get x
+              ut_trans(&lp, &ut_getx_code);
+            } else if (!strncmp(lp1, "TY", 2)) {
+              lp1 += 2;
+              // get y
+              ut_trans(&lp, &ut_gety_code);
+            }
+            break;
+#endif // USE_UNIVERSAL_TOUCH
         }
       }
     }
+    nextline:
     if (*lp == '\n' || *lp == ' ') {   // Add space char
       lp++;
     } else {
@@ -505,6 +701,24 @@ uDisplay::uDisplay(char *lp) : Renderer(800, 600) {
     ep_mode = 2;
   }
 
+
+#ifdef USE_ESP32_S3
+void UfsCheckSDCardInit(void);
+
+  if (spec_init == _UDSP_SPI) {
+    // special case, assuming sd card and display on same spi bus
+    // end spi in case it was running
+    SPI.end();
+    // reininit SD card
+    UfsCheckSDCardInit();
+  }
+#endif
+
+  if ((epcoffs_full || epcoffs_part) && !(lutfsize || lutpsize)) {
+    // no lutfsize or lutpsize, but epcoffs_full or epcoffs_part
+    ep_mode = 3;
+  }
+
 #ifdef UDSP_DEBUG
   Serial.printf("Device : %s\n", dname);
   Serial.printf("xs : %d\n", gxs);
@@ -517,6 +731,9 @@ uDisplay::uDisplay(char *lp) : Renderer(800, 600) {
     Serial.printf("CLK : %d\n", spi_clk);
     Serial.printf("MOSI: %d\n", spi_mosi);
     Serial.printf("DC  : %d\n", spi_dc);
+    Serial.printf("TS_CS: %d\n", ut_spi_cs);
+    Serial.printf("TS_RST: %d\n", ut_reset);
+    Serial.printf("TS_IRQ: %d\n", ut_irq);
     Serial.printf("BPAN: %d\n", bpanel);
     Serial.printf("RES : %d\n", reset);
     Serial.printf("MISO: %d\n", spi_miso);
@@ -648,6 +865,50 @@ void uDisplay::delay_arg(uint32_t args) {
 
 extern int32_t ESP_ResetInfoReason();
 
+// special init for GC displays
+void uDisplay::send_spi_icmds(uint16_t cmd_size) {
+uint16_t index = 0;
+uint16_t cmd_offset = 0;
+
+
+#ifdef UDSP_DEBUG
+  Serial.printf("start send icmd table\n");
+#endif
+  while (1) {
+    uint8_t iob;
+    SPI_CS_LOW
+    iob = dsp_cmds[cmd_offset++];
+    index++;
+    ulcd_command(iob);
+    uint8_t args = dsp_cmds[cmd_offset++];
+    index++;
+#ifdef UDSP_DEBUG
+    Serial.printf("cmd, args %02x, %d ", iob, args & 0x7f);
+#endif
+    for (uint32_t cnt = 0; cnt < (args & 0x7f); cnt++) {
+      iob = dsp_cmds[cmd_offset++];
+      index++;
+#ifdef UDSP_DEBUG
+      Serial.printf("%02x ", iob);
+#endif
+      ulcd_data8(iob);
+    }
+    SPI_CS_HIGH
+#ifdef UDSP_DEBUG
+    Serial.printf("\n");
+#endif
+    if (args & 0x80) {  // delay after the command
+      delay_arg(args);
+    }
+    if (index >= cmd_size) break;
+  }
+#ifdef UDSP_DEBUG
+  Serial.printf("end send icmd table\n");
+#endif
+  return;
+}
+
+
 void uDisplay::send_spi_cmds(uint16_t cmd_offset, uint16_t cmd_size) {
 uint16_t index = 0;
 #ifdef UDSP_DEBUG
@@ -658,7 +919,7 @@ uint16_t index = 0;
     SPI_CS_LOW
     iob = dsp_cmds[cmd_offset++];
     index++;
-    if (ep_mode == 1 && iob >= EP_RESET) {
+    if ((ep_mode == 1 || ep_mode == 3) && iob >= EP_RESET) {
       // epaper pseudo opcodes
       uint8_t args = dsp_cmds[cmd_offset++];
       index++;
@@ -735,6 +996,17 @@ uint16_t index = 0;
         delay_arg(args);
       }
     } else {
+      if (spi_dc == -2) {
+        // pseudo opcodes
+        switch (iob) {
+          case UDSP_WRITE_16:
+            break;
+          case UDSP_READ_DATA:
+            break;
+          case UDSP_READ_STATUS:
+            break;
+        }
+      }
       ulcd_command(iob);
       uint8_t args = dsp_cmds[cmd_offset++];
       index++;
@@ -774,6 +1046,13 @@ exit:
 Renderer *uDisplay::Init(void) {
   extern bool UsePSRAM(void);
 
+  if (!interface) {   // no valid configuration, abort
+    #ifdef UDSP_DEBUG
+    Serial.printf("Dsp Init no valid configuration\n");
+    #endif
+    return NULL;
+  }
+
   #ifdef UDSP_DEBUG
     Serial.printf("Dsp Init 1 start \n");
   #endif
@@ -797,13 +1076,16 @@ Renderer *uDisplay::Init(void) {
     if (wire_n == 0) {
       wire = &Wire;
     }
-#ifdef ESP32
+#if SOC_HP_I2C_NUM > 1
     if (wire_n == 1) {
       wire = &Wire1;
     }
 #endif // ESP32
-    wire->begin(i2c_sda, i2c_scl);    // TODO: aren't I2C buses already initialized? Shouldn't this be moved to display driver?
-
+/*
+    if (i2c_sda != i2c_scl) {
+      wire->begin(i2c_sda, i2c_scl);    // TODO: aren't I2C buses already initialized? Shouldn't this be moved to display driver?
+    }
+*/
 #ifdef UDSP_DEBUG
     Serial.printf("I2C cmds: %d\n", dsp_ncmds);
 #endif
@@ -901,6 +1183,12 @@ Renderer *uDisplay::Init(void) {
 
   if (interface == _UDSP_RGB) {
 #ifdef USE_ESP32_S3
+    if (!UsePSRAM())  {        // RGB is not supported on S3 without PSRAM
+      #ifdef UDSP_DEBUG
+      Serial.printf("Dsp RGB requires PSRAM, abort\n");
+      #endif
+      return NULL;
+    }
 
     if (bpanel >= 0) {
       analogWrite(bpanel, 32);
@@ -909,9 +1197,9 @@ Renderer *uDisplay::Init(void) {
 
     _panel_config->clk_src = LCD_CLK_SRC_PLL160M;
 
-    if (spi_speed > 14) {
-      spi_speed = 14;
-    }
+    //if (spi_speed > 14) {
+      //spi_speed = 14;
+    //}
     _panel_config->timings.pclk_hz = spi_speed*1000000;
     _panel_config->timings.h_res = gxs;
     _panel_config->timings.v_res = gys;
@@ -945,7 +1233,11 @@ Renderer *uDisplay::Init(void) {
     _panel_config->disp_gpio_num = GPIO_NUM_NC;
 
     _panel_config->flags.disp_active_low = 0;
+#if ESP_IDF_VERSION_MAJOR >= 5
+    _panel_config->flags.refresh_on_demand = 0;
+#else
     _panel_config->flags.relax_on_idle = 0;
+#endif // ESP_IDF_VERSION_MAJOR >= 5
     _panel_config->flags.fb_in_psram = 1;             // allocate frame buffer in PSRAM
 
     ESP_ERROR_CHECK(esp_lcd_new_rgb_panel(_panel_config, &_panel_handle));
@@ -955,9 +1247,16 @@ Renderer *uDisplay::Init(void) {
     uint16_t color = random(0xffff);
     ESP_ERROR_CHECK(_panel_handle->draw_bitmap(_panel_handle, 0, 0, 1, 1, &color));
 
+#if ESP_IDF_VERSION_MAJOR < 5
     _rgb_panel = __containerof(_panel_handle, esp_rgb_panel_t, base);
-
     rgb_fb = (uint16_t *)_rgb_panel->fb;
+#else
+    void * buf = NULL;
+    esp_lcd_rgb_panel_get_frame_buffer(_panel_handle, 1, &buf);
+    rgb_fb = (uint16_t *)buf;
+#endif
+
+
 
 #endif // USE_ESP32_S3
   }
@@ -1007,6 +1306,7 @@ Renderer *uDisplay::Init(void) {
     esp_lcd_i80_bus_config_t bus_config = {
         .dc_gpio_num = par_rs,
         .wr_gpio_num = par_wr,
+        .clk_src = LCD_CLK_SRC_DEFAULT,
         .bus_width = bus_width,
         .max_transfer_bytes = 32768
     };
@@ -1032,12 +1332,14 @@ Renderer *uDisplay::Init(void) {
 
     esp_lcd_new_i80_bus(&bus_config, &_i80_bus);
 
+#if ESP_IDF_VERSION_MAJOR < 5
     _dma_chan = _i80_bus->dma_chan;
+#endif
 
     uint32_t div_a, div_b, div_n, clkcnt;
     calcClockDiv(&div_a, &div_b, &div_n, &clkcnt, 240*1000*1000, spi_speed*1000000);
     lcd_cam_lcd_clock_reg_t lcd_clock;
-    lcd_clock.lcd_clkcnt_n = std::max(1u, clkcnt - 1);
+    lcd_clock.lcd_clkcnt_n = std::max((uint32_t)1u, clkcnt - 1); // ESP_IDF_VERSION_MAJOR >= 5
     lcd_clock.lcd_clk_equ_sysclk = (clkcnt == 1);
     lcd_clock.lcd_ck_idle_edge = true;
     lcd_clock.lcd_ck_out_edge = false;
@@ -1478,6 +1780,9 @@ void uDisplay::drawFastVLine(int16_t x, int16_t y, int16_t h, uint16_t color) {
 
   if (interface == _UDSP_RGB) {
   #ifdef USE_ESP32_S3
+    if (lvgl_param.swap_color) {
+      color = color << 8 | color >> 8;
+    }
     if (cur_rot > 0) {
       while (h--) {
         drawPixel_RGB(x , y , color);
@@ -1548,6 +1853,9 @@ void uDisplay::drawFastHLine(int16_t x, int16_t y, int16_t w, uint16_t color) {
 
   if (interface == _UDSP_RGB) {
 #ifdef USE_ESP32_S3
+    if (lvgl_param.swap_color) {
+      color = color << 8 | color >> 8;
+    }
     if (cur_rot > 0) {
       while (w--) {
         drawPixel_RGB(x , y , color);
@@ -1693,6 +2001,75 @@ for(y=h; y>0; y--) {
 }
 */
 
+#ifdef USE_UNIVERSAL_TOUCH
+
+uint8_t ut_irq_flg;
+
+void IRAM_ATTR ut_touch_irq(void) {
+  ut_irq_flg = 1;
+}
+
+// universal touch driver
+bool uDisplay::utouch_Init(char **name) {
+  *name = ut_name;
+  if (ut_init_code) {
+    if (ut_reset >= 0) {
+      pinMode(ut_reset, OUTPUT);
+      digitalWrite(ut_reset, HIGH);
+      delay(10);
+      digitalWrite(ut_reset, LOW);
+      delay(5);
+      digitalWrite(ut_reset, HIGH);
+      delay(10);
+    }
+    if (ut_irq >= 0) {
+      pinMode(ut_irq, INPUT );
+      attachInterrupt(ut_irq, ut_touch_irq, FALLING);
+    }
+
+extern SPIClass *SpiBegin(uint32 bus);
+
+    if (ut_spi_nr == spi_nr) {
+      // same as display
+      ut_spi = uspi;
+    } else {
+#ifdef ESP32
+      ut_spi = SpiBegin(ut_spi_nr);
+#endif
+    }
+    return ut_execute(ut_init_code);
+  }
+  return false;
+}
+
+uint16_t uDisplay::touched(void) {
+  if (ut_irq >= 0) {
+    if (!ut_irq_flg) {
+      return false;
+    }
+    ut_irq_flg = 0;
+  }
+  if (ut_touch_code) {
+    return ut_execute(ut_touch_code);
+  }
+  return 0;
+}
+
+int16_t uDisplay::getPoint_x(void) {
+  if (ut_getx_code) {
+    return ut_execute(ut_getx_code);
+  }
+  return 0;
+}
+
+int16_t uDisplay::getPoint_y(void) {
+  if (ut_gety_code) {
+    return ut_execute(ut_gety_code);
+  }
+  return 0;
+}
+#endif // USE_UNIVERSAL_TOUCH
+
 
 void uDisplay::Splash(void) {
 
@@ -1825,12 +2202,23 @@ void uDisplay::pushColorsMono(uint16_t *data, uint16_t len, bool rgb16_swap) {
   uint16_t rgb16_to_mono_mask = rgb16_swap ? RGB16_SWAP_TO_MONO : RGB16_TO_MONO;
 
   for (uint32_t y = seta_yp1; y < seta_yp2; y++) {
-    for (uint32_t x = seta_xp1; x < seta_xp2; x++) {
-      uint16_t color = *data++;
-      if (bpp == 1) color = (color & rgb16_to_mono_mask) ? 1 : 0;
-      drawPixel(x, y, color);   // todo - inline the method to save speed
-      len--;
-      if (!len) return;         // failsafe - exist if len (pixel number) is exhausted
+    seta_yp1++;
+    if (lvgl_param.invert_bw) {
+      for (uint32_t x = seta_xp1; x < seta_xp2; x++) {
+        uint16_t color = *data++;
+        if (bpp == 1) color = (color & rgb16_to_mono_mask) ? 0 : 1;
+        drawPixel(x, y, color);   // todo - inline the method to save speed
+        len--;
+        if (!len) return;         // failsafe - exist if len (pixel number) is exhausted
+      }
+    } else {
+      for (uint32_t x = seta_xp1; x < seta_xp2; x++) {
+        uint16_t color = *data++;
+        if (bpp == 1) color = (color & rgb16_to_mono_mask) ? 1 : 0;
+        drawPixel(x, y, color);   // todo - inline the method to save speed
+        len--;
+        if (!len) return;         // failsafe - exist if len (pixel number) is exhausted
+      }
     }
   }
 }
@@ -1846,42 +2234,73 @@ void uDisplay::pushColors(uint16_t *data, uint16_t len, boolean not_swapped) {
   }
 
   //Serial.printf("push %x - %d - %d - %d\n", (uint32_t)data, len, not_swapped, lvgl_param.data);
-  if (not_swapped == false) {
-    // called from LVGL bytes are swapped
-    if (interface == _UDSP_RGB) {
+
+  // Isolating _UDSP_RGB to increase code sharing
+  //
+  // LVGL documentation suggest to call the following:
+  //    lv_draw_sw_rgb565_swap() to invert bytes
+  //    esp_lcd_panel_draw_bitmap() to paste bytes
+  // but it appears to be faster to include the color swap in the copy loop
+  // because the CPU is much faster than PSRAM (SPI bus), therefore
+  // swapping bytes on the fly costs zero performance
+  //
+  // not_swapped == false : called from LVGL bytes are swapped
+  // not_swapped == true : called from displaytext, no byte swap, currently no dma here
+  if (interface == _UDSP_RGB) {
 #ifdef USE_ESP32_S3
-      if (cur_rot > 0) {
-        for (uint32_t y = seta_yp1; y < seta_yp2; y++) {
-          seta_yp1++;
-          for (uint32_t x = seta_xp1; x < seta_xp2; x++) {
-            uint16_t color = *data++;
-            color = color << 8 | color >> 8;
-            drawPixel_RGB(x, y, color);
-            len--;
-            if (!len) return;         // failsafe - exist if len (pixel number) is exhausted
-          }
-        }
-      } else {
-        for (uint32_t y = seta_yp1; y < seta_yp2; y++) {
-          seta_yp1++;
-          uint16_t *fb = rgb_fb;
-          fb += (int32_t)y * _width;
-          fb += seta_xp1;
-          for (uint32_t x = seta_xp1; x < seta_xp2; x++) {
-            uint16_t color = *data++;
-            color = color << 8 | color >> 8;
-            *fb = color;
-            Cache_WriteBack_Addr((uint32_t)fb, 2);
-            fb++;
-            len--;
-            if (!len) return;         // failsafe - exist if len (pixel number) is exhausted
-          }
+    // check that bytes count matches the size of area, and remove from inner loop
+    if ((seta_yp2 - seta_yp1) * (seta_xp2 - seta_xp2) > len) { return; }
+
+    uint16_t lenc = len;
+
+    if (cur_rot > 0) {
+      for (uint32_t y = seta_yp1; y < seta_yp2; y++) {
+        seta_yp1++;
+        for (uint32_t x = seta_xp1; x < seta_xp2; x++) {
+          uint16_t color = *data++;
+          if (!not_swapped) { color = color << 8 | color >> 8; }
+          drawPixel_RGB(x, y, color);
+          lenc--;
+          if (!lenc) return;         // failsafe - exist if len (pixel number) is exhausted
         }
       }
-#endif
-      return;
+    } else {
+      uint16_t *fb_y = rgb_fb + (int32_t)seta_yp1 * _width;
+      for (uint32_t y = seta_yp1; y < seta_yp2; y++) {
+        uint16_t * fb_xy = fb_y + seta_xp1;
+        // we get the 'not_swapped' test outside of the inner loop
+        if (not_swapped) {
+          for (uint32_t x = seta_xp1; x < seta_xp2; x++) {
+            uint16_t color = *data++;
+            *fb_xy = color;
+            fb_xy++;
+            lenc--;
+            if (!lenc) break;         // failsafe - exist if len (pixel number) is exhausted
+          }
+        } else {
+          for (uint32_t x = seta_xp1; x < seta_xp2; x++) {
+            uint16_t color = *data++;
+            color = color << 8 | color >> 8;
+            *fb_xy = color;
+            fb_xy++;
+            lenc--;
+            if (!lenc) break;         // failsafe - exist if len (pixel number) is exhausted
+          }
+        }
+        uint16_t * flush_ptr = rgb_fb + (int32_t)seta_yp1 * _width + seta_xp1;
+        Cache_WriteBack_Addr((uint32_t)flush_ptr, (seta_xp2 - seta_xp1) * 2);
+        fb_y += _width;
+        seta_yp1++;
+        if (!lenc) break; 
+      }
     }
+#endif
+    return;
+  }
 
+
+  if (not_swapped == false) {
+    // called from LVGL bytes are swapped
     if (bpp != 16) {
       // lvgl_color_swap(data, len); -- no need to swap anymore, we have inverted the mask
       pushColorsMono(data, len, true);
@@ -1955,35 +2374,6 @@ void uDisplay::pushColors(uint16_t *data, uint16_t len, boolean not_swapped) {
     }
   } else {
     // called from displaytext, no byte swap, currently no dma here
-    if (interface == _UDSP_RGB) {
-#ifdef USE_ESP32_S3
-      if (cur_rot > 0) {
-        for (uint32_t y = seta_yp1; y < seta_yp2; y++) {
-          seta_yp1++;
-          for (uint32_t x = seta_xp1; x < seta_xp2; x++) {
-            drawPixel_RGB(x, y, *data++);
-            len--;
-            if (!len) return;         // failsafe - exist if len (pixel number) is exhausted
-          }
-        }
-      } else {
-        for (uint32_t y = seta_yp1; y < seta_yp2; y++) {
-          seta_yp1++;
-          uint16_t *fb = rgb_fb;
-          fb += (int32_t)y * _width;
-          fb += seta_xp1;
-          for (uint32_t x = seta_xp1; x < seta_xp2; x++) {
-            *fb = *data++;
-            Cache_WriteBack_Addr((uint32_t)fb, 2);
-            fb++;
-            len--;
-            if (!len) return;         // failsafe - exist if len (pixel number) is exhausted
-          }
-        }
-      }
-#endif
-      return;
-    }
 
     if (bpp != 16) {
       pushColorsMono(data, len);
@@ -2072,6 +2462,9 @@ void uDisplay::drawPixel(int16_t x, int16_t y, uint16_t color) {
 
 #ifdef USE_ESP32_S3
   if (interface == _UDSP_RGB) {
+    if (lvgl_param.swap_color) {
+      color = color << 8 | color >> 8;
+    }
     drawPixel_RGB(x, y, color);
     return;
   }
@@ -2279,7 +2672,7 @@ void uDisplay::dim10(uint8_t dim, uint16_t dim_gamma) {           // dimmer with
 }
 
 // the cases are PSEUDO_OPCODES from MODULE_DESCRIPTOR
-// and may be exapnded with more opcodes
+// and may be expanded with more opcodes
 void uDisplay::TS_RotConvert(int16_t *x, int16_t *y) {
   int16_t temp;
 
@@ -2339,6 +2732,480 @@ char *uDisplay::devname(void) {
   return dname;
 }
 
+
+
+#ifdef USE_UNIVERSAL_TOUCH
+
+float CharToFloat(const char *str);
+
+uint32_t uDisplay::ut_par(char **lp, uint32_t mode) {
+  char *cp = *lp;
+  while (*cp != ' ') {
+    if (!cp) break;
+    cp++;
+  }
+  cp++;
+  uint32_t result;
+  if (!mode) {
+    // hex
+    result = strtol(cp, &cp, 16);
+  } else if (mode == 1) {
+    // word
+    result = strtol(cp, &cp, 10);
+  } else {
+    // float as 32bit integer
+    float fval = CharToFloat(cp);
+    result = *(uint32_t*)&fval;
+    while (*cp) {
+      if (*cp == ' ' || *cp =='\n') {
+        break;
+      }
+      cp++;
+    }
+  }
+  *lp = cp;
+  return result;
+}
+
+// translate pseudo opcodes to tokens
+void uDisplay::ut_trans(char **sp, uint8_t **code) {
+  char *cp = *sp;
+  uint16_t wval;
+  uint8_t tmp_code[64];
+  uint8_t *ut_code = tmp_code;
+  while (*cp) {
+    if (*cp == ':' || *cp == '#') {
+      break;
+    }
+    if (*cp == ';') {
+      // skip comment line
+      while (*cp) {
+        if (*cp == '\n') {
+          cp++;
+          break;
+        }
+        cp++;
+      }
+    }
+    if (!strncmp(cp, "RDWM", 4)) {
+      // read word many
+      *ut_code++ = UT_RDWM;
+      wval = ut_par(&cp, 0);
+      *ut_code++ = wval>>8;
+      *ut_code++ = wval;
+      wval = ut_par(&cp, 1);
+      if (wval > sizeof(ut_array)) {
+        wval = sizeof(ut_array);
+      }
+      *ut_code++ = wval;
+    } else if (!strncmp(cp, "RDW", 3)) {
+      // read word one
+      *ut_code++ = UT_RDW;
+      wval = ut_par(&cp, 0);
+      *ut_code++ = wval>>8;
+      *ut_code++ = wval;
+    } else if (!strncmp(cp, "RDM", 3)) {
+      // read many
+      *ut_code++ = UT_RDM;
+      *ut_code++ = ut_par(&cp, 0);
+      wval = ut_par(&cp, 1);
+      if (wval > sizeof(ut_array)) {
+        wval = sizeof(ut_array);
+      }
+      *ut_code++ = wval;
+    } else if (!strncmp(cp, "RD", 2)) {
+      // read one
+      *ut_code++ = UT_RD;
+      *ut_code++ = ut_par(&cp, 0);
+    } else if (!strncmp(cp, "CPR", 3)) {
+      // cmp and set
+      *ut_code++ = UT_CPR;
+      *ut_code++ = ut_par(&cp, 0);
+     } else if (!strncmp(cp, "CPM", 3)) {
+      // cmp multiple and set
+      *ut_code++ = UT_CPM;
+      uint8_t num = ut_par(&cp, 0);
+      *ut_code++ = num;
+      for (uint32_t cnt = 0; cnt < num; cnt++) {
+        *ut_code++ = ut_par(&cp, 0);
+      }
+     } else if (!strncmp(cp, "CP", 2)) {
+      // cmp and set
+      *ut_code++ = UT_CP;
+      *ut_code++ = ut_par(&cp, 0);
+    } else if (!strncmp(cp, "RTF", 3)) {
+      // return when false
+      *ut_code++ = UT_RTF;
+    } else if (!strncmp(cp, "RTT", 3)) {
+      // return when true
+      *ut_code++ = UT_RTT;
+    } else if (!strncmp(cp, "MVB", 3)) {
+      // move
+      *ut_code++ = UT_MVB;
+      *ut_code++ = ut_par(&cp, 1);
+      *ut_code++ = ut_par(&cp, 1);
+    } else if (!strncmp(cp, "MV", 2)) {
+      // move
+      *ut_code++ = UT_MV;
+      *ut_code++ = ut_par(&cp, 1);
+      *ut_code++ = ut_par(&cp, 1);
+    } else if (!strncmp(cp, "RT", 2)) {
+      // return status
+      *ut_code++ = UT_RT;
+    } else if (!strncmp(cp, "WRW", 3)) {
+      *ut_code++ = UT_WRW;
+      wval = ut_par(&cp, 0);
+      *ut_code++ = wval>>8;
+      *ut_code++ = wval;
+      wval = ut_par(&cp, 0);
+      *ut_code++ = wval;
+    } else if (!strncmp(cp, "WR", 2)) {
+      *ut_code++ = UT_WR;
+      wval = ut_par(&cp, 0);
+      *ut_code++ = wval;
+      wval = ut_par(&cp, 0);
+      *ut_code++ = wval;
+    } else if (!strncmp(cp, "AND", 3)) {
+      *ut_code++ = UT_AND;
+      wval = ut_par(&cp, 0);
+      *ut_code++ = wval >> 8;
+      *ut_code++ = wval;
+    } else if (!strncmp(cp, "SCL", 3)) {
+      *ut_code++ = UT_SCALE;
+      wval = ut_par(&cp, 1);
+      *ut_code++ = wval >> 8;
+      *ut_code++ = wval;
+      uint32_t lval = ut_par(&cp, 2);
+      *ut_code++ = lval >> 24;
+      *ut_code++ = lval >> 16;
+      *ut_code++ = lval >> 8;
+      *ut_code++ = lval;
+    } else if (!strncmp(cp, "LIM", 3)) {
+      *ut_code++ = UT_LIM;
+      wval = ut_par(&cp, 1);
+      *ut_code++ = wval >> 8;
+      *ut_code++ = wval;
+    } else if (!strncmp(cp, "GSRT", 4)) {
+      *ut_code++ = UT_GSRT;
+      wval = ut_par(&cp, 1);
+      *ut_code++ = wval >> 8;
+      *ut_code++ = wval;
+    } else if (!strncmp(cp, "XPT", 3)) {
+      *ut_code++ = UT_XPT;
+      wval = ut_par(&cp, 1);
+      *ut_code++ = wval >> 8;
+      *ut_code++ = wval;
+    } else if (!strncmp(cp, "DBG", 3)) {
+      *ut_code++ = UT_DBG;
+      wval = ut_par(&cp, 1);
+      *ut_code++ = wval;
+    }
+    cp++;
+  }
+  *ut_code++ = UT_END;
+  *sp = cp - 1;
+  uint16_t memsize = (uint32_t)ut_code - (uint32_t)tmp_code;
+  // allocate memory
+  //AddLog(LOG_LEVEL_INFO, PSTR("UT-code: %d bytes"),memsize);
+#ifdef UDSP_DEBUG
+  Serial.printf("Utouch code size : %d\n", memsize);
+#endif
+  uint8_t *mp = (uint8_t*)malloc(memsize + 2);
+  if (mp) {
+    memmove(mp, tmp_code, memsize);
+    *code = mp;
+  }
+}
+
+uint8_t *uDisplay::ut_rd(uint8_t *iop, uint32_t len, uint32_t amode) {
+  if (ut_wire) {
+    // i2c mode
+    ut_wire->beginTransmission(ut_i2caddr);
+    ut_wire->write(*iop++);
+    if (amode == 2) {
+      ut_wire->write(*iop++);
+    }
+    ut_wire->endTransmission(false);
+    if (len > 1) {
+      len = *iop++;
+    }
+    ut_wire->requestFrom(ut_i2caddr, (size_t)len);
+    uint8_t index = 0;
+    while (ut_wire->available()) {
+      ut_array[index++] = ut_wire->read();
+    }
+  } else {
+    // spi mode
+    if (amode == 1) {
+      uint16_t val = *iop++;
+      uint16_t len = *iop++;
+      if (ut_spi) {
+        digitalWrite(ut_spi_cs, LOW);
+        ut_spi->beginTransaction(ut_spiSettings);
+        ut_spi->transfer(val);
+        val = ut_spi->transfer16(0);
+        ut_spi->endTransaction();
+        ut_array[len] = val << 8;
+        ut_array[len + 1] = val;
+        digitalWrite(ut_spi_cs, HIGH);
+      }
+    }
+  }
+  return iop;
+}
+
+uint8_t *uDisplay::ut_wr(uint8_t *iop, uint32_t amode) {
+  if (ut_wire) {
+    // i2c mode
+    ut_wire->beginTransmission(ut_i2caddr);
+    ut_wire->write(*iop++);
+    if (amode == 2) {
+      ut_wire->write(*iop++);
+    }
+    ut_wire->write(*iop++);
+    ut_wire->endTransmission(true);
+  } else {
+    // spi mode
+  }
+  return iop;
+}
+
+
+int16_t uDisplay::besttwoavg( int16_t x , int16_t y , int16_t z ) {
+  int16_t da, db, dc;
+  int16_t reta = 0;
+  if ( x > y ) da = x - y; else da = y - x;
+  if ( x > z ) db = x - z; else db = z - x;
+  if ( z > y ) dc = z - y; else dc = y - z;
+
+  if ( da <= db && da <= dc ) reta = (x + y) >> 1;
+  else if ( db <= da && db <= dc ) reta = (x + z) >> 1;
+  else reta = (y + z) >> 1;
+
+  return (reta);
+}
+
+uint16_t uDisplay::ut_XPT2046(uint16_t z_th) {
+  uint16_t result = 0;
+  if (ut_spi) {
+    int16_t data[6];
+		ut_spi->beginTransaction(ut_spiSettings);
+		digitalWrite(ut_spi_cs, LOW);
+		ut_spi->transfer(0xB1 /* Z1 */);
+		int16_t z1 = ut_spi->transfer16(0xC1 /* Z2 */) >> 3;
+		int16_t z = z1 + 4095;
+		int16_t z2 = ut_spi->transfer16(0x91 /* X */) >> 3;
+		z -= z2;
+		if (z >= z_th) {
+			ut_spi->transfer16(0x91 /* X */);  // dummy X measure, 1st is always noisy
+			data[0] = ut_spi->transfer16(0xD1 /* Y */) >> 3;
+			data[1] = ut_spi->transfer16(0x91 /* X */) >> 3; // make 3 x-y measurements
+			data[2] = ut_spi->transfer16(0xD1 /* Y */) >> 3;
+			data[3] = ut_spi->transfer16(0x91 /* X */) >> 3;
+      result = 1;
+		}
+		else {
+      data[0] = data[1] = data[2] = data[3] = 0;
+    }
+    data[4] = ut_spi->transfer16(0xD0 /* Y */) >> 3;	// Last Y touch power down
+		data[5] = ut_spi->transfer16(0) >> 3;
+		digitalWrite(ut_spi_cs, HIGH);
+		ut_spi->endTransaction();
+
+    uint16_t x = besttwoavg( data[0], data[2], data[4] );
+	  uint16_t y = besttwoavg( data[1], data[3], data[5] );
+
+    ut_array[0] = x >> 8;
+    ut_array[1] = x;
+    ut_array[2] = y >> 8;
+    ut_array[3] = y;
+	}
+  return result;
+}
+
+int16_t uDisplay::ut_execute(uint8_t *ut_code) {
+int16_t result = 0;
+uint8_t iob, len;
+uint16_t wval;
+
+  while (*ut_code != UT_END) {
+    iob = *ut_code++;
+    switch (iob) {
+      case UT_RD:
+        // read 1 byte
+        ut_code = ut_rd(ut_code, 1, 1);
+        break;
+
+      case UT_RDM:
+        // read multiple bytes
+        ut_code = ut_rd(ut_code, 2, 1);
+        break;
+
+      case UT_RDW:
+        // read 1 byte
+        ut_code = ut_rd(ut_code, 1, 2);
+        break;
+
+      case UT_RDWM:
+        // read multiple bytes
+        ut_code = ut_rd(ut_code, 2, 2);
+        break;
+
+      case UT_WR:
+        ut_code = ut_wr(ut_code, 1);
+        break;
+
+       case UT_WRW:
+        ut_code = ut_wr(ut_code, 2);
+        break;
+
+      case UT_CP:
+        // compare
+        iob = *ut_code++;
+        result = (iob == ut_array[0]);
+        break;
+
+      case UT_CPM:
+        // compare multiple
+        len = *ut_code++;
+        result = 0;
+        for (uint32_t cnt = 0; cnt < len; cnt++) {
+          iob = *ut_code++;
+          result |= (iob == ut_array[0]);
+        }
+        break;
+
+      case UT_CPR:
+        // compare
+        iob = *ut_code++;
+        result = (iob == result);
+        break;
+
+      case UT_RTF:
+        // return when false
+        if (result == 0) {
+          return false;
+        }
+        break;
+
+      case UT_RTT:
+         // return when true
+        if (result > 0) {
+          return false;
+        }
+        break;
+
+      case UT_MVB:
+        // move byte from index to high or low result
+        wval = *ut_code++;
+        iob = *ut_code++;
+        if (wval == 0) {
+          result &= 0xff00;
+          result |= ut_array[iob]; 
+        } else {
+          result &= 0x00ff;
+          result |= (ut_array[iob] << 8); 
+        }
+        break;
+
+      case UT_MV:
+        // move
+        // source
+        result = *ut_code++;
+        iob = *ut_code++;
+        if (iob == 1) {
+          result = ut_array[result];
+        } else if (iob == 2) {
+          iob = result;
+          result = ut_array[iob] << 8;
+          result |= ut_array[iob + 1];
+        } else {
+          iob = result;
+          result = ut_array[iob + 1] << 8;
+          result |= ut_array[iob];
+        }
+        result &= 0xfff;
+        break;
+
+      case UT_AND:
+        // and 
+        wval = *ut_code++ << 8;
+        wval |= *ut_code++;
+        result &= wval;
+        break;
+      
+      case UT_SCALE:
+        {
+        wval = *ut_code++ << 8;
+        wval |= *ut_code++;
+        result -= wval;
+        uint32_t lval = (uint32_t)*ut_code++ << 24;
+        lval |= (uint32_t)*ut_code++ << 16;
+        lval |= (uint32_t)*ut_code++ << 8;
+        lval |= (uint32_t)*ut_code++;
+        float fval = *(float*)&lval;
+        fval *= (float)result;  
+        result = fval;
+        }
+        break;
+
+      case UT_LIM:
+        wval = *ut_code++ << 8;
+        wval |= *ut_code++;
+        if (result > wval) {
+          result = wval;
+        }
+        break;
+
+      case UT_RT:
+        // result
+        return result;
+        break;
+
+      case UT_GSRT:
+#ifdef USE_ESP32_S3      
+        { uint32_t val = get_sr_touch(SIMPLERS_XP, SIMPLERS_XM, SIMPLERS_YP, SIMPLERS_YM);
+        if (val == 0) {
+          return false;
+        }
+        uint16_t xp = val >> 16;
+        uint16_t yp = val;
+
+        wval = *ut_code++ << 8;
+        wval |= *ut_code++;
+        if (xp > wval && yp > wval) {
+          ut_array[0] = val >> 24;
+          ut_array[1] = val >> 16;
+          ut_array[2] = val >> 8;
+          ut_array[3] = val;
+          return true;
+        }
+        return false;
+        }
+#endif // USE_ESP32_S3
+        break;
+
+      case UT_XPT:
+        wval = *ut_code++ << 8;
+        wval |= *ut_code++;
+        result = ut_XPT2046(wval);
+        break;
+
+      case UT_DBG:
+        // debug show result
+        //Serial.printf("UTDBG: %d\n", result);
+        wval = *ut_code++;
+        AddLog(LOG_LEVEL_INFO, PSTR("UTDBG %d: %02x : %02x,%02x,%02x,%02x"), wval, result, ut_array[0], ut_array[1], ut_array[2], ut_array[3]);
+        break;
+
+      case UT_END:
+        break;
+    }
+  }
+  return result;
+}
+#endif // USE_UNIVERSAL_TOUCH
+
 uint32_t uDisplay::str2c(char **sp, char *vp, uint32_t len) {
     char *lp = *sp;
     if (len) len--;
@@ -2395,37 +3262,57 @@ uint32_t uDisplay::next_hex(char **sp) {
 // we use our own hardware driver for 9 bit spi
 void uDisplay::hw_write9(uint8_t val, uint8_t dc) {
 
-    uint32_t regvalue = val >> 1;
-    if (dc) regvalue |= 0x80;
-    else regvalue &= 0x7f;
-    if (val & 1) regvalue |= 0x8000;
+    if (spi_dc < -1) {
+      // RA8876 mode
+      if (!dc) {
+        uspi->write(RA8876_CMD_WRITE);
+        uspi->write(val);
+      } else {
+        uspi->write(RA8876_DATA_WRITE);
+        uspi->write(val);
+      }
+    } else {
+      uint32_t regvalue = val >> 1;
+      if (dc) regvalue |= 0x80;
+      else regvalue &= 0x7f;
+      if (val & 1) regvalue |= 0x8000;
 
-    REG_SET_BIT(SPI_USER_REG(3), SPI_USR_MOSI);
-    REG_WRITE(SPI_MOSI_DLEN_REG(3), 9 - 1);
-    uint32_t *dp = (uint32_t*)SPI_W0_REG(3);
-    *dp = regvalue;
-    REG_SET_BIT(SPI_CMD_REG(3), SPI_USR);
-    while (REG_GET_FIELD(SPI_CMD_REG(3), SPI_USR));
+      REG_SET_BIT(SPI_USER_REG(3), SPI_USR_MOSI);
+      REG_WRITE(SPI_MOSI_DLEN_REG(3), 9 - 1);
+      uint32_t *dp = (uint32_t*)SPI_W0_REG(3);
+      *dp = regvalue;
+      REG_SET_BIT(SPI_CMD_REG(3), SPI_USR);
+      while (REG_GET_FIELD(SPI_CMD_REG(3), SPI_USR));
+    }
 }
 
 #else
 #include "spi_register.h"
 void uDisplay::hw_write9(uint8_t val, uint8_t dc) {
 
-    uint32_t regvalue;
-    uint8_t bytetemp;
-    if (!dc) {
-      bytetemp = (val>> 1) & 0x7f;
+    if (spi_dc < -1) {
+      // RA8876 mode
+      if (!dc) {
+        uspi->write(RA8876_CMD_WRITE);
+        uspi->write(val);
+      } else {
+        uspi->write(RA8876_DATA_WRITE);
+        uspi->write(val);
+      }
     } else {
-      bytetemp = (val >> 1) | 0x80;
+      uint32_t regvalue;
+      uint8_t bytetemp;
+      if (!dc) {
+        bytetemp = (val>> 1) & 0x7f;
+      } else {
+        bytetemp = (val >> 1) | 0x80;
+      }
+      regvalue = ((8 & SPI_USR_COMMAND_BITLEN) << SPI_USR_COMMAND_BITLEN_S) | ((uint32)bytetemp);		//configure transmission variable,9bit transmission length and first 8 command bit
+      if (val & 0x01) 	regvalue |= BIT15;        //write the 9th bit
+      while (READ_PERI_REG(SPI_CMD(1)) & SPI_USR);		//waiting for spi module available
+      WRITE_PERI_REG(SPI_USER2(1), regvalue);				//write  command and command length into spi reg
+      SET_PERI_REG_MASK(SPI_CMD(1), SPI_USR);		//transmission start
     }
-
-    regvalue = ((8 & SPI_USR_COMMAND_BITLEN) << SPI_USR_COMMAND_BITLEN_S) | ((uint32)bytetemp);		//configure transmission variable,9bit transmission length and first 8 command bit
-    if (val & 0x01) 	regvalue |= BIT15;        //write the 9th bit
-    while (READ_PERI_REG(SPI_CMD(1)) & SPI_USR);		//waiting for spi module available
-    WRITE_PERI_REG(SPI_USER2(1), regvalue);				//write  command and command length into spi reg
-    SET_PERI_REG_MASK(SPI_CMD(1), SPI_USR);		//transmission start
-
 }
 #endif
 
@@ -2440,6 +3327,26 @@ void USECACHE uDisplay::write8(uint8_t val) {
     else   GPIO_CLR(spi_mosi);
     GPIO_SET(spi_clk);
   }
+}
+
+uint8_t uDisplay::writeReg16(uint8_t reg, uint16_t wval) {
+  hw_write9(reg, 0);
+  hw_write9(wval, 1);
+  hw_write9(reg + 1, 0);
+  hw_write9(wval >> 8, 1);
+  return 0;
+}
+
+uint8_t uDisplay::readData(void) {
+  uspi->write(RA8876_DATA_READ);
+  uint8_t val = uspi->transfer(0);
+  return val;
+}
+
+uint8_t uDisplay::readStatus(void) {
+  uspi->write(RA8876_STATUS_READ);
+  uint8_t val = uspi->transfer(0);
+  return val;
 }
 
 void uDisplay::write8_slow(uint8_t val) {
@@ -2558,6 +3465,9 @@ void uDisplay::Init_EPD(int8_t p) {
   if (ep_mode == 1) {
     ClearFrameMemory(0xFF);
     Updateframe_EPD();
+  } else if (ep_mode == 3) {
+    ClearFrameMemory(0xFF);
+    Updateframe_EPD();
   } else {
     ClearFrame_42();
   }
@@ -2647,7 +3557,7 @@ void uDisplay::SetLut(const unsigned char* lut) {
 }
 
 void uDisplay::Updateframe_EPD(void) {
-  if (ep_mode == 1) {
+  if (ep_mode == 1 || ep_mode == 3) {
     switch (ep_update_mode) {
       case DISPLAY_INIT_PARTIAL:
         if (epc_part_cnt) {
@@ -2676,15 +3586,33 @@ void uDisplay::DisplayFrame_29(void) {
 }
 
 void uDisplay::SetMemoryArea(int x_start, int y_start, int x_end, int y_end) {
-    spi_command_EPD(SET_RAM_X_ADDRESS_START_END_POSITION);
+    int x_start1 = (x_start >> 3) & 0xFF;
+    int x_end1 = (x_end >> 3) & 0xFF;
+    int y_start1 = y_start & 0xFF;
+    int y_start2 = (y_start >> 8) & 0xFF;
+    int y_end1 = y_end & 0xFF;
+    int y_end2 = (y_end >> 8) & 0xFF;
     /* x point must be the multiple of 8 or the last 3 bits will be ignored */
-    spi_data8_EPD((x_start >> 3) & 0xFF);
-    spi_data8_EPD((x_end >> 3) & 0xFF);
-    spi_command_EPD(SET_RAM_Y_ADDRESS_START_END_POSITION);
-    spi_data8_EPD(y_start & 0xFF);
-    spi_data8_EPD((y_start >> 8) & 0xFF);
-    spi_data8_EPD(y_end & 0xFF);
-    spi_data8_EPD((y_end >> 8) & 0xFF);
+
+    if (ep_mode == 3) {
+        spi_command_EPD(SET_RAM_X_ADDRESS_START_END_POSITION);
+        spi_data8_EPD(x_start1);
+        spi_data8_EPD(x_end1);
+        spi_command_EPD(SET_RAM_Y_ADDRESS_START_END_POSITION);
+        spi_data8_EPD(y_end1);
+        spi_data8_EPD(y_end2);
+        spi_data8_EPD(y_start1);
+        spi_data8_EPD(y_start2);
+    } else {
+        spi_command_EPD(SET_RAM_X_ADDRESS_START_END_POSITION);
+        spi_data8_EPD(x_start1);
+        spi_data8_EPD(x_end1);
+        spi_command_EPD(SET_RAM_Y_ADDRESS_START_END_POSITION);
+        spi_data8_EPD(y_start1);
+        spi_data8_EPD(y_start2);
+        spi_data8_EPD(y_end1);
+        spi_data8_EPD(y_end2);
+    }
 }
 
 void uDisplay::SetFrameMemory(const unsigned char* image_buffer) {
@@ -2698,12 +3626,27 @@ void uDisplay::SetFrameMemory(const unsigned char* image_buffer) {
 }
 
 void uDisplay::SetMemoryPointer(int x, int y) {
+    int x1;
+    int y1;
+    int y2;
+
+    if (ep_mode == 3) {
+        x1 = (x >> 3) & 0xFF;
+        y--;
+        y1 = y & 0xFF;
+        y2 = (y >> 8) & 0xFF;
+    } else {
+        x1 = (x >> 3) & 0xFF;
+        y1 = y & 0xFF;
+        y2 = (y >> 8) & 0xFF;
+    }
+
     spi_command_EPD(SET_RAM_X_ADDRESS_COUNTER);
     /* x point must be the multiple of 8 or the last 3 bits will be ignored */
-    spi_data8_EPD((x >> 3) & 0xFF);
+    spi_data8_EPD(x1);
     spi_command_EPD(SET_RAM_Y_ADDRESS_COUNTER);
-    spi_data8_EPD(y & 0xFF);
-    spi_data8_EPD((y >> 8) & 0xFF);
+    spi_data8_EPD(y1);
+    spi_data8_EPD(y2);
 }
 
 #if 0

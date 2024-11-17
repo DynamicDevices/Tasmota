@@ -29,13 +29,12 @@
 
 #define D_CMND_RFSEND "Send"
 #define D_CMND_RFPROTOCOL "Protocol"
-#define D_CMND_RFTIMEOUT "TimeOut"
 
 #define D_JSON_RF_PULSE "Pulse"
 #define D_JSON_RF_REPEAT "Repeat"
 #define D_JSON_NONE_ENABLED "None Enabled"
 
-const char kRfCommands[] PROGMEM = "Rf|"  // No prefix
+const char kRfCommands[] PROGMEM = D_CMND_PREFIX_RF "|"  // Prefix
   D_CMND_RFSEND "|" D_CMND_RFPROTOCOL "|" D_CMND_RFTIMEOUT;
 
 void (* const RfCommands[])(void) PROGMEM = {
@@ -93,7 +92,7 @@ void RfInit(void) {
     if (!Settings->rf_protocol_mask) {
       Settings->rf_protocol_mask = (1ULL << mySwitch.getNumProtos()) -1;
     }
-    mySwitch.setReceiveProtocolMask(Settings->rf_protocol_mask);
+    (void)mySwitch.setReceiveProtocolMask(Settings->rf_protocol_mask);
   }
 }
 
@@ -133,7 +132,10 @@ void CmndRfProtocol(void) {
       }
     }
   }
-  mySwitch.setReceiveProtocolMask(Settings->rf_protocol_mask);
+  const bool incompatibleProtocolsSelected = !mySwitch.setReceiveProtocolMask(Settings->rf_protocol_mask);
+  if (incompatibleProtocolsSelected) {
+    AddLog(LOG_LEVEL_INFO, PSTR("RFR: CmndRfProtocol:: Incompatible protocols selected, using default separation limit, some protocols may not work"));
+  }
 //  AddLog(LOG_LEVEL_INFO, PSTR("RFR: CmndRfProtocol:: Start responce"));
   Response_P(PSTR("{\"" D_CMND_RFPROTOCOL "\":\""));
   bool gotone = false;
@@ -245,6 +247,9 @@ bool Xdrv17(uint32_t function)
         break;
       case FUNC_INIT:
         RfInit();
+        break;
+      case FUNC_ACTIVE:
+        result = true;
         break;
     }
   }

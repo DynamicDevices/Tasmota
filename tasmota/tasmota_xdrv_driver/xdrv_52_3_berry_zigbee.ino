@@ -26,6 +26,9 @@
 #include "be_func.h"
 
 extern "C" {
+  extern const bclass be_class_zcl_attribute_list;
+  extern const bclass be_class_zcl_attribute;
+  extern const bclass be_class_zcl_attribute_ntv;
   extern const bclass be_class_zb_device;
 
   // Zigbee Device `zd`
@@ -75,6 +78,21 @@ extern "C" {
 
 extern "C" {
   // Zigbee Coordinator `zc`
+
+  // `zigbee.started() -> bool or nil`
+  // Returns `true` if Zigbee sucessfully started, `false` if not yet started
+  // or `nil` if not configured or aborted
+  int zc_started(struct bvm *vm);
+  int zc_started(struct bvm *vm) {
+    // return `nil` if `zigbee.active` is false (i.e. no GPIO configured)
+    // or aborted, `zigbee.init_phase` is `true` but `zigbee.state_machine` is `false`
+    if (!zigbee.active) {
+      be_return_nil(vm);
+    }
+    be_pushbool(vm, !zigbee.init_phase);
+    be_return(vm);
+  }
+
   int zc_info(struct bvm *vm);
   int zc_info(struct bvm *vm) {
     int32_t top = be_top(vm); // Get the number of arguments
@@ -99,17 +117,25 @@ extern "C" {
     be_raise(vm, kTypeError, nullptr);
   }
 
-  int zc_item(struct bvm *vm);
-  int zc_item(struct bvm *vm) {
+  // implement item() and find()
+  int zc_item_or_find(struct bvm *vm, bbool raise_if_unknown) {
     int32_t top = be_top(vm); // Get the number of arguments
-    if (zigbee.init_phase) {
-      be_raise(vm, "internal_error", "zigbee not started");
+    if (!zigbee.active) {
+      if (raise_if_unknown) {
+        be_raise(vm, "internal_error", "zigbee not started");
+      } else {
+        be_return_nil(vm);
+      }
     }
     if (top >= 2 && (be_isint(vm, 2) || be_isstring(vm, 2))) {
       const Z_Device & device = be_isint(vm, 2) ? zigbee_devices.findShortAddr(be_toint(vm, 2))
                                                 : zigbee_devices.parseDeviceFromName(be_tostring(vm, 2));
       if (!device.valid()) {
-        be_raise(vm, "value_error", "unknown device");
+        if (raise_if_unknown) {
+          be_raise(vm, "index_error", "unknown device");
+        } else {
+          be_return_nil(vm);
+        }
       }
 
       be_pushntvclass(vm, &be_class_zb_device);
@@ -119,6 +145,20 @@ extern "C" {
       be_return(vm);
     }
     be_raise(vm, kTypeError, nullptr);
+  }
+
+  // `zigbee.item(shortaddr:int | friendlyname:str) -> instance of zb_device`
+  // raise en exception if not found
+  int zc_item(struct bvm *vm);
+  int zc_item(struct bvm *vm) {
+    return zc_item_or_find(vm, true);
+  }
+
+  // `zigbee.find(shortaddr:int | friendlyname:str) -> instance of zb_device`
+  // return `nil` if not found
+  int zc_find(struct bvm *vm);
+  int zc_find(struct bvm *vm) {
+    return zc_item_or_find(vm, false);
   }
 
   int32_t zc_size(void*) {
@@ -156,7 +196,7 @@ extern "C" {
 
   int zc_iter(bvm *vm);
   int zc_iter(bvm *vm) {
-    if (zigbee.init_phase) {
+    if (!zigbee.active) {
       be_raise(vm, "internal_error", "zigbee not started");
     }
     be_pushntvclosure(vm, zc_iter_closure, 1);
@@ -202,6 +242,27 @@ extern "C" {
     return ret;
   }
 
+  int zd_info(bvm *vm);
+  int zd_info(bvm *vm) {
+    if (!zigbee.active) {
+      be_raise(vm, "internal_error", "zigbee not started");
+    }
+    be_getmember(vm, 1, "_p");
+    const class Z_Device* device = (const class Z_Device*) be_tocomptr(vm, -1);
+    // call ZbInfo
+    static Z_attribute_list attr_list;
+    attr_list.reset();
+    if (device != nullptr) {
+      device->jsonDumpSingleDevice(attr_list, 3, false);   // don't add Device/Name
+      be_pushntvclass(vm, &be_class_zcl_attribute_list);
+     be_pushcomptr(vm, &attr_list);
+      be_call(vm, 1);
+      be_pop(vm, 1);
+      be_return(vm);
+    } else {
+      be_return_nil(vm);
+    }
+  }
 }
 
 /*********************************************************************************************\
@@ -214,9 +275,9 @@ extern "C" {
 
   extern const be_ctypes_structure_t be_zigbee_zcl_frame_struct = {
     sizeof(ZCLFrame),  /* size in bytes */
-    12,  /* number of elements */
+    13,  /* number of elements */
     nullptr,
-    (const be_ctypes_structure_item_t[12]) {
+    (const be_ctypes_structure_item_t[13]) {
       { "cluster", offsetof(ZCLFrame, cluster), 0, 0, ctypes_u16, 0 },
       { "cluster_specific", offsetof(ZCLFrame, clusterSpecific), 0, 0, ctypes_u8, 0 },
       { "cmd", offsetof(ZCLFrame, cmd), 0, 0, ctypes_u8, 0 },
@@ -227,6 +288,7 @@ extern "C" {
       { "need_response", offsetof(ZCLFrame, needResponse), 0, 0, ctypes_u8, 0 },
       { "payload_ptr", offsetof(ZCLFrame, payload), 0, 0, ctypes_ptr32, 0 },
       { "shortaddr", offsetof(ZCLFrame, shortaddr), 0, 0, ctypes_u16, 0 },
+      { "srcendpoint", offsetof(ZCLFrame, srcendpoint), 0, 0, ctypes_u8, 0 },
       { "transactseq", offsetof(ZCLFrame, transactseq), 0, 0, ctypes_u8, 0 },
       { "transactseq_set", offsetof(ZCLFrame, transacSet), 0, 0, ctypes_u8, 0 },
   }};
@@ -254,22 +316,24 @@ extern "C" {
 
   extern const be_ctypes_structure_t be_zigbee_zcl_attribute_struct = {
     sizeof(Z_attribute),  /* size in bytes */
-    10,  /* number of elements */
+    11,  /* number of elements */
     nullptr,
-    (const be_ctypes_structure_item_t[10]) {
+    (const be_ctypes_structure_item_t[12]) {
       { "_attr_id", offsetof(Z_attribute, attr_id), 0, 0, ctypes_u16, 0 },
       { "_cluster", offsetof(Z_attribute, cluster), 0, 0, ctypes_u16, 0 },
       { "_cmd", offsetof(Z_attribute, attr_id), 0, 0, ctypes_u8, 0 },       // low 8 bits of attr_id
       { "_cmd_general", offsetof(Z_attribute, attr_id) + 1, 1, 1, ctypes_u8, 0 },       // bit #1 of byte+1
       { "_direction", offsetof(Z_attribute, attr_id) + 1, 0, 1, ctypes_u8, 0 },         // bit #0 of byte+1
       { "_iscmd", offsetof(Z_attribute, key_is_cmd), 0, 0, ctypes_u8, 0 },
-      { "attr_multiplier", offsetof(Z_attribute, attr_multiplier), 0, 0, ctypes_i8, 0 },
-      { "attr_divider", offsetof(Z_attribute, attr_divider), 0, 0, ctypes_i8, 0 },
+      { "attr_base", offsetof(Z_attribute, attr_base), 0, 0, ctypes_u32, 0 },
+      { "attr_divider", offsetof(Z_attribute, attr_divider), 0, 0, ctypes_u32, 0 },
+      { "attr_multiplier", offsetof(Z_attribute, attr_multiplier), 0, 0, ctypes_u32, 0 },
       { "attr_type", offsetof(Z_attribute, attr_type), 0, 0, ctypes_u8, 0 },
       // { "key", offsetof(Z_attribute, key), 0, 0, ctypes_ptr32, 0 },
       // { "key_is_pmem", offsetof(Z_attribute, key_is_pmem), 0, 0, ctypes_u8, 0 },
       // { "key_is_str", offsetof(Z_attribute, key_is_str), 0, 0, ctypes_u8, 0 },
       { "key_suffix", offsetof(Z_attribute, key_suffix), 0, 0, ctypes_u8, 0 },
+      { "manuf", offsetof(Z_attribute, manuf), 0, 0, ctypes_u16, 0 },
       // { "type", offsetof(Z_attribute, type), 0, 0, ctypes_u8, 0 },
       // { "val_float", offsetof(Z_attribute, val), 0, 0, ctypes_float, 0 },
       // { "val_i32", offsetof(Z_attribute, val), 0, 0, ctypes_i32, 0 },
@@ -310,10 +374,6 @@ extern "C" {
  *
 \*********************************************************************************************/
 extern "C" {
-  extern const bclass be_class_zcl_attribute_list;
-  extern const bclass be_class_zcl_attribute;
-  extern const bclass be_class_zcl_attribute_ntv;
-
   void zat_zcl_attribute(struct bvm *vm, const Z_attribute *attr);
 
   // Pushes the Z_attribute_list on the stack as a simple list
@@ -355,10 +415,20 @@ extern "C" {
         be_pushreal(vm, (breal)attr->val.fval);
         break;
       case Za_type::Za_raw:
-        be_pushbytes(vm, attr->val.bval->getBuffer(), attr->val.bval->len());
+        // `bval` can be `null`, avoid crashing
+        if (attr->val.bval) {
+          be_pushbytes(vm, attr->val.bval->getBuffer(), attr->val.bval->len());
+        } else {
+          be_pushbytes(vm, nullptr, 0);
+        }
         break;
       case Za_type::Za_str:
-        be_pushstring(vm, attr->val.sval);
+        // `sval` can be `null`, avoid crashing
+        if (attr->val.sval) {
+          be_pushstring(vm, attr->val.sval);
+        } else {
+          be_pushstring(vm, "");
+        }
         break;
         
       case Za_type::Za_obj:
@@ -531,38 +601,38 @@ extern "C" {
 }
 
 extern "C" {
-  int zigbee_test_attr(struct bvm *vm) {
-    int32_t mode = be_toint(vm, 2);
-    if (mode < 10) {
-      //
-    } else {
-      Z_attribute *a = new Z_attribute();
-      if (mode == 10) {
-        a->setKeyId(1111, 2222);
-        a->setUInt(1337);
-      } else if (mode == 11) {
-        a->setKeyName("super_attribute");
-        a->key_suffix = 2;
-        a->setFloat(3.14);
-      } else if (mode == 12) {
-        a->setKeyName("array");
-        a->newJsonArray();
-        a->val.arrval->add(-1);
-        a->val.arrval->addStr("foo");
-        a->val.arrval->addStr("bar");
-        a->val.arrval->addStr("bar\"baz\'toto");
-      } else if (mode == 13) {
-        a->setKeyName("list");
-        a->newAttrList();
-        Z_attribute &subattr1 = a->val.objval->addAttribute(10,20);
-        subattr1.setStr("sub1");
-        Z_attribute &subattr2 = a->val.objval->addAttribute(11,21);
-        subattr2.setStr("sub2");
-      }
-      zat_zcl_attribute(vm, a);
-    }
-    be_return(vm);
-  }
+//   int zigbee_test_attr(struct bvm *vm) {
+//     int32_t mode = be_toint(vm, 2);
+//     if (mode < 10) {
+//       //
+//     } else {
+//       Z_attribute *a = new Z_attribute();
+//       if (mode == 10) {
+//         a->setKeyId(1111, 2222);
+//         a->setUInt(1337);
+//       } else if (mode == 11) {
+//         a->setKeyName("super_attribute");
+//         a->key_suffix = 2;
+//         a->setFloat(3.14);
+//       } else if (mode == 12) {
+//         a->setKeyName("array");
+//         a->newJsonArray();
+//         a->val.arrval->add((int32_t)-1);
+//         a->val.arrval->addStr("foo");
+//         a->val.arrval->addStr("bar");
+//         a->val.arrval->addStr("bar\"baz\'toto");
+//       } else if (mode == 13) {
+//         a->setKeyName("list");
+//         a->newAttrList();
+//         Z_attribute &subattr1 = a->val.objval->addAttribute(10,20);
+//         subattr1.setStr("sub1");
+//         Z_attribute &subattr2 = a->val.objval->addAttribute(11,21);
+//         subattr2.setStr("sub2");
+//       }
+//       zat_zcl_attribute(vm, a);
+//     }
+//     be_return(vm);
+//   }
 
 
   // Creates a zcl_attributes from Z_attribute_list
@@ -581,18 +651,18 @@ extern "C" {
     }
   }
 
-  int zigbee_test_msg(struct bvm *vm) {
-    Z_attribute_list attr_list;
+  // int zigbee_test_msg(struct bvm *vm) {
+  //   Z_attribute_list attr_list;
 
-    attr_list.lqi = 250;
-    Z_attribute &subattr1 = attr_list.addAttribute(10,20);
-    subattr1.setStr("sub1");
-    Z_attribute &subattr2 = attr_list.addAttribute(11,21);
-    subattr2.setStr("sub2");
+  //   attr_list.lqi = 250;
+  //   Z_attribute &subattr1 = attr_list.addAttribute(10,20);
+  //   subattr1.setStr("sub1");
+  //   Z_attribute &subattr2 = attr_list.addAttribute(11,21);
+  //   subattr2.setStr("sub2");
 
-    zat_zcl_attribute_list(vm, 100, &attr_list);
-    be_return(vm);
-  }
+  //   zat_zcl_attribute_list(vm, 100, &attr_list);
+  //   be_return(vm);
+  // }
 }
 
 #endif // USE_ZIGBEE

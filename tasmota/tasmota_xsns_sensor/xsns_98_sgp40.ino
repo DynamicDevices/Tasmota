@@ -104,8 +104,6 @@ const char HTTP_SNS_SGP40[] PROGMEM =
 const char HTTP_SNS_AHUM40[] PROGMEM = "{s}SGP40 Abs Humidity{m}%s g/m3{e}";
 #endif
 
-#define D_JSON_AHUM "aHumidity"
-
 void Sgp40Show(bool json)
 {
   if (sgp40_ready) {
@@ -122,7 +120,9 @@ void Sgp40Show(bool json)
       }
       ResponseJsonEnd();
 #ifdef USE_DOMOTICZ
-      if (0 == TasmotaGlobal.tele_period) DomoticzSensor(DZ_AIRQUALITY, raw_base);
+      if (0 == TasmotaGlobal.tele_period) {
+        DomoticzSensor(DZ_AIRQUALITY, voc_index);
+      }
 #endif  // USE_DOMOTICZ
 #ifdef USE_WEBSERVER
     } else {

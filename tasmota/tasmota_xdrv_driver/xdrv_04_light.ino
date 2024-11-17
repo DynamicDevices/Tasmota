@@ -29,11 +29,16 @@
  *  3          PWM3       RGB    no         (H801, MagicHome and Arilux LC01)
  *  4          PWM4       RGBW   no         (H801, MagicHome and Arilux)
  *  5          PWM5       RGBCW  yes        (H801, Arilux LC11)
- *  9          reserved          no
- * 10          reserved          yes
+ *  6          PWM6
+ *  7          PWM7
+ *  8          reserved
+ *  9          SERIAL1           no
+ * 10          SERIAL2           yes
  * 11          +WS2812    RGB    no         (One WS2812 RGB or RGBW ledstrip)
  * 12          AiLight    RGBW   no
  * 13          Sonoff B1  RGBCW  yes
+ * 14          reserved
+ * 15          reserved
  *
  * light_scheme  WS2812  3+ Colors  1+2 Colors  Effect
  * ------------  ------  ---------  ----------  -----------------
@@ -50,7 +55,8 @@
  * 10            yes     no         no          Kwanzaa
  * 11            yes     no         no          Rainbow
  * 12            yes     no         no          Fire
- *
+ * 13            yes     no         no          Stairs
+ * 14            yes     no         no          Clear (= Berry)
 \*********************************************************************************************/
 
 /*********************************************************************************************\
@@ -235,6 +241,7 @@ struct LIGHT {
   uint8_t fixed_color_index = 1;
   uint8_t pwm_offset = 0;                 // Offset in color buffer, used by sm16716 to drive itself RGB, and PWM for CCT (value is 0 or 3)
   uint8_t max_scheme = LS_MAX -1;
+  uint8_t last_scheme;
 
   uint32_t wakeup_start_time = 0;
 
@@ -245,7 +252,7 @@ struct LIGHT {
   bool     fade_initialized = false;      // dont't fade at startup
   bool     fade_running = false;
 #ifdef USE_DEVICE_GROUPS
-  uint8_t  last_scheme = 0;
+  uint8_t  last_dgr_scheme = 0;
   bool     devgrp_no_channels_out = false; // don't share channels with device group (e.g. if scheme set by other device)
 #ifdef USE_DGR_LIGHT_SEQUENCE
   uint8_t  sequence_offset = 0;            // number of channel changes this light is behind the master
@@ -1116,17 +1123,17 @@ bool LightModuleInit(void)
 #endif  // USE_PWM_DIMMER
 
   if (TasmotaGlobal.light_type > LT_BASIC) {
-    TasmotaGlobal.devices_present++;
+    UpdateDevicesPresent(1);
   }
 
   // post-process for lights
   uint32_t pwm_channels = (TasmotaGlobal.light_type & 7) > LST_MAX ? LST_MAX : (TasmotaGlobal.light_type & 7);
   if (Settings->flag3.pwm_multi_channels) {  // SetOption68 - Enable multi-channels PWM instead of Color PWM
     if (0 == pwm_channels) { pwm_channels = 1; }
-    TasmotaGlobal.devices_present += pwm_channels - 1;    // add the pwm channels controls at the end
+    UpdateDevicesPresent(pwm_channels - 1);  // add the pwm channels controls at the end
   } else if ((Settings->param[P_RGB_REMAP] & 128) && (LST_RGBW <= pwm_channels)) {  // SetOption37
     // if RGBW or RGBCW, and SetOption37 >= 128, we manage RGB and W separately, hence adding a device
-    TasmotaGlobal.devices_present++;
+    UpdateDevicesPresent(1);
   } else {
 #ifdef USE_LIGHT_VIRTUAL_CT
     initCTRange(pwm_channels);
@@ -1356,9 +1363,10 @@ void LightColorOffset(int32_t offset) {
   uint16_t hue;
   uint8_t sat;
   light_state.getHSB(&hue, &sat, nullptr);  // Allow user control over Saturation
-  hue += offset;
-  if (hue < 0) { hue += 359; }
-  if (hue > 359) { hue -= 359; }
+  int16_t hue_new = hue + offset;
+  if (hue_new < 0) { hue_new += 359; }
+  if (hue_new > 359) { hue_new -= 359; }
+  hue = hue_new;
   if (!Light.pwm_multi_channels) {
     light_state.setHS(hue, sat);
   } else {
@@ -1546,6 +1554,9 @@ void LightPreparePower(power_t channels = 0xFFFFFFFF) {    // 1 = only RGB, 2 = 
   #ifdef USE_DOMOTICZ
         DomoticzUpdatePowerState(Light.device + i);
   #endif  // USE_DOMOTICZ
+  #ifdef USE_KNX
+        KnxUpdateLight();
+  #endif
       }
     }
   } else {
@@ -1582,6 +1593,9 @@ void LightPreparePower(power_t channels = 0xFFFFFFFF) {    // 1 = only RGB, 2 = 
 #ifdef USE_DOMOTICZ
     DomoticzUpdatePowerState(Light.device);
 #endif  // USE_DOMOTICZ
+#ifdef USE_KNX
+    KnxUpdateLight();
+#endif
   }
 
   if (Settings->flag3.hass_tele_on_power) {  // SetOption59 - Send tele/%topic%/STATE in addition to stat/%topic%/RESULT
@@ -1774,9 +1788,10 @@ void LightAnimate(void)
   // make sure we update CT range in case SetOption82 was changed
   Light.strip_timer_counter++;
 
-  // set sleep parameter: either settings,
-  // or set a maximum of PWM_MAX_SLEEP if light is on or Fade is running
-  if (Light.power || Light.fade_running) {
+  // Set a maximum sleep of PWM_MAX_SLEEP if Fade is running, or if light is on and
+  // a frequently updating light scheme is in use. This is to allow smooth transitions
+  // between light levels and colors.
+  if ((Settings->light_scheme > LS_POWER && Light.power) || Light.fade_running) {
     if (TasmotaGlobal.sleep > PWM_MAX_SLEEP) {
       sleep_previous = TasmotaGlobal.sleep;     // save previous value of sleep
       TasmotaGlobal.sleep = PWM_MAX_SLEEP;      // set a maximum value (in milliseconds) to sleep to ensure that animations are smooth
@@ -1866,16 +1881,18 @@ void LightAnimate(void)
         break;
 #endif
       default:
-          XlgtCall(FUNC_SET_SCHEME);
+        XlgtCall(FUNC_SET_SCHEME);
     }
 
 #ifdef USE_DEVICE_GROUPS
-    if (Settings->light_scheme != Light.last_scheme) {
-      Light.last_scheme = Settings->light_scheme;
+    if (Settings->light_scheme != Light.last_dgr_scheme) {
+      Light.last_dgr_scheme = Settings->light_scheme;
       SendDeviceGroupMessage(Light.device, DGR_MSGTYP_UPDATE, DGR_ITEM_LIGHT_SCHEME, Settings->light_scheme);
       Light.devgrp_no_channels_out = false;
     }
 #endif  // USE_DEVICE_GROUPS
+
+    Light.last_scheme = Settings->light_scheme;
   }
 
   if ((Settings->light_scheme < LS_MAX) || power_off) {  // exclude WS281X Neopixel schemes
@@ -1907,19 +1924,12 @@ void LightAnimate(void)
         cur_col_10[i] = change8to10(Light.new_color[i]);
       }
 
-      bool rgbwwtable_applied_white = false;      // did we already applied RGBWWTable to white channels (ex: in white_blend_mode or virtual_ct)
       if (Light.pwm_multi_channels) {
         calcGammaMultiChannels(cur_col_10);
       } else {
         // AddLog(LOG_LEVEL_INFO, PSTR(">>> calcGammaBulbs In  %03X,%03X,%03X,%03X,%03X"), cur_col_10[0], cur_col_10[1], cur_col_10[2], cur_col_10[3], cur_col_10[4]);
-        rgbwwtable_applied_white = calcGammaBulbs(cur_col_10);     // true means that one PWM channel is used for CT
+        calcGammaBulbs(cur_col_10);
         // AddLog(LOG_LEVEL_INFO, PSTR(">>> calcGammaBulbs Out %03X,%03X,%03X,%03X,%03X"), cur_col_10[0], cur_col_10[1], cur_col_10[2], cur_col_10[3], cur_col_10[4]);
-      }
-
-      // Apply RGBWWTable only if not Settings->flag4.white_blend_mode
-      for (uint32_t i = 0; i < (rgbwwtable_applied_white ? 3 : Light.subtype); i++) {
-        uint32_t adjust = change8to10(Settings->rgbwwTable[i]);
-        cur_col_10[i] = changeUIntScale(cur_col_10[i], 0, 1023, 0, adjust);
       }
 
       // final adjusments for PMW ranges, post-gamma correction
@@ -2083,7 +2093,7 @@ bool LightApplyFade(void) {   // did the value chanegd and needs to be applied
       Light.fade_duration = LightGetSpeedSetting() * 500;
       Light.speed_once_enabled = false; // The once off speed value has been read, reset it
       if (!Settings->flag5.fade_fixed_duration) {
-        Light.fade_duration = (distance * Light.fade_duration) / 1023;    // time is proportional to distance, except with SO117
+        Light.fade_duration = (distance * Light.fade_duration) / 1023 + 1 /* make sure value is not zero */;    // time is proportional to distance, except with SO117
       }
       if (Settings->save_data) {
         // Also postpone the save_data for the duration of the Fade (in seconds)
@@ -2187,15 +2197,15 @@ void LightSetOutputs(const uint16_t *cur_col_10) {
         if (i != channel_ct) {   // if CT don't use pwm_min and pwm_max
           cur_col = cur_col > 0 ? changeUIntScale(cur_col, 0, Settings->pwm_range, Light.pwm_min, Light.pwm_max) : 0;   // shrink to the range of pwm_min..pwm_max
         }
-        if (!Settings->flag4.zerocross_dimmer) {
 #ifdef ESP32
-          TasmotaGlobal.pwm_value[i] = ac_zero_cross_power(cur_col);   // mark the new expected value
-          // AddLog(LOG_LEVEL_DEBUG_MORE, "analogWrite-%i 0x%03X", i, cur_col);
+        TasmotaGlobal.pwm_value[i] = cur_col;   // mark the new expected value
+        // AddLog(LOG_LEVEL_DEBUG_MORE, "analogWrite-%i 0x%03X", i, cur_col);
 #else // ESP32
-          analogWrite(Pin(GPIO_PWM1, i), bitRead(TasmotaGlobal.pwm_inverted, i) ? Settings->pwm_range - ac_zero_cross_power(cur_col) : ac_zero_cross_power(cur_col));
+        if (!Settings->flag4.zerocross_dimmer) {
+          AnalogWrite(Pin(GPIO_PWM1, i), bitRead(TasmotaGlobal.pwm_inverted, i) ? Settings->pwm_range - cur_col : cur_col);
           // AddLog(LOG_LEVEL_DEBUG_MORE, "analogWrite-%i 0x%03X", bitRead(TasmotaGlobal.pwm_inverted, i) ? Settings->pwm_range - cur_col : cur_col);
-#endif // ESP32
         }
+#endif // ESP32
       }
     }
 #ifdef ESP32
@@ -2318,9 +2328,8 @@ void calcGammaBulb5Channels_8(uint8_t in8[LST_MAX], uint16_t col10[LST_MAX]) {
   calcGammaBulb5Channels(col10, nullptr, nullptr);
 }
 
-bool calcGammaBulbs(uint16_t cur_col_10[5]) {
+void calcGammaBulbs(uint16_t cur_col_10[5]) {
   bool rgbwwtable_applied_white = false;
-  bool pwm_ct = false;
   bool white_free_cw = false;         // true if White channels are uncorrelated. Happens when CW+WW>255, i.e. manually setting white channels to exceed to total power of a single channel (may harm the power supply)
   // Various values needed for accurate White calculation
   // CT value streteched to 0..1023 (from within CT range, so not necessarily from 153 to 500). 0=Cold, 1023=Warm
@@ -2338,24 +2347,7 @@ bool calcGammaBulbs(uint16_t cur_col_10[5]) {
     calcGammaBulbCW(cur_col_10, &white_bri10, &white_free_cw);
   }
 
-  // Now we know ct_10 and white_bri10 (gamma corrected if needed)
-
-  if ((LST_COLDWARM == Light.subtype) || (LST_RGBCW == Light.subtype)) {
-#ifdef ESP8266
-    if ((PHILIPS == TasmotaGlobal.module_type) || (Settings->flag4.pwm_ct_mode)) {   // channel 1 is the color tone, mapped to cold channel (0..255)
-#else
-    if (Settings->flag4.pwm_ct_mode) {   // channel 1 is the color tone, mapped to cold channel (0..255)
-#endif  // ESP8266
-      pwm_ct = true;
-      // Xiaomi Philips bulbs follow a different scheme:
-      // channel 0=intensity, channel1=temperature
-      cur_col_10[cw0] = white_bri10;
-      cur_col_10[cw0+1] = ct_10;
-      return false;     // avoid any interference
-    }
-  }
-
-  // Now see if we need to mix RGB and  White
+  // Now see if we need to mix RGB and White
   // Valid only for LST_RGBW, LST_RGBCW, SetOption105 1, and white is zero (see doc)
   if ((LST_RGBW <= Light.subtype) && (Settings->flag4.white_blend_mode) && (0 == cur_col_10[3]+cur_col_10[4])) {
     uint32_t min_rgb_10 = min3(cur_col_10[0], cur_col_10[1], cur_col_10[2]);
@@ -2419,7 +2411,27 @@ bool calcGammaBulbs(uint16_t cur_col_10[5]) {
       cur_col_10[cw0] = white_bri10 - cur_col_10[cw0+1];
     }
   }
-  return rgbwwtable_applied_white;
+
+  // Apply RGBWWTable (RGB: always, CW: only if white_blend_mode is not engaged)
+  for (uint32_t i = 0; i < (rgbwwtable_applied_white ? 3 : Light.subtype); i++) {
+    uint32_t adjust = change8to10(Settings->rgbwwTable[i]);
+    cur_col_10[i] = changeUIntScale(cur_col_10[i], 0, 1023, 0, adjust);
+  }
+
+  // Implement SO92: Some lights like Xiaomi Philips bulbs follow the scheme
+  // cw0=intensity, cw0+1=temperature
+  if (ChannelCT() >= 0) {
+    // Need to compute white_bri10 and ct_10 from cur_col_10[] for compatibility with VirtualCT
+    white_bri10 = cur_col_10[cw0] + cur_col_10[cw0+1];
+    if (white_bri10 > 1023) {
+      // In white_free_cw mode, the combined brightness of cw and ww may be larger than 1023.
+      // This cannot be represented in pwm_ct_mode, so we set the maximum brightness instead.
+      white_bri10 = 1023;
+    }
+
+    cur_col_10[cw0] = white_bri10;
+    cur_col_10[cw0+1] = ct_10;
+  }
 }
 
 #ifdef USE_DEVICE_GROUPS
@@ -2487,7 +2499,7 @@ void LightHandleDevGroupItem(void)
       break;
     case DGR_ITEM_LIGHT_SCHEME:
       if (Settings->light_scheme != value) {
-        Light.last_scheme = Settings->light_scheme = value;
+        Light.last_dgr_scheme = Settings->light_scheme = value;
         Light.devgrp_no_channels_out = (value != 0);
         send_state = true;
       }
@@ -2860,7 +2872,7 @@ void CmndHsbColor(void)
 
 void CmndScheme(void)
 {
-  // Scheme 0..12  - Select one of schemes 0 to 12
+  // Scheme 0..14  - Select one of schemes 0 to 14
   // Scheme 2      - Select scheme 2
   // Scheme 2,0    - Select scheme 2 with color wheel set to 0 (HSB Red)
   // Scheme +      - Select next scheme
@@ -3278,6 +3290,7 @@ void CmndVirtualCT(void)
     }
   }
   checkVirtualCT();
+  Light.update = true;
 
   Response_P(PSTR("{\"%s\":{"), XdrvMailbox.command);
   uint32_t pivot_len = CT_PIVOTS;
@@ -3457,17 +3470,20 @@ bool Xdrv04(uint32_t function)
         LightInit();
         break;
 #ifdef USE_LIGHT_ARTNET
-    case FUNC_JSON_APPEND:
-      ArtNetJSONAppend();
-      break;
-    case FUNC_NETWORK_UP:
-      ArtNetFuncNetworkUp();
-      break;
-    case FUNC_NETWORK_DOWN:
-      ArtNetFuncNetworkDown();
-      break;
+      case FUNC_JSON_APPEND:
+        ArtNetJSONAppend();
+        break;
+      case FUNC_NETWORK_UP:
+        ArtNetFuncNetworkUp();
+        break;
+      case FUNC_NETWORK_DOWN:
+        ArtNetFuncNetworkDown();
+        break;
 #endif // USE_LIGHT_ARTNET
-    }
+      case FUNC_ACTIVE:
+        result = true;
+        break;
+   }
   }
   return result;
 }

@@ -418,7 +418,7 @@ const char HueConfigResponse_JSON[] PROGMEM = "\x3D\xA7\xB3\xAC\x6B\x3D\x87\x99\
 String GetHueDeviceId(uint16_t id, uint8_t ep = 0)
 {
   char s[32];
-  String deviceid = WiFi.macAddress();
+  String deviceid = WiFiHelper::macAddress();
   deviceid.toLowerCase();
   if (0x11 == ep) { ep = 0xFE; }    // avoid collision with 0x11 which is used as default for `0`
   if (0 == ep) { ep = 0x11; }   // if ep is zero, revert to original value
@@ -454,7 +454,7 @@ void HueNotImplemented(String *path)
 void HueConfigResponse(String *response)
 {
   *response += Decompress(HueConfigResponse_JSON, HueConfigResponse_JSON_SIZE);
-  response->replace(F("{ma"), WiFi.macAddress());
+  response->replace(F("{ma"), WiFiHelper::macAddress());
   response->replace(F("{ip"), WiFi.localIP().toString());
   response->replace(F("{ms"), WiFi.subnetMask().toString());
   response->replace(F("{gw"), WiFi.gatewayIP().toString());
@@ -763,7 +763,7 @@ void HueLightsCommand(uint8_t device, uint32_t device_id, String &response) {
   if (Webserver->args()) {
     response = "[";
 
-#ifdef ESP82666   // ESP8266 memory is limited, avoid copying and modify in place
+#ifdef ESP8266   // ESP8266 memory is limited, avoid copying and modify in place
     JsonParser parser((char*) Webserver->arg((Webserver->args())-1).c_str());
 #else             // does not work on ESP32, we need to get a fresh copy of the string
     String request_arg = Webserver->arg((Webserver->args())-1);
@@ -1167,6 +1167,9 @@ bool Xdrv20(uint32_t function)
         break;
       case FUNC_NETWORK_DOWN:
         UdpDisconnect();
+        break;
+      case FUNC_ACTIVE:
+        result = true;
         break;
     }
   }

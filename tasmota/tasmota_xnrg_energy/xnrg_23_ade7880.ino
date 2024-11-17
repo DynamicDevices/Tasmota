@@ -44,20 +44,48 @@
 #define ADE7880_WATCHDOG        5            // Allow x seconds of missed interrupts before reinit
 
 // Default calibration parameters can be overridden by a rule as documented above.
+#ifndef ADE7880_FREQ_INIT
 #define ADE7880_FREQ_INIT       0            // Connected to networks with fundamental frequencies between 55 Hz and 66 Hz (1). Default 45 Hz to 55 Hz (0).
+#endif
+#ifndef ADE7880_AIGAIN_INIT
 #define ADE7880_AIGAIN_INIT     3166385      // rms, current_a
+#endif
+#ifndef ADE7880_BIGAIN_INIT
 #define ADE7880_BIGAIN_INIT     3125691      // rms, current_b
+#endif
+#ifndef ADE7880_CIGAIN_INIT
 #define ADE7880_CIGAIN_INIT     3131983      // rms, current_c
+#endif
+#ifndef ADE7880_NIGAIN_INIT
 #define ADE7880_NIGAIN_INIT     1756557      // rms, current_s !!
+#endif
+#ifndef ADE7880_AVGAIN_INIT
 #define ADE7880_AVGAIN_INIT     -767262      // rms, voltage_a
+#endif
+#ifndef ADE7880_BVGAIN_INIT
 #define ADE7880_BVGAIN_INIT     -763439      // rms, voltage_b
+#endif
+#ifndef ADE7880_CVGAIN_INIT
 #define ADE7880_CVGAIN_INIT     -749854      // rms, voltage_c
+#endif
+#ifndef ADE7880_APHCAL_INIT
 #define ADE7880_APHCAL_INIT     180          // angles, angle0
+#endif
+#ifndef ADE7880_BPHCAL_INIT
 #define ADE7880_BPHCAL_INIT     176          // angles, angle1
+#endif
+#ifndef ADE7880_CPHCAL_INIT
 #define ADE7880_CPHCAL_INIT     176          // angles, angle2
+#endif
+#ifndef ADE7880_APGAIN_INIT
 #define ADE7880_APGAIN_INIT     -1345820     // powers, totactive, a
+#endif
+#ifndef ADE7880_BPGAIN_INIT
 #define ADE7880_BPGAIN_INIT     -1347328     // powers, totactive, b
+#endif
+#ifndef ADE7880_CPGAIN_INIT
 #define ADE7880_CPGAIN_INIT     -1351979     // powers, totactive, c
+#endif
 
 enum Ade7880DspRegisters {
   // Register Name                    Addres  R/W  Bt  CommBln  Ty  Default     Description
@@ -444,13 +472,17 @@ bool Ade7880SetCalibrate(void) {
     uint32_t start = millis();
 #endif  // ADE7880_PROFILING
 
-  int reset = Pin(GPIO_RESET);
-  if (-1 == reset) { reset = 16; }                                         // Reset pin ADE7880 in Shelly 3EM
-  pinMode(reset, OUTPUT);
-  digitalWrite(reset, 0);
-  delay(1);
-  digitalWrite(reset, 1);
-  pinMode(reset, INPUT);
+  int pin_reset = Pin(GPIO_RESET);
+#ifdef ESP8266
+  if (-1 == pin_reset) { pin_reset = 16; }                                 // Reset pin ADE7880 in Shelly 3EM
+#endif
+  if (pin_reset >= 0) {
+    pinMode(pin_reset, OUTPUT);
+    digitalWrite(pin_reset, 0);
+    delay(1);
+    digitalWrite(pin_reset, 1);
+    pinMode(pin_reset, INPUT);
+  }
 
   Ade7880.cycle_count = 2;                                                 // Skip first two cycles
 
@@ -541,7 +573,7 @@ void Ade7880Service0(void) {
   Ade7880.irq0_state = 0;
 }
 
-void IRAM_ATTR Ade7880Isr0(void) {
+static void IRAM_ATTR Ade7880Isr0(void) {
   // Poll sequence
   if (!Ade7880.irq0_state) {
     Ade7880.irq0_state = 1;
@@ -737,19 +769,12 @@ bool Ade7880Command(void) {
 \*********************************************************************************************/
 
 #ifdef ADE7880_MORE_REGS
-#ifdef USE_WEBSERVER
-const char HTTP_ADE7880_CURRENT[] PROGMEM = "{s}" D_CURRENT_NEUTRAL "{m}%s " D_UNIT_AMPERE "{e}";
-#endif  // USE_WEBSERVER
-
 void Ade7880Show(bool json) {
-  char value_chr[GUISZ];
-
   if (json) {
-    ResponseAppend_P(PSTR(",\"" D_JSON_CURRENT_NEUTRAL "\":%s"),
-      EnergyFormat(value_chr, &Ade7880.neutral_current, Settings->flag2.current_resolution, 1));
+    ResponseAppend_P(PSTR(",\"" D_JSON_CURRENT_NEUTRAL "\":%s"), EnergyFmt(&Ade7880.neutral_current, Settings->flag2.current_resolution, 1));
 #ifdef USE_WEBSERVER
   } else {
-    WSContentSend_PD(HTTP_ADE7880_CURRENT, WebEnergyFormat(value_chr, &Ade7880.neutral_current, Settings->flag2.current_resolution, 1));
+    WSContentSend_PD(HTTP_SNS_CURRENT_N, WebEnergyFmt(&Ade7880.neutral_current, Settings->flag2.current_resolution, 1));
 #endif  // USE_WEBSERVER
   }
 }
@@ -776,11 +801,7 @@ bool Xnrg23(uint32_t function) {
       Ade7880Show(1);
       break;
 #ifdef USE_WEBSERVER
-#ifdef USE_ENERGY_COLUMN_GUI
     case FUNC_WEB_COL_SENSOR:
-#else   // not USE_ENERGY_COLUMN_GUI
-    case FUNC_WEB_SENSOR:
-#endif  // USE_ENERGY_COLUMN_GUI
       Ade7880Show(0);
       break;
 #endif  // USE_WEBSERVER

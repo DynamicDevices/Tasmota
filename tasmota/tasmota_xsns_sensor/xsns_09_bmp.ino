@@ -48,7 +48,7 @@
 
 #define BMP_CMND_RESET       0xB6  // I2C Parameter for RESET to put BMP into reset state
 
-#ifdef ESP32
+#ifdef USE_I2C_BUS2
   #define BMP_MAX_SENSORS    4     // 2 busses
 #else
   #define BMP_MAX_SENSORS    2
@@ -73,7 +73,9 @@ typedef struct {
 
 uint8_t bmp_addresses[] = { BMP_ADDR1, BMP_ADDR2 };
 uint8_t bmp_count = 0;
-uint8_t bmp_once = 1;
+#ifdef USE_DEEPSLEEP
+uint8_t bmp_deepsleep = 0;  // Prevent updating measurments once BMP has been put to sleep (just before ESP enters deepsleep)
+#endif
 
 bmp_sensors_t *bmp_sensors = nullptr;
 
@@ -478,12 +480,10 @@ void Bme680Read(uint8_t bmp_idx) {
 /********************************************************************************************/
 
 void BmpDetect(void) {
-  int bmp_sensor_size = BMP_MAX_SENSORS * sizeof(bmp_sensors_t);
   if (!bmp_sensors) {
-    bmp_sensors = (bmp_sensors_t*)malloc(bmp_sensor_size);
+    bmp_sensors = (bmp_sensors_t*)calloc(BMP_MAX_SENSORS, sizeof(bmp_sensors_t));
   }
   if (!bmp_sensors) { return; }
-  memset(bmp_sensors, 0, bmp_sensor_size);  // Init defaults to 0
 
   for (uint32_t i = 0; i < BMP_MAX_SENSORS; i++) {
     uint8_t bus = i >>1;
@@ -523,6 +523,10 @@ void BmpDetect(void) {
 }
 
 void BmpRead(void) {
+#ifdef USE_DEEPSLEEP
+  // Prevent updating measurments once BMP has been put to sleep (just before ESP enters deepsleep)
+  if (bmp_deepsleep) return;
+#endif
   for (uint32_t bmp_idx = 0; bmp_idx < bmp_count; bmp_idx++) {
     switch (bmp_sensors[bmp_idx].bmp_type) {
       case BMP180_CHIPID:
@@ -554,7 +558,7 @@ void BmpShow(bool json) {
       if (bmp_count > 1) {
         // BMP280-77
         snprintf_P(name, sizeof(name), PSTR("%s%c%02X"), name, IndexSeparator(), bmp_sensors[bmp_idx].bmp_address);
-#ifdef ESP32
+#ifdef USE_I2C_BUS2
         if (TasmotaGlobal.i2c_enabled_2) {           // Second bus enabled
           uint8_t bus = bmp_sensors[0].bmp_bus;
           for (uint32_t i = 1; i < bmp_count; i++) {
@@ -565,7 +569,7 @@ void BmpShow(bool json) {
             }
           }
         }
-#endif
+#endif  // USE_I2C_BUS2
       }
 
       char pressure[33];
@@ -579,14 +583,23 @@ void BmpShow(bool json) {
       float f_dewpoint = CalcTempHumToDew(bmp_temperature, bmp_humidity);
       char dewpoint[33];
       dtostrfd(f_dewpoint, Settings->flag2.temperature_resolution, dewpoint);
+#ifdef USE_HEAT_INDEX
+      float f_heatindex = CalcTemHumToHeatIndex(bmp_temperature, bmp_humidity);
+      char heatindex[33];
+      dtostrfd(f_heatindex, Settings->flag2.temperature_resolution, heatindex);
+#endif  // USE_HEAT_INDEX
 #ifdef USE_BME68X
       char gas_resistance[33];
       dtostrfd(bmp_sensors[bmp_idx].bmp_gas_resistance, 2, gas_resistance);
 #endif  // USE_BME68X
 
       if (json) {
-        char json_humidity[80];
+        char json_humidity[100];
+#ifdef USE_HEAT_INDEX
+        snprintf_P(json_humidity, sizeof(json_humidity), PSTR(",\"" D_JSON_HUMIDITY "\":%s,\"" D_JSON_DEWPOINT "\":%s,\"" D_JSON_HEATINDEX "\":%s"), humidity, dewpoint, heatindex);
+#else
         snprintf_P(json_humidity, sizeof(json_humidity), PSTR(",\"" D_JSON_HUMIDITY "\":%s,\"" D_JSON_DEWPOINT "\":%s"), humidity, dewpoint);
+#endif  // USE_HEAT_INDEX
         char json_sealevel[40];
         snprintf_P(json_sealevel, sizeof(json_sealevel), PSTR(",\"" D_JSON_PRESSUREATSEALEVEL "\":%s"), sea_pressure);
 #ifdef USE_BME68X
@@ -627,6 +640,9 @@ void BmpShow(bool json) {
         if (bmp_sensors[bmp_idx].bmp_model >= 2) {
           WSContentSend_PD(HTTP_SNS_HUM, name, humidity);
           WSContentSend_PD(HTTP_SNS_DEW, name, dewpoint, TempUnit());
+#ifdef USE_HEAT_INDEX
+          WSContentSend_PD(HTTP_SNS_HEATINDEX, name, heatindex, TempUnit());
+#endif  // USE_HEAT_INDEX
         }
         WSContentSend_PD(HTTP_SNS_PRESSURE, name, pressure, PressureUnit().c_str());
         if (Settings->altitude != 0) {
@@ -692,6 +708,7 @@ bool Xsns09(uint32_t function) {
 #ifdef USE_DEEPSLEEP
       case FUNC_SAVE_BEFORE_RESTART:
         BMP_EnterSleep();
+        bmp_deepsleep = 1;
         break;
 #endif // USE_DEEPSLEEP
     }

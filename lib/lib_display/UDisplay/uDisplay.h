@@ -6,16 +6,35 @@
 #include <Wire.h>
 #include <SPI.h>
 
-
 #ifdef ESP32
 #ifdef CONFIG_IDF_TARGET_ESP32S3
 #define USE_ESP32_S3
 #endif
+#include "driver/spi_master.h"
+#if ESP_IDF_VERSION_MAJOR >= 5
+#include "soc/gpio_periph.h"
+#include <rom/gpio.h>
+#endif // ESP_IDF_VERSION_MAJOR >= 5
 #endif
 
-#ifdef ESP32
-#include "driver/spi_master.h"
-#endif
+enum {
+  UT_RD,UT_RDM,UT_CP,UT_RTF,UT_MV,UT_MVB,UT_RT,UT_RTT,UT_RDW,UT_RDWM,UT_WR,UT_WRW,UT_CPR,UT_AND,UT_SCALE,UT_LIM,UT_DBG,UT_GSRT,UT_XPT,UT_CPM,UT_END
+};
+
+#define RA8876_DATA_WRITE  0x80
+#define RA8876_DATA_READ   0xC0
+#define RA8876_CMD_WRITE   0x00
+#define RA8876_STATUS_READ 0x40
+
+#define UDSP_WRITE_16 0xf0
+#define UDSP_READ_DATA 0xf1
+#define UDSP_READ_STATUS 0xf2
+
+
+#define SIMPLERS_XP par_dbl[1]
+#define SIMPLERS_XM par_cs
+#define SIMPLERS_YP par_rs
+#define SIMPLERS_YM par_dbl[0]
 
 #ifdef USE_ESP32_S3
 #include <esp_lcd_panel_io.h>
@@ -37,6 +56,9 @@ static inline void gpio_lo(int_fast8_t pin) { if (pin >= 0) *get_gpio_lo_reg(pin
 #include "esp_lcd_panel_ops.h"
 #include <hal/dma_types.h>
 #include <rom/cache.h>
+#if ESP_IDF_VERSION_MAJOR >= 5
+#include "esp_rom_lldesc.h"
+#endif // ESP_IDF_VERSION_MAJOR >= 5
 #endif // USE_ESP32_S3
 
 #define _UDSP_I2C 1
@@ -89,13 +111,18 @@ enum uColorType { uCOLOR_BW, uCOLOR_COLOR };
 #undef GPIO_CLR
 #undef GPIO_SET_SLOW
 #undef GPIO_CLR_SLOW
-#if CONFIG_IDF_TARGET_ESP32C3
+
+#if CONFIG_IDF_TARGET_ESP32C2 || CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32C6
 #define GPIO_CLR(A) GPIO.out_w1tc.val = (1 << A)
 #define GPIO_SET(A) GPIO.out_w1ts.val = (1 << A)
 #else // plain ESP32
 #define GPIO_CLR(A) GPIO.out_w1tc = (1 << A)
 #define GPIO_SET(A) GPIO.out_w1ts = (1 << A)
 #endif
+
+
+
+
 #define GPIO_CLR_SLOW(A) digitalWrite(A, LOW)
 #define GPIO_SET_SLOW(A) digitalWrite(A, HIGH)
 
@@ -110,7 +137,7 @@ enum uColorType { uCOLOR_BW, uCOLOR_COLOR };
 #define SPI_DC_HIGH if (spi_dc >= 0) GPIO_SET_SLOW(spi_dc);
 
 
-#ifdef USE_ESP32_S3
+#if defined(USE_ESP32_S3) && ESP_IDF_VERSION_MAJOR < 5
 struct esp_lcd_i80_bus_t {
     int bus_id;            // Bus ID, index from 0
     portMUX_TYPE spinlock; // spinlock used to protect i80 bus members(hal, device_list, cur_trans)
@@ -143,7 +170,9 @@ struct esp_rgb_panel_t
   size_t resolution_hz;                                        // Peripheral clock resolution
   esp_lcd_rgb_timing_t timings;                                // RGB timing parameters (e.g. pclk, sync pulse, porch width)
   gdma_channel_handle_t dma_chan;                              // DMA channel handle
+#if ESP_IDF_VERSION_MAJOR < 5
   esp_lcd_rgb_panel_frame_trans_done_cb_t on_frame_trans_done; // Callback, invoked after frame trans done
+#endif // ESP_IDF_VERSION_MAJOR < 5
   void *user_ctx;                                              // Reserved user's data of callback functions
   int x_gap;                                                   // Extra gap in x coordinate, it's used when calculate the flush window
   int y_gap;                                                   // Extra gap in y coordinate, it's used when calculate the flush window
@@ -155,8 +184,7 @@ struct esp_rgb_panel_t
   } flags;
   dma_descriptor_t dma_nodes[]; // DMA descriptor pool of size `num_dma_nodes`
 };
-
-#endif
+#endif //USE_ESP32_S3 && ESP_IDF_VERSION_MAJOR < 5
 
 
 class uDisplay : public Renderer {
@@ -183,6 +211,13 @@ class uDisplay : public Renderer {
   void invertDisplay(boolean i);
   void SetPwrCB(pwr_cb cb) { pwr_cbp = cb; };
   void SetDimCB(dim_cb cb) { dim_cbp = cb; };
+#ifdef USE_UNIVERSAL_TOUCH
+// universal touch driver
+  bool utouch_Init(char **name);
+  uint16_t touched(void);
+  int16_t getPoint_x();
+  int16_t getPoint_y();
+#endif // USE_UNIVERSAL_TOUCH
 
  private:
    void beginTransaction(SPISettings s);
@@ -206,6 +241,9 @@ class uDisplay : public Renderer {
    void write16(uint16_t val);
    void write32(uint32_t val);
    void spi_data9(uint8_t d, uint8_t dc);
+   uint8_t readData(void);
+   uint8_t readStatus(void);
+   uint8_t writeReg16(uint8_t reg, uint16_t wval);
    void WriteColor(uint16_t color);
    void SetLut(const unsigned char* lut);
    void SetLuts(void);
@@ -238,6 +276,7 @@ class uDisplay : public Renderer {
    uint8_t interface;
    uint8_t i2caddr;
    int8_t i2c_scl;
+   int8_t spec_init;
    TwoWire *wire;
    int8_t wire_n;
    int8_t i2c_sda;
@@ -326,6 +365,8 @@ class uDisplay : public Renderer {
    void delay_arg(uint32_t arg);
    void Send_EP_Data(void);
    void send_spi_cmds(uint16_t cmd_offset, uint16_t cmd_size);
+   void send_spi_icmds(uint16_t cmd_size);
+   
 
 #ifdef USE_ESP32_S3
    int8_t par_cs;
@@ -352,8 +393,10 @@ class uDisplay : public Renderer {
    uint16_t pclk_active_neg;
 
    esp_lcd_panel_handle_t _panel_handle = NULL;
+#if ESP_IDF_VERSION_MAJOR < 5
    esp_rgb_panel_t *_rgb_panel;
-   uint16_t *rgb_fb;
+#endif //ESP_IDF_VERSION_MAJOR < 5
+   
 
 
    esp_lcd_i80_bus_handle_t _i80_bus = nullptr;
@@ -400,6 +443,33 @@ class uDisplay : public Renderer {
    void pushPixelsDMA(uint16_t* image, uint32_t len);
    void pushPixels3DMA(uint8_t* image, uint32_t len);
 #endif // ESP32
+
+#ifdef USE_UNIVERSAL_TOUCH
+// universal touch driver
+  void ut_trans(char **sp, uint8_t **ut_code);
+  int16_t ut_execute(uint8_t *ut_code);
+  uint32_t ut_par(char **cp, uint32_t mode);
+  uint8_t *ut_rd(uint8_t *io, uint32_t len, uint32_t amode);
+  uint8_t *ut_wr(uint8_t *io, uint32_t amode);
+  uint16_t ut_XPT2046(uint16_t zh);
+  int16_t besttwoavg( int16_t x , int16_t y , int16_t z );
+
+  uint8_t ut_array[16];
+  uint8_t ut_i2caddr;
+  uint8_t ut_spi_cs = -1;
+  int8_t ut_reset = -1;
+  int8_t ut_irq = -1;
+  uint8_t ut_spi_nr;
+  TwoWire *ut_wire = nullptr;;
+  SPIClass *ut_spi = nullptr;;
+  SPISettings ut_spiSettings;
+  char ut_name[8];
+  uint8_t *ut_init_code = nullptr;
+  uint8_t *ut_touch_code = nullptr;
+  uint8_t *ut_getx_code = nullptr;
+  uint8_t *ut_gety_code = nullptr;
+
+#endif // USE_UNIVERSAL_TOUCH
 };
 
 

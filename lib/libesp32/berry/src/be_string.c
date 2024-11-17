@@ -27,6 +27,17 @@
         .s = _s                                                    \
     }
 
+#define be_define_const_str_long(_name, _s, _len)                  \
+    BERRY_LOCAL const bclstring be_const_str_##_name = {           \
+        .next = (bgcobject *)NULL,                                 \
+        .type = BE_STRING,                                         \
+        .marked = GC_CONST,                                        \
+        .extra = 0,                                                \
+        .slen = 255,                                               \
+        .llen = _len,                                              \
+        .s = _s                                                    \
+    }
+
 /* const string table */
 struct bconststrtab {
     const bstring* const *table;
@@ -167,6 +178,12 @@ static bstring* find_conststr(const char *str, size_t len)
     uint32_t hash = str_hash(str, len);
     bcstring *s = (bcstring*)tab->table[hash % tab->size];
     for (; s != NULL; s = next(s)) {
+        if (len == 0 && s->slen == 0) {
+            /* special case for the empty string,
+               since we don't want to compare it using strncmp, 
+               because str might be NULL */
+            return (bstring*)s;
+        }
         if (len == s->slen && !strncmp(str, s->s, len)) {
             return (bstring*)s;
         }
@@ -189,6 +206,9 @@ static bstring* newshortstr(bvm *vm, const char *str, size_t len)
     }
     s = createstrobj(vm, len, 0);
     if (s) {
+        /* recompute size and list that may have changed due to a GC */
+        size = vm->strtab.size;
+        list = vm->strtab.table + (hash & (size - 1));
         memcpy(cast(char *, sstr(s)), str, len);
         s->extra = 0;
         s->next = cast(void*, *list);
@@ -259,14 +279,18 @@ void be_gcstrtab(bvm *vm)
             }
         }
     }
-    if (tab->count < size >> 2 && size > 8) {
-        resize(vm, size >> 1);
+    if (BE_USE_DEBUG_GC || comp_is_gc_debug(vm)) {
+        resize(vm, tab->count + 4);
+    } else {
+        if (tab->count < size >> 2 && size > 8) {
+            resize(vm, size >> 1);
+        }
     }
 }
 
 uint32_t be_strhash(const bstring *s)
 {
-    if (gc_isconst(s)) {
+    if (gc_isconst(s) && (s->slen != 255)) {
         bcstring* cs = cast(bcstring*, s);
         if (cs->hash) {  /* if hash is null we need to compute it */
             return cs->hash;
@@ -285,11 +309,11 @@ uint32_t be_strhash(const bstring *s)
 const char* be_str2cstr(const bstring *s)
 {
     be_assert(cast_str(s) != NULL);
-    if (gc_isconst(s)) {
-        return cstr(s);
-    }
     if (s->slen == 255) {
         return lstr(s);
+    }
+    if (gc_isconst(s)) {
+        return cstr(s);
     }
     return sstr(s);
 }
