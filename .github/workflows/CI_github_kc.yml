@@ -47,11 +47,11 @@ jobs:
     - name: Store artifacts
       uses: actions/upload-artifact@v3.1.2
       with:
-        name: firmware-${{ github.sha }}
+        name: firmware-minimal-${{ github.sha }}
         path: ./build_output/firmware
     - name: Deploy Development (if 'kettlecompanion' branch)
       if: ${{ github.ref == 'refs/heads/kettlecompanion' }}
-      uses: JamesIves/github-pages-deploy-action@v4.4.1
+      uses: JamesIves/github-pages-deploy-action@v4.6.9
       with:
         branch: gh-pages # The branch the action should deploy to.
         folder: build_output/firmware  # The folder the action should deploy.
@@ -59,7 +59,7 @@ jobs:
         clean: false
     - name: Deploy Production (if 'kettlecompanion-prod' branch)
       if: ${{ github.ref == 'refs/heads/kettlecompanion-prod' }}
-      uses: JamesIves/github-pages-deploy-action@v4.4.1
+      uses: JamesIves/github-pages-deploy-action@v4.6.9
       with:
         branch: gh-pages # The branch the action should deploy to.
         folder: build_output/firmware  # The folder the action should deploy.
@@ -99,11 +99,11 @@ jobs:
     - name: Store artifacts
       uses: actions/upload-artifact@v3.1.2
       with:
-        name: firmware-${{ github.sha }}
+        name: firmware-kettle-minimal-${{ github.sha }}
         path: ./build_output/firmware
     - name: Deploy Development (if 'kettlecompanion' branch)
       if: ${{ github.ref == 'refs/heads/kettlecompanion' }}
-      uses: JamesIves/github-pages-deploy-action@v4.4.1
+      uses: JamesIves/github-pages-deploy-action@v4.6.9
       with:
         branch: gh-pages # The branch the action should deploy to.
         folder: build_output/firmware  # The folder the action should deploy.
@@ -111,7 +111,7 @@ jobs:
         clean: false
     - name: Deploy Production (if 'kettlecompanion-prod' branch)
       if: ${{ github.ref == 'refs/heads/kettlecompanion-prod' }}
-      uses: JamesIves/github-pages-deploy-action@v4.4.1
+      uses: JamesIves/github-pages-deploy-action@v4.6.9
       with:
         branch: gh-pages # The branch the action should deploy to.
         folder: build_output/firmware  # The folder the action should deploy.
@@ -151,11 +151,11 @@ jobs:
     - name: Store artifacts
       uses: actions/upload-artifact@v3.1.2
       with:
-        name: firmware-${{ github.sha }}
+        name: firmware-minimal-trampoline${{ github.sha }}
         path: ./build_output/firmware
     - name: Deploy Development (if 'kettlecompanion' branch)
       if: ${{ github.ref == 'refs/heads/kettlecompanion' }}
-      uses: JamesIves/github-pages-deploy-action@v4.4.1
+      uses: JamesIves/github-pages-deploy-action@v4.6.9
       with:
         branch: gh-pages # The branch the action should deploy to.
         folder: build_output/firmware  # The folder the action should deploy.
@@ -163,7 +163,7 @@ jobs:
         clean: false
     - name: Deploy Production (if 'kettlecompanion-prod' branch)
       if: ${{ github.ref == 'refs/heads/kettlecompanion-prod' }}
-      uses: JamesIves/github-pages-deploy-action@v4.4.1
+      uses: JamesIves/github-pages-deploy-action@v4.6.9
       with:
         branch: gh-pages # The branch the action should deploy to.
         folder: build_output/firmware  # The folder the action should deploy.
@@ -203,11 +203,11 @@ jobs:
     - name: Store artifacts
       uses: actions/upload-artifact@v3.1.2
       with:
-        name: firmware-${{ github.sha }}
+        name: firmware-kettle-minimal-trampoline-${{ github.sha }}
         path: ./build_output/firmware
     - name: Deploy Development (if 'kettlecompanion' branch)
       if: ${{ github.ref == 'refs/heads/kettlecompanion' }}
-      uses: JamesIves/github-pages-deploy-action@v4.4.1
+      uses: JamesIves/github-pages-deploy-action@v4.6.9
       with:
         branch: gh-pages # The branch the action should deploy to.
         folder: build_output/firmware  # The folder the action should deploy.
@@ -215,7 +215,7 @@ jobs:
         clean: false
     - name: Deploy Production (if 'kettlecompanion-prod' branch)
       if: ${{ github.ref == 'refs/heads/kettlecompanion-prod' }}
-      uses: JamesIves/github-pages-deploy-action@v4.4.1
+      uses: JamesIves/github-pages-deploy-action@v4.6.9
       with:
         branch: gh-pages # The branch the action should deploy to.
         folder: build_output/firmware  # The folder the action should deploy.
@@ -256,11 +256,11 @@ jobs:
     - name: Store artifacts
       uses: actions/upload-artifact@v3.1.2
       with:
-        name: firmware-${{ github.sha }}
+        name: firmware-lite-${{ github.sha }}
         path: ./build_output/firmware
     - name: Deploy Development (if 'kettlecompanion' branch)
       if: ${{ github.ref == 'refs/heads/kettlecompanion' }}
-      uses: JamesIves/github-pages-deploy-action@v4.4.1
+      uses: JamesIves/github-pages-deploy-action@v4.6.9
       with:
         branch: gh-pages # The branch the action should deploy to.
         folder: build_output/firmware  # The folder the action should deploy.
@@ -268,7 +268,7 @@ jobs:
         clean: false
     - name: Deploy Production (if 'kettlecompanion-prod' branch)
       if: ${{ github.ref == 'refs/heads/kettlecompanion-prod' }}
-      uses: JamesIves/github-pages-deploy-action@v4.4.1
+      uses: JamesIves/github-pages-deploy-action@v4.6.9
       with:
         branch: gh-pages # The branch the action should deploy to.
         folder: build_output/firmware  # The folder the action should deploy.
@@ -308,11 +308,11 @@ jobs:
     - name: Store artifacts
       uses: actions/upload-artifact@v3.1.2
       with:
-        name: firmware-${{ github.sha }}
+        name: firmware-lite-trampoline${{ github.sha }}
         path: ./build_output/firmware
     - name: Deploy Development (if 'kettlecompanion' branch)
       if: ${{ github.ref == 'refs/heads/kettlecompanion' }}
-      uses: JamesIves/github-pages-deploy-action@v4.4.1
+      uses: JamesIves/github-pages-deploy-action@v4.6.9
       with:
         branch: gh-pages # The branch the action should deploy to.
         folder: build_output/firmware  # The folder the action should deploy.
@@ -320,7 +320,7 @@ jobs:
         clean: false
     - name: Deploy Production (if 'kettlecompanion-prod' branch)
       if: ${{ github.ref == 'refs/heads/kettlecompanion-prod' }}
-      uses: JamesIves/github-pages-deploy-action@v4.4.1
+      uses: JamesIves/github-pages-deploy-action@v4.6.9
       with:
         branch: gh-pages # The branch the action should deploy to.
         folder: build_output/firmware  # The folder the action should deploy.
@@ -365,7 +365,7 @@ jobs:
         path: ./build_output/firmware
     - name: Deploy Development (if 'kettlecompanion' branch)
       if: ${{ github.ref == 'refs/heads/kettlecompanion' }}
-      uses: JamesIves/github-pages-deploy-action@v4.4.1
+      uses: JamesIves/github-pages-deploy-action@v4.6.9
       with:
         branch: gh-pages # The branch the action should deploy to.
         folder: build_output/firmware  # The folder the action should deploy.
@@ -373,7 +373,7 @@ jobs:
         clean: false
     - name: Deploy Production (if 'kettlecompanion-prod' branch)
       if: ${{ github.ref == 'refs/heads/kettlecompanion-prod' }}
-      uses: JamesIves/github-pages-deploy-action@v4.4.1
+      uses: JamesIves/github-pages-deploy-action@v4.6.9
       with:
         branch: gh-pages # The branch the action should deploy to.
         folder: build_output/firmware  # The folder the action should deploy.
@@ -414,11 +414,11 @@ jobs:
     - name: Store artifacts
       uses: actions/upload-artifact@v3.1.2
       with:
-        name: firmware-${{ github.sha }}
+        name: firmware-kettle-${{ github.sha }}
         path: ./build_output/firmware
     - name: Deploy Development (if 'kettlecompanion' branch)
       if: ${{ github.ref == 'refs/heads/kettlecompanion' }}
-      uses: JamesIves/github-pages-deploy-action@v4.4.1
+      uses: JamesIves/github-pages-deploy-action@v4.6.9
       with:
         branch: gh-pages # The branch the action should deploy to.
         folder: build_output/firmware  # The folder the action should deploy.
@@ -426,7 +426,7 @@ jobs:
         clean: false
     - name: Deploy Production (if 'kettlecompanion-prod' branch)
       if: ${{ github.ref == 'refs/heads/kettlecompanion-prod' }}
-      uses: JamesIves/github-pages-deploy-action@v4.4.1
+      uses: JamesIves/github-pages-deploy-action@v4.6.9
       with:
         branch: gh-pages # The branch the action should deploy to.
         folder: build_output/firmware  # The folder the action should deploy.
