@@ -1,3 +1,5 @@
+17/11/2024  v9.5.0.3/v1.1.3.1   - Force build
+
 18/04/2022  v9.5.0.3/v1.1.3.0   - Fix issue with OTA URL always being "devel" even when running "prod" firmware
                                 - Disable rules support in full Tasmota to try to prevent boot loop lockup
 
