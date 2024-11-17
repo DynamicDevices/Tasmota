@@ -11,6 +11,7 @@
 
 // Supports:
 //   Brand: Sony,  Model: HT-CT380 Soundbar (Uses 38kHz & 3 repeats)
+//   Brand: Sony,  Model: HT-SF150 Soundbar (Uses 38kHz & 3 repeats)
 
 #include <algorithm>
 #include "IRrecv.h"
@@ -120,7 +121,7 @@ uint32_t IRsend::encodeSony(const uint16_t nbits, const uint16_t command,
 ///   bits long.
 bool IRrecv::decodeSony(decode_results *results, uint16_t offset,
                         const uint16_t nbits, const bool strict) {
-  if (results->rawlen <= 2 * nbits + kHeader - 1 + offset)
+  if (results->rawlen < 2 * nbits + kHeader - 1 + offset)
     return false;  // Message is smaller than we expected.
 
   // Compliance

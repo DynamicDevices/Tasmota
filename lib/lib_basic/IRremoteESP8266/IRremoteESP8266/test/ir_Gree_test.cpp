@@ -303,9 +303,10 @@ TEST(TestGreeClass, Temperature) {
   EXPECT_EQ(63, ac.getTemp());
   EXPECT_EQ(
       "Model: 2 (YBOFB), Power: On, Mode: 1 (Cool), Temp: 63F, Fan: 0 (Auto), "
-      "Turbo: Off, IFeel: Off, WiFi: Off, XFan: Off, Light: On, Sleep: Off, "
-      "Swing(V) Mode: Manual, Swing(V): 0 (Last), Timer: Off, "
-      "Display Temp: 0 (Off)", ac.toString());
+      "Turbo: Off, Econo: Off, IFeel: Off, WiFi: Off, XFan: Off, Light: On, "
+      "Sleep: Off, "
+      "Swing(V) Mode: Manual, Swing(V): 0 (Last), Swing(H): 0 (Off), "
+      "Timer: Off, Display Temp: 0 (Off)", ac.toString());
 }
 
 TEST(TestGreeClass, OperatingMode) {
@@ -325,6 +326,9 @@ TEST(TestGreeClass, OperatingMode) {
   ac.setMode(kGreeHeat);
   EXPECT_EQ(kGreeHeat, ac.getMode());
 
+  ac.setMode(kGreeEcono);
+  EXPECT_EQ(kGreeEcono, ac.getMode());
+
   ASSERT_NE(kGreeFanMax, 1);
   ac.setFan(kGreeFanMax);
   ac.setMode(kGreeDry);  // Dry should lock the fan to speed 1.
@@ -336,7 +340,7 @@ TEST(TestGreeClass, OperatingMode) {
   ac.setMode(kGreeFan);
   EXPECT_EQ(kGreeFan, ac.getMode());
 
-  ac.setMode(kGreeHeat + 1);
+  ac.setMode(kGreeEcono + 1);
   EXPECT_EQ(kGreeAuto, ac.getMode());
 
   ac.setMode(255);
@@ -383,6 +387,20 @@ TEST(TestGreeClass, Turbo) {
 
   ac.setTurbo(true);
   EXPECT_TRUE(ac.getTurbo());
+}
+
+TEST(TestGreeClass, Econo) {
+  IRGreeAC ac(kGpioUnused);
+  ac.begin();
+
+  ac.setEcono(true);
+  EXPECT_TRUE(ac.getEcono());
+
+  ac.setEcono(false);
+  EXPECT_FALSE(ac.getEcono());
+
+  ac.setEcono(true);
+  EXPECT_TRUE(ac.getEcono());
 }
 
 TEST(TestGreeClass, IFeel) {
@@ -506,6 +524,24 @@ TEST(TestGreeClass, VerticalSwing) {
   EXPECT_EQ(kGreeSwingAuto, ac.getSwingVerticalPosition());
 }
 
+TEST(TestGreeClass, HorizontalSwing) {
+  IRGreeAC ac(kGpioUnused);
+  ac.begin();
+
+  ac.setSwingHorizontal(kGreeSwingHAuto);
+  EXPECT_EQ(kGreeSwingHAuto, ac.getSwingHorizontal());
+
+  ac.setSwingHorizontal(kGreeSwingHMiddle);
+  EXPECT_EQ(kGreeSwingHMiddle, ac.getSwingHorizontal());
+
+  ac.setSwingHorizontal(kGreeSwingHMaxRight);
+  EXPECT_EQ(kGreeSwingHMaxRight, ac.getSwingHorizontal());
+
+  // Out of bounds.
+  ac.setSwingHorizontal(kGreeSwingHMaxRight + 1);
+  EXPECT_EQ(kGreeSwingHOff, ac.getSwingHorizontal());
+}
+
 TEST(TestGreeClass, SetAndGetRaw) {
   IRGreeAC ac(kGpioUnused);
   uint8_t initialState[kGreeStateLength] = {0x00, 0x09, 0x20, 0x50,
@@ -543,8 +579,9 @@ TEST(TestGreeClass, HumanReadable) {
 
   EXPECT_EQ(
       "Model: 1 (YAW1F), Power: Off, Mode: 0 (Auto), Temp: 25C, Fan: 0 (Auto), "
-      "Turbo: Off, IFeel: Off, WiFi: Off, XFan: Off, Light: On, Sleep: Off, "
-      "Swing(V) Mode: Manual, Swing(V): 0 (Last), "
+      "Turbo: Off, Econo: Off, IFeel: Off, WiFi: Off, XFan: Off, Light: On, "
+      "Sleep: Off, "
+      "Swing(V) Mode: Manual, Swing(V): 0 (Last), Swing(H): 0 (Off), "
       "Timer: Off, Display Temp: 0 (Off)",
       ac.toString());
   ac.on();
@@ -562,9 +599,10 @@ TEST(TestGreeClass, HumanReadable) {
   ac.setDisplayTempSource(3);
   EXPECT_EQ(
       "Model: 1 (YAW1F), Power: On, Mode: 1 (Cool), Temp: 16C, Fan: 3 (High), "
-      "Turbo: On, IFeel: On, WiFi: On, XFan: On, Light: Off, Sleep: On, "
-      "Swing(V) Mode: Auto, Swing(V): 1 (Auto), Timer: 12:30, "
-      "Display Temp: 3 (Outside)",
+      "Turbo: On, Econo: Off, IFeel: On, WiFi: On, XFan: On, Light: Off, "
+      "Sleep: On, "
+      "Swing(V) Mode: Auto, Swing(V): 1 (Auto), Swing(H): 0 (Off), "
+      "Timer: 12:30, Display Temp: 3 (Outside)",
       ac.toString());
 }
 
@@ -623,9 +661,10 @@ TEST(TestDecodeGree, NormalRealExample) {
   ac.setRaw(irsend.capture.state);
   EXPECT_EQ(
       "Model: 1 (YAW1F), Power: On, Mode: 1 (Cool), Temp: 26C, Fan: 1 (Low), "
-      "Turbo: Off, IFeel: Off, WiFi: Off, XFan: Off, Light: On, Sleep: Off, "
-      "Swing(V) Mode: Manual, Swing(V): 2 (UNKNOWN), Timer: Off, "
-      "Display Temp: 3 (Outside)",
+      "Turbo: Off, Econo: Off, IFeel: Off, WiFi: Off, XFan: Off, Light: On, "
+      "Sleep: Off, "
+      "Swing(V) Mode: Manual, Swing(V): 2 (UNKNOWN), Swing(H): 0 (Off), "
+      "Timer: Off, Display Temp: 3 (Outside)",
       IRAcUtils::resultAcToString(&irsend.capture));
   stdAc::state_t r, p;
   ASSERT_TRUE(IRAcUtils::decodeToState(&irsend.capture, &r, &p));
@@ -681,8 +720,9 @@ TEST(TestGreeClass, Issue814Power) {
   EXPECT_EQ(gree_ac_remote_model_t::YBOFB, ac.getModel());
   EXPECT_EQ(
       "Model: 2 (YBOFB), Power: On, Mode: 1 (Cool), Temp: 23C, Fan: 1 (Low), "
-      "Turbo: Off, IFeel: Off, WiFi: Off, XFan: Off, Light: On, Sleep: Off, "
-      "Swing(V) Mode: Auto, Swing(V): 1 (Auto), Timer: Off, "
+      "Turbo: Off, Econo: Off, IFeel: Off, WiFi: Off, XFan: Off, Light: On, "
+      "Sleep: Off, "
+      "Swing(V) Mode: Auto, Swing(V): 1 (Auto), Swing(H): 0 (Off), Timer: Off, "
       "Display Temp: 0 (Off)",
       ac.toString());
   ac.off();
@@ -760,4 +800,41 @@ TEST(TestGreeClass, DisplayTempSource) {
   const uint8_t state[8] = {0x4C, 0x04, 0x60, 0x50, 0x01, 0x02, 0x00, 0xA0};
   ac.setRaw(state);
   EXPECT_EQ(2, ac.getDisplayTempSource());
+}
+
+TEST(TestUtils, Housekeeping) {
+  ASSERT_EQ("GREE", typeToString(decode_type_t::GREE));
+  ASSERT_EQ(decode_type_t::GREE, strToDecodeType("GREE"));
+  ASSERT_TRUE(hasACState(decode_type_t::GREE));
+  ASSERT_TRUE(IRac::isProtocolSupported(decode_type_t::GREE));
+  ASSERT_EQ(kGreeBits, IRsend::defaultBits(decode_type_t::GREE));
+  ASSERT_EQ(kNoRepeat, IRsend::minRepeats(decode_type_t::GREE));
+  ASSERT_EQ(gree_ac_remote_model_t::YAW1F, IRac::strToModel("YAW1F"));
+  ASSERT_EQ(irutils::modelToStr(decode_type_t::GREE,
+                                gree_ac_remote_model_t::YAW1F), "YAW1F");
+  ASSERT_EQ(gree_ac_remote_model_t::YBOFB, IRac::strToModel("YBOFB"));
+  ASSERT_EQ(irutils::modelToStr(decode_type_t::GREE,
+                                gree_ac_remote_model_t::YBOFB), "YBOFB");
+  ASSERT_EQ(gree_ac_remote_model_t::YX1FSF, IRac::strToModel("YX1FSF"));
+  ASSERT_EQ(irutils::modelToStr(decode_type_t::GREE,
+                                gree_ac_remote_model_t::YX1FSF), "YX1FSF");
+}
+
+TEST(TestGreeClass, Issue1821EnergySaver) {
+  IRGreeAC ac(kGpioUnused);
+  ac.begin();
+
+  // https://github.com/crankyoldgit/IRremoteESP8266/issues/1821#issue-1271458457
+  const uint8_t energy[8] = {0x1D, 0x09, 0x60, 0x58, 0x00, 0x20, 0x00, 0xA0};
+
+  ac.setRaw(energy);
+  EXPECT_EQ(kGreeEcono, ac.getMode());
+  EXPECT_TRUE(ac.getEcono());
+  EXPECT_EQ(gree_ac_remote_model_t::YX1FSF, ac.getModel());
+  EXPECT_EQ(
+      "Model: 3 (YX1FSF), Power: On, Mode: 5 (Econo), Temp: 77F, Fan: 1 (Low), "
+      "Turbo: Off, Econo: Off, IFeel: Off, WiFi: Off, XFan: Off, Light: On, "
+      "Sleep: Off, Swing(V) Mode: Manual, Swing(V): 0 (Last), "
+      "Swing(H): 0 (Off), Timer: Off, Display Temp: 0 (Off)",
+      ac.toString());
 }

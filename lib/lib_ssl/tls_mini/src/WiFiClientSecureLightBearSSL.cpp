@@ -21,7 +21,7 @@
 */
 
 #include "tasmota_options.h"
-#if defined(USE_TLS)
+#ifdef USE_TLS
 
 // #define DEBUG_TLS
 // #define DEBUG_ESP_SSL
@@ -43,8 +43,8 @@
 #include "lwip/netif.h"
 #ifdef ESP8266
   #include <include/ClientContext.h>
+  #include "c_types.h"
 #endif
-#include "c_types.h"
 
 #include <core_version.h>
 #undef DEBUG_TLS
@@ -191,6 +191,7 @@ void WiFiClientSecure_light::_clear() {
   _last_error = 0;
   _recvapp_buf = nullptr;
   _recvapp_len = 0;
+  _insecure = false;  // set to true when calling setPubKeyFingerprint()
   _fingerprint_any = true; // by default accept all fingerprints
   _fingerprint1 = nullptr;
   _fingerprint2 = nullptr;
@@ -199,6 +200,8 @@ void WiFiClientSecure_light::_clear() {
   _ta_P = nullptr;
   _ta_size = 0;
   _max_thunkstack_use = 0;
+  _alpn_names = nullptr;
+  _alpn_num = 0;
 }
 
 // Constructor
@@ -284,10 +287,21 @@ void WiFiClientSecure_light::stop(void) {
 
 void WiFiClientSecure_light::flush(void) {
   (void) _run_until(BR_SSL_SENDAPP);
-  WiFiClient::flush();
+  // don't call flush on ESP32 - its behavior is different and empties the receive buffer - which we don't want
 }
 #endif
 
+#ifdef ESP32
+int WiFiClientSecure_light::connect(IPAddress ip, uint16_t port, int32_t timeout) {
+  DEBUG_BSSL("connect(%s,%d)", ip.toString().c_str(), port);
+  clearLastError();
+  if (!WiFiClient::connect(ip, port, timeout)) {
+    setLastError(ERR_TCP_CONNECT);
+    return 0;
+  }
+  return _connectSSL(_domain.isEmpty() ? nullptr : _domain.c_str());
+}
+#else // ESP32
 int WiFiClientSecure_light::connect(IPAddress ip, uint16_t port) {
   DEBUG_BSSL("connect(%s,%d)", ip.toString().c_str(), port);
   clearLastError();
@@ -295,9 +309,30 @@ int WiFiClientSecure_light::connect(IPAddress ip, uint16_t port) {
     setLastError(ERR_TCP_CONNECT);
     return 0;
   }
-  return _connectSSL(nullptr);
+  return _connectSSL(_domain.isEmpty() ? nullptr : _domain.c_str());
 }
+#endif
 
+#ifdef ESP32
+int WiFiClientSecure_light::connect(const char* name, uint16_t port, int32_t timeout) {
+  DEBUG_BSSL("connect(%s,%d)\n", name, port);
+  IPAddress remote_addr;
+  clearLastError();
+  if (!WiFi.hostByName(name, remote_addr)) {
+    DEBUG_BSSL("connect: Name loopup failure\n");
+    setLastError(ERR_CANT_RESOLVE_IP);
+    return 0;
+  }
+  DEBUG_BSSL("connect(%s,%d)\n", remote_addr.toString().c_str(), port);
+  if (!WiFiClient::connect(remote_addr, port, timeout)) {
+    DEBUG_BSSL("connect: Unable to connect TCP socket\n");
+    _last_error = ERR_TCP_CONNECT;
+    return 0;
+  }
+  LOG_HEAP_SIZE("Before calling _connectSSL");
+  return _connectSSL(name);
+}
+#else // ESP32
 int WiFiClientSecure_light::connect(const char* name, uint16_t port) {
   DEBUG_BSSL("connect(%s,%d)\n", name, port);
   IPAddress remote_addr;
@@ -316,6 +351,7 @@ int WiFiClientSecure_light::connect(const char* name, uint16_t port) {
   LOG_HEAP_SIZE("Before calling _connectSSL");
   return _connectSSL(name);
 }
+#endif
 
 void WiFiClientSecure_light::_freeSSL() {
   _ctx_present = false;
@@ -380,6 +416,10 @@ size_t WiFiClientSecure_light::_write(const uint8_t *buf, size_t size, bool pmem
 
   LOG_HEAP_SIZE("_write");
   return sent_bytes;
+}
+
+void WiFiClientSecure_light::setInsecure() {
+  _insecure = true;
 }
 
 size_t WiFiClientSecure_light::write(const uint8_t *buf, size_t size) {
@@ -880,11 +920,7 @@ extern "C" {
   // We limit to a single cipher to reduce footprint
   // we reference it, don't put in PROGMEM
   static const uint16_t suites[] = {
-#ifdef USE_MQTT_TLS_FORCE_EC_CIPHER
     BR_TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
-#else
-    BR_TLS_RSA_WITH_AES_128_GCM_SHA256
-#endif
   };
 
   // Default initializion for our SSL clients
@@ -907,12 +943,8 @@ extern "C" {
     br_ssl_engine_set_aes_ctr(&cc->eng, &br_aes_small_ctr_vtable);
     br_ssl_engine_set_ghash(&cc->eng, &br_ghash_ctmul32);
 
-#ifdef USE_MQTT_TLS_FORCE_EC_CIPHER
     // we support only P256 EC curve for AWS IoT, no EC curve for Letsencrypt unless forced
     br_ssl_engine_set_ec(&cc->eng, &br_ec_p256_m15); // TODO
-#endif
-    static const char * alpn_mqtt = "mqtt";
-    br_ssl_engine_set_protocol_names(&cc->eng, &alpn_mqtt, 1);
   }
 }
 
@@ -920,11 +952,9 @@ extern "C" {
 // Returns if the SSL handshake succeeded.
 bool WiFiClientSecure_light::_connectSSL(const char* hostName) {
   // Validation context, either full CA validation or checking only fingerprints
-#ifdef USE_MQTT_TLS_CA_CERT
-  br_x509_minimal_context *x509_minimal;
-#else
-  br_x509_pubkeyfingerprint_context *x509_insecure;
-#endif
+
+  br_x509_minimal_context *x509_minimal = nullptr;
+  br_x509_pubkeyfingerprint_context *x509_insecure = nullptr;
 
   LOG_HEAP_SIZE("_connectSSL.start");
 
@@ -939,37 +969,40 @@ bool WiFiClientSecure_light::_connectSSL(const char* hostName) {
     _freeSSL();
     clearLastError();
 #ifdef ESP8266
-    if (!stack_thunk_light_get_stack_bot()) break;  
+    if (!stack_thunk_light_get_stack_bot()) break;
 #endif // ESP8266
 
     _ctx_present = true;
     _eng = &_sc->eng; // Allocation/deallocation taken care of by the _sc shared_ptr
 
     br_ssl_client_base_init(_sc.get());
+    if (_alpn_names && _alpn_num > 0) {
+      br_ssl_engine_set_protocol_names(_eng, _alpn_names, _alpn_num);
+    }
 
     // ============================================================
     // Allocatte and initialize Decoder Context
     LOG_HEAP_SIZE("_connectSSL before DecoderContext allocation");
     // Only failure possible in the installation is OOM
-  #ifdef USE_MQTT_TLS_CA_CERT
-    x509_minimal = (br_x509_minimal_context*) malloc(sizeof(br_x509_minimal_context));
-    if (!x509_minimal) break;
-    br_x509_minimal_init(x509_minimal, &br_sha256_vtable, _ta_P, _ta_size);
-    br_x509_minimal_set_rsa(x509_minimal, br_ssl_engine_get_rsavrfy(_eng));
-    br_x509_minimal_set_hash(x509_minimal, br_sha256_ID, &br_sha256_vtable);
-    br_ssl_engine_set_x509(_eng, &x509_minimal->vtable);
-    uint32_t now = UtcTime();
-    uint32_t cfg_time = CfgTime();
-    if (cfg_time > now) { now = cfg_time; }
-    br_x509_minimal_set_time(x509_minimal, now / 86400 + 719528, now % 86400);
 
-  #else
     x509_insecure = (br_x509_pubkeyfingerprint_context*) malloc(sizeof(br_x509_pubkeyfingerprint_context));
     //x509_insecure = std::unique_ptr<br_x509_pubkeyfingerprint_context>(new br_x509_pubkeyfingerprint_context);
     if (!x509_insecure) break;
     br_x509_pubkeyfingerprint_init(x509_insecure, _fingerprint1, _fingerprint2, _recv_fingerprint, _fingerprint_any);
     br_ssl_engine_set_x509(_eng, &x509_insecure->vtable);
-  #endif
+
+    if (!_insecure) {
+      x509_minimal = (br_x509_minimal_context*) malloc(sizeof(br_x509_minimal_context));
+      if (!x509_minimal) break;
+      br_x509_minimal_init(x509_minimal, &br_sha256_vtable, _ta_P, _ta_size);
+      br_x509_minimal_set_rsa(x509_minimal, br_ssl_engine_get_rsavrfy(_eng));
+      br_x509_minimal_set_hash(x509_minimal, br_sha256_ID, &br_sha256_vtable);
+      br_ssl_engine_set_x509(_eng, &x509_minimal->vtable);
+      uint32_t now = UtcTime();
+      uint32_t cfg_time = CfgTime();
+      if (cfg_time > now) { now = cfg_time; }
+      br_x509_minimal_set_time(x509_minimal, now / 86400 + 719528, now % 86400);
+    }
     LOG_HEAP_SIZE("_connectSSL after DecoderContext allocation");
 
     // ============================================================
@@ -1012,11 +1045,8 @@ bool WiFiClientSecure_light::_connectSSL(const char* hostName) {
     LOG_HEAP_SIZE("_connectSSL.end, freeing StackThunk");
 #endif // ESP8266
 
-  #ifdef USE_MQTT_TLS_CA_CERT
-    free(x509_minimal);
-  #else
+    free(x509_minimal);   // safe to call if nullptr
     free(x509_insecure);
-  #endif
     LOG_HEAP_SIZE("_connectSSL after release of Priv Key");
     return ret;
   } while (0);
@@ -1028,11 +1058,8 @@ bool WiFiClientSecure_light::_connectSSL(const char* hostName) {
 #ifdef ESP8266
   stack_thunk_light_del_ref();
 #endif
-#ifdef USE_MQTT_TLS_CA_CERT
-  free(x509_minimal);
-#else
+  free(x509_minimal);   // safe to call if nullptr
   free(x509_insecure);
-#endif
   LOG_HEAP_SIZE("_connectSSL clean_on_error");
   return false;
 }

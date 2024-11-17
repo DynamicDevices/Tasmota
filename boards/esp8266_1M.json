@@ -15,11 +15,9 @@
     "wifi"
   ],
   "frameworks": [
-    "arduino",
-    "esp8266-rtos-sdk",
-    "esp8266-nonos-sdk"
+    "arduino"
   ],
-  "name": "Espressif Generic ESP8266 Tasmota 1M sketch NO SPIFFS",
+  "name": "Espressif Generic ESP8266 Tasmota 1M sketch NO FS",
   "upload": {
     "maximum_ram_size": 81920,
     "maximum_size": 995326,

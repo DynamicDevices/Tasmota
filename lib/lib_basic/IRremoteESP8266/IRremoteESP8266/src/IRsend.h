@@ -42,83 +42,84 @@ const uint32_t kDefaultMessageGap = 100000;
 
 /// Enumerators and Structures for the Common A/C API.
 namespace stdAc {
-  /// Common A/C settings for A/C operating modes.
-  enum class opmode_t {
-    kOff  = -1,
-    kAuto =  0,
-    kCool =  1,
-    kHeat =  2,
-    kDry  =  3,
-    kFan  =  4,
-    // Add new entries before this one, and update it to point to the last entry
-    kLastOpmodeEnum = kFan,
-  };
+/// Common A/C settings for A/C operating modes.
+enum class opmode_t {
+  kOff  = -1,
+  kAuto =  0,
+  kCool =  1,
+  kHeat =  2,
+  kDry  =  3,
+  kFan  =  4,
+  // Add new entries before this one, and update it to point to the last entry
+  kLastOpmodeEnum = kFan,
+};
 
-  /// Common A/C settings for Fan Speeds.
-  enum class fanspeed_t {
-    kAuto =   0,
-    kMin =    1,
-    kLow =    2,
-    kMedium = 3,
-    kHigh =   4,
-    kMax =    5,
-    // Add new entries before this one, and update it to point to the last entry
-    kLastFanspeedEnum = kMax,
-  };
+/// Common A/C settings for Fan Speeds.
+enum class fanspeed_t {
+  kAuto =   0,
+  kMin =    1,
+  kLow =    2,
+  kMedium = 3,
+  kHigh =   4,
+  kMax =    5,
+  // Add new entries before this one, and update it to point to the last entry
+  kLastFanspeedEnum = kMax,
+};
 
-  /// Common A/C settings for Vertical Swing.
-  enum class swingv_t {
-    kOff =    -1,
-    kAuto =    0,
-    kHighest = 1,
-    kHigh =    2,
-    kMiddle =  3,
-    kLow =     4,
-    kLowest =  5,
-    // Add new entries before this one, and update it to point to the last entry
-    kLastSwingvEnum = kLowest,
-  };
+/// Common A/C settings for Vertical Swing.
+enum class swingv_t {
+  kOff =    -1,
+  kAuto =    0,
+  kHighest = 1,
+  kHigh =    2,
+  kMiddle =  3,
+  kLow =     4,
+  kLowest =  5,
+  // Add new entries before this one, and update it to point to the last entry
+  kLastSwingvEnum = kLowest,
+};
 
-  /// Common A/C settings for Horizontal Swing.
-  enum class swingh_t {
-    kOff =     -1,
-    kAuto =     0,  // a.k.a. On.
-    kLeftMax =  1,
-    kLeft =     2,
-    kMiddle =   3,
-    kRight =    4,
-    kRightMax = 5,
-    kWide =     6,  // a.k.a. left & right at the same time.
-    // Add new entries before this one, and update it to point to the last entry
-    kLastSwinghEnum = kWide,
-  };
+/// Common A/C settings for Horizontal Swing.
+enum class swingh_t {
+  kOff =     -1,
+  kAuto =     0,  // a.k.a. On.
+  kLeftMax =  1,
+  kLeft =     2,
+  kMiddle =   3,
+  kRight =    4,
+  kRightMax = 5,
+  kWide =     6,  // a.k.a. left & right at the same time.
+  // Add new entries before this one, and update it to point to the last entry
+  kLastSwinghEnum = kWide,
+};
 
-  /// Structure to hold a common A/C state.
-  typedef struct {
-    decode_type_t protocol;
-    int16_t model;
-    bool power;
-    stdAc::opmode_t mode;
-    float degrees;
-    bool celsius;
-    stdAc::fanspeed_t fanspeed;
-    stdAc::swingv_t swingv;
-    stdAc::swingh_t swingh;
-    bool quiet;
-    bool turbo;
-    bool econo;
-    bool light;
-    bool filter;
-    bool clean;
-    bool beep;
-    int16_t sleep;
-    int16_t clock;
-  } state_t;
+/// Structure to hold a common A/C state.
+struct state_t {
+  decode_type_t protocol = decode_type_t::UNKNOWN;
+  int16_t model = -1;  // `-1` means unused.
+  bool power = false;
+  stdAc::opmode_t mode = stdAc::opmode_t::kOff;
+  float degrees = 25;
+  bool celsius = true;
+  stdAc::fanspeed_t fanspeed = stdAc::fanspeed_t::kAuto;
+  stdAc::swingv_t swingv = stdAc::swingv_t::kOff;
+  stdAc::swingh_t swingh = stdAc::swingh_t::kOff;
+  bool quiet = false;
+  bool turbo = false;
+  bool econo = false;
+  bool light = false;
+  bool filter = false;
+  bool clean = false;
+  bool beep = false;
+  int16_t sleep = -1;  // `-1` means off.
+  int16_t clock = -1;  // `-1` means not set.
+};
 };  // namespace stdAc
 
 /// Fujitsu A/C model numbers
 enum fujitsu_ac_remote_model_t {
-  ARRAH2E = 1,  ///< (1) AR-RAH2E, AR-RAC1E, AR-RAE1E, AR-RCE1E (Default)
+  ARRAH2E = 1,  ///< (1) AR-RAH2E, AR-RAC1E, AR-RAE1E, AR-RCE1E, AR-RAH2U,
+                ///<     AR-REG1U (Default)
                 ///< Warning: Use on incorrect models can cause the A/C to lock
                 ///< up, requring the A/C to be physically powered off to fix.
                 ///< e.g. AR-RAH1U may lock up with a Swing command.
@@ -133,13 +134,27 @@ enum fujitsu_ac_remote_model_t {
 /// Gree A/C model numbers
 enum gree_ac_remote_model_t {
   YAW1F = 1,  // (1) Ultimate, EKOKAI, RusClimate (Default)
-  YBOFB,     // (2) Green, YBOFB2, YAPOF3
+  YBOFB,      // (2) Green, YBOFB2, YAPOF3
+  YX1FSF,     // (3) Soleus Air window unit (Similar to YAW1F, but with an
+              //     Operation mode of Energy Saver (Econo))
+};
+
+/// HAIER_AC176 A/C model numbers
+enum haier_ac176_remote_model_t {
+  V9014557_A = 1,  // (1) V9014557 Remote in "A" setting. (Default)
+  V9014557_B,      // (2) V9014557 Remote in "B" setting.
 };
 
 /// HITACHI_AC1 A/C model numbers
 enum hitachi_ac1_remote_model_t {
   R_LT0541_HTA_A = 1,  // (1) R-LT0541-HTA Remote in "A" setting. (Default)
   R_LT0541_HTA_B,      // (2) R-LT0541-HTA Remote in "B" setting.
+};
+
+/// MIRAGE A/C model numbers
+enum mirage_ac_remote_model_t {
+  KKG9AC1 = 1,  // (1) KKG9A-C1 Remote. (Default)
+  KKG29AC1,     // (2) KKG29A-C1 Remote.
 };
 
 /// Panasonic A/C model numbers
@@ -160,6 +175,12 @@ enum sharp_ac_remote_model_t {
   A903 = 3,  // 820 too
 };
 
+/// TCL (& Teknopoint) A/C model numbers
+enum tcl_ac_remote_model_t {
+  TAC09CHSD = 1,
+  GZ055BE1 = 2,  // Also Teknopoint GZ01-BEJ0-000
+};
+
 /// Voltas A/C model numbers
 enum voltas_ac_remote_model_t {
   kVoltasUnknown = 0,  // Full Function
@@ -176,6 +197,9 @@ enum whirlpool_ac_remote_model_t {
 enum lg_ac_remote_model_t {
   GE6711AR2853M = 1,  // (1) LG 28-bit Protocol (default)
   AKB75215403,        // (2) LG2 28-bit Protocol
+  AKB74955603,        // (3) LG2 28-bit Protocol variant
+  AKB73757604,        // (4) LG2 Variant of AKB74955603
+  LG6711A20083V,      // (5) Same as GE6711AR2853M, but only SwingV toggle.
 };
 
 
@@ -317,6 +341,16 @@ class IRsend {
                    const uint16_t nbytes = kSanyoAcStateLength,
                    const uint16_t repeat = kNoRepeat);
 #endif  // SEND_SANYO_AC
+#if SEND_SANYO_AC88
+  void sendSanyoAc88(const uint8_t *data,
+                     const uint16_t nbytes = kSanyoAc88StateLength,
+                     const uint16_t repeat = kSanyoAc88MinRepeat);
+#endif  // SEND_SANYO_AC88
+#if SEND_SANYO_AC152
+  void sendSanyoAc152(const uint8_t *data,
+                     const uint16_t nbytes = kSanyoAc152StateLength,
+                     const uint16_t repeat = kSanyoAc152MinRepeat);
+#endif  // SEND_SANYO_AC152
 #if SEND_DISH
   // sendDISH() should typically be called with repeat=3 as DISH devices
   // expect the code to be sent at least 4 times. (code + 3 repeats = 4 codes)
@@ -356,9 +390,13 @@ class IRsend {
                 uint16_t repeat = kNoRepeat);
 #endif
 #if SEND_COOLIX
-  void sendCOOLIX(uint64_t data, uint16_t nbits = kCoolixBits,
-                  uint16_t repeat = kCoolixDefaultRepeat);
-#endif
+  void sendCOOLIX(const uint64_t data, const uint16_t nbits = kCoolixBits,
+                  const uint16_t repeat = kCoolixDefaultRepeat);
+#endif  // SEND_COOLIX
+#if SEND_COOLIX48
+  void sendCoolix48(const uint64_t data, const uint16_t nbits = kCoolix48Bits,
+                    const uint16_t repeat = kCoolixDefaultRepeat);
+#endif  // SEND_COOLIX48
 #if SEND_WHYNTER
   void sendWhynter(const uint64_t data, const uint16_t nbits = kWhynterBits,
                    const uint16_t repeat = kNoRepeat);
@@ -451,11 +489,21 @@ class IRsend {
                    const uint16_t nbytes = kDaikin2StateLength,
                    const uint16_t repeat = kDaikin2DefaultRepeat);
 #endif
+#if SEND_DAIKIN200
+  void sendDaikin200(const unsigned char data[],
+                     const uint16_t nbytes = kDaikin200StateLength,
+                     const uint16_t repeat = kDaikin200DefaultRepeat);
+#endif  // SEND_DAIKIN200
 #if SEND_DAIKIN216
   void sendDaikin216(const unsigned char data[],
                      const uint16_t nbytes = kDaikin216StateLength,
                      const uint16_t repeat = kDaikin216DefaultRepeat);
-#endif
+#endif  // SEND_DAIKIN216
+#if SEND_DAIKIN312
+  void sendDaikin312(const unsigned char data[],
+                     const uint16_t nbytes = kDaikin312StateLength,
+                     const uint16_t repeat = kDaikin312DefaultRepeat);
+#endif  // SEND_DAIKIN312
 #if SEND_AIWA_RC_T501
   void sendAiwaRCT501(uint64_t data, uint16_t nbits = kAiwaRcT501Bits,
                       uint16_t repeat = kAiwaRcT501MinRepeats);
@@ -483,7 +531,12 @@ class IRsend {
   void sendTrotec(const unsigned char data[],
                   const uint16_t nbytes = kTrotecStateLength,
                   const uint16_t repeat = kTrotecDefaultRepeat);
-#endif
+#endif  // SEND_TROTEC
+#if SEND_TROTEC_3550
+  void sendTrotec3550(const unsigned char data[],
+                      const uint16_t nbytes = kTrotecStateLength,
+                      const uint16_t repeat = kTrotecDefaultRepeat);
+#endif  // SEND_TROTEC_3550
 #if SEND_NIKAI
   void sendNikai(uint64_t data, uint16_t nbits = kNikaiBits,
                  uint16_t repeat = kNoRepeat);
@@ -522,6 +575,11 @@ class IRsend {
   void sendCarrierAC64(uint64_t data, uint16_t nbits = kCarrierAc64Bits,
                        uint16_t repeat = kCarrierAc64MinRepeat);
 #endif
+#if SEND_CARRIER_AC128
+  void sendCarrierAC128(const uint8_t data[],
+                        uint16_t nbytes = kCarrierAc128StateLength,
+                        uint16_t repeat = kCarrierAc128MinRepeat);
+#endif  // SEND_CARRIER_AC128
 #if (SEND_HAIER_AC || SEND_HAIER_AC_YRW02 || SEND_HAIER_AC176)
   void sendHaierAC(const unsigned char data[],
                    const uint16_t nbytes = kHaierACStateLength,
@@ -532,6 +590,11 @@ class IRsend {
                         const uint16_t nbytes = kHaierACYRW02StateLength,
                         const uint16_t repeat = kHaierAcYrw02DefaultRepeat);
 #endif  // SEND_HAIER_AC_YRW02
+#if SEND_HAIER_AC160
+  void sendHaierAC160(const unsigned char data[],
+                      const uint16_t nbytes = kHaierAC160StateLength,
+                      const uint16_t repeat = kHaierAc160DefaultRepeat);
+#endif  // SEND_HAIER_AC160
 #if SEND_HAIER_AC176
   void sendHaierAC176(const unsigned char data[],
                       const uint16_t nbytes = kHaierAC176StateLength,
@@ -558,6 +621,16 @@ class IRsend {
                                               // different sizes
                       const uint16_t repeat = kHitachiAcDefaultRepeat);
 #endif  // SEND_HITACHI_AC3
+#if SEND_HITACHI_AC264
+  void sendHitachiAc264(const unsigned char data[],
+                        const uint16_t nbytes = kHitachiAc264StateLength,
+                        const uint16_t repeat = kHitachiAcDefaultRepeat);
+#endif  // SEND_HITACHI_AC264
+#if SEND_HITACHI_AC296
+  void sendHitachiAc296(const unsigned char data[],
+                        const uint16_t nbytes = kHitachiAc296StateLength,
+                        const uint16_t repeat = kHitachiAcDefaultRepeat);
+#endif  // SEND_HITACHI_AC296
 #if SEND_HITACHI_AC344
   void sendHitachiAc344(const unsigned char data[],
                         const uint16_t nbytes = kHitachiAc344StateLength,
@@ -609,11 +682,16 @@ class IRsend {
   void sendVestelAc(const uint64_t data, const uint16_t nbits = kVestelAcBits,
                     const uint16_t repeat = kNoRepeat);
 #endif
+#if SEND_TCL96AC
+  void sendTcl96Ac(const unsigned char data[],
+                    const uint16_t nbytes = kTcl96AcStateLength,
+                    const uint16_t repeat = kTcl96AcDefaultRepeat);
+#endif  // SEND_TCL96AC
 #if SEND_TCL112AC
   void sendTcl112Ac(const unsigned char data[],
                     const uint16_t nbytes = kTcl112AcStateLength,
                     const uint16_t repeat = kTcl112AcDefaultRepeat);
-#endif
+#endif  // SEND_TCL112AC
 #if SEND_TECO
   void sendTeco(const uint64_t data, const uint16_t nbits = kTecoBits,
                 const uint16_t repeat = kNoRepeat);
@@ -721,6 +799,44 @@ class IRsend {
   void sendKelon(const uint64_t data, const uint16_t nbits = kKelonBits,
                  const uint16_t repeat = kNoRepeat);
 #endif  // SEND_KELON
+#if SEND_KELON168
+  void sendKelon168(const unsigned char data[],
+                    const uint16_t nbytes = kKelon168StateLength,
+                    const uint16_t repeat = kNoRepeat);
+#endif  // SEND_KELON168
+#if SEND_BOSE
+  void sendBose(const uint64_t data, const uint16_t nbits = kBoseBits,
+                const uint16_t repeat = kNoRepeat);
+#endif  // SEND_BOSE
+#if SEND_ARRIS
+  void sendArris(const uint64_t data, const uint16_t nbits = kArrisBits,
+                 const uint16_t repeat = kNoRepeat);
+  static uint32_t toggleArrisRelease(const uint32_t data);
+  static uint32_t encodeArris(const uint32_t command, const bool release);
+#endif  // SEND_ARRIS
+#if SEND_RHOSS
+  void sendRhoss(const unsigned char data[],
+                 const uint16_t nbytes = kRhossStateLength,
+                 const uint16_t repeat = kRhossDefaultRepeat);
+#endif  // SEND_RHOSS
+#if SEND_AIRTON
+  void sendAirton(const uint64_t data, const uint16_t nbits = kAirtonBits,
+                  const uint16_t repeat = kAirtonDefaultRepeat);
+#endif  // SEND_AIRTON
+#if SEND_TOTO
+  void sendToto(const uint64_t data, const uint16_t nbits = kTotoBits,
+                const uint16_t repeat = kTotoDefaultRepeat);
+#endif  // SEND_TOTO
+#if SEND_CLIMABUTLER
+  void sendClimaButler(const uint64_t data,
+                       const uint16_t nbits = kClimaButlerBits,
+                       const uint16_t repeat = kNoRepeat);
+#endif  // SEND_CLIMABUTLER
+#if SEND_BOSCH144
+  void sendBosch144(const unsigned char data[],
+                    const uint16_t nbytes = kBosch144StateLength,
+                    const uint16_t repeat = kNoRepeat);
+#endif  // SEND_BOSCH144
 
  protected:
 #ifdef UNIT_TEST

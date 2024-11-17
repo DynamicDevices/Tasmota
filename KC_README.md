@@ -1,6 +1,20 @@
-17/11/2024  v9.5.0.3/v1.1.3.1   - Force build
+19/03/2023  v12.4.0/v2.0.0.0    - Found issues with our TLS configuration as we had a trust anchor for USE_MOSQUITTO for BearSSL
+                                  which directly trusted broker-new.kettlecompanion.com. What we actually need is to trust the CA key
+                                  which has been used to signed the certificate for the named server. This is changed now to use our
+                                  own CA certificate which is [here](https://github.com/DynamicDevices/kc-devops/blob/master/keys/ca.key)
 
-18/04/2022  v9.5.0.3/v1.1.3.0   - Fix issue with OTA URL always being "devel" even when running "prod" firmware
+                                  This means older releases will only connect to WIoTP or broker-new. Whereas from now we should
+                                  be able to connect to any named server with a key signed by our CA.
+
+15/03/2023  v12.4.0.x/v1.1.5.0  - Merged in master from upstream Tasmota which is currently v12.4.0.0 + some bits
+                                - Tested against our Mosquitto KC broker and made various changes to move away from WIOTP implementation
+                                - So login and topics and such have changed
+                                - Also removed dodgy 'io broker' fix publishing POWER to cmnd topic on connection 
+                                - Seems to be working so tagging for test
+
+15/03/2023  v11.1.0.0/v1.1.4.0   - Disable Watson MQTT support
+
+18/04/2022  v11.1.0.0/v1.1.3.0   - Fix issue with OTA URL always being "devel" even when running "prod" firmware
                                 - Disable rules support in full Tasmota to try to prevent boot loop lockup
 
 15/04/2022  v9.5.0.3/v1.1.2.0   - fix provisioning AP name from 'Provisoning' to 'Provisioning'

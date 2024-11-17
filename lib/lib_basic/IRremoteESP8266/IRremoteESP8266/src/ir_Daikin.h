@@ -1,6 +1,6 @@
 // Copyright 2016 sillyfrog
 // Copyright 2017 sillyfrog, crankyoldgit
-// Copyright 2018-2020 crankyoldgit
+// Copyright 2018-2022 crankyoldgit
 // Copyright 2019 pasna (IRDaikin160 class / Daikin176 class)
 
 /// @file
@@ -16,10 +16,13 @@
 /// @see Daikin160 https://github.com/crankyoldgit/IRremoteESP8266/issues/731
 /// @see Daikin2 https://docs.google.com/spreadsheets/d/1f8EGfIbBUo2B-CzUFdrgKQprWakoYNKM80IKZN4KXQE/edit#gid=236366525&range=B25:D32
 /// @see Daikin2 https://github.com/crankyoldgit/IRremoteESP8266/issues/582
+/// @see Daikin2 https://github.com/crankyoldgit/IRremoteESP8266/issues/1535
 /// @see Daikin2 https://www.daikin.co.nz/sites/default/files/daikin-split-system-US7-FTXZ25-50NV1B.pdf
 /// @see Daikin216 https://github.com/crankyoldgit/IRremoteESP8266/issues/689
 /// @see Daikin216 https://github.com/danny-source/Arduino_DY_IRDaikin
 /// @see Daikin64 https://github.com/crankyoldgit/IRremoteESP8266/issues/1064
+/// @see Daikin200 https://github.com/crankyoldgit/IRremoteESP8266/issues/1802
+/// @see Daikin312 https://github.com/crankyoldgit/IRremoteESP8266/issues/1829
 
 // Supports:
 //   Brand: Daikin,  Model: ARC433** remote (DAIKIN)
@@ -33,17 +36,23 @@
 //   Brand: Daikin,  Model: BRC4C153 remote (DAIKIN176)
 //   Brand: Daikin,  Model: FFQ35B8V1B A/C (DAIKIN176)
 //   Brand: Daikin,  Model: BRC4C151 remote (DAIKIN176)
-//   Brand: Daikin,  Model: 17 Series A/C (DAIKIN128)
-//   Brand: Daikin,  Model: FTXB12AXVJU A/C (DAIKIN128)
-//   Brand: Daikin,  Model: FTXB09AXVJU A/C (DAIKIN128)
+//   Brand: Daikin,  Model: 17 Series FTXB09AXVJU A/C (DAIKIN128)
+//   Brand: Daikin,  Model: 17 Series FTXB12AXVJU A/C (DAIKIN128)
+//   Brand: Daikin,  Model: 17 Series FTXB24AXVJU A/C (DAIKIN128)
 //   Brand: Daikin,  Model: BRC52B63 remote (DAIKIN128)
 //   Brand: Daikin,  Model: ARC480A5 remote (DAIKIN152)
 //   Brand: Daikin,  Model: FFN-C/FCN-F Series A/C (DAIKIN64)
 //   Brand: Daikin,  Model: DGS01 remote (DAIKIN64)
 //   Brand: Daikin,  Model: M Series A/C (DAIKIN)
 //   Brand: Daikin,  Model: FTXM-M A/C (DAIKIN)
+//   Brand: Daikin,  Model: ARC466A12 remote (DAIKIN)
 //   Brand: Daikin,  Model: ARC466A33 remote (DAIKIN)
 //   Brand: Daikin,  Model: FTWX35AXV1 A/C (DAIKIN64)
+//   Brand: Daikin,  Model: ARC484A4 remote (DAIKIN216)
+//   Brand: Daikin,  Model: FTQ60TV16U2 A/C (DAIKIN216)
+//   Brand: Daikin,  Model: BRC4M150W16 remote (DAIKIN200)
+//   Brand: Daikin,  Model: FTXM20R5V1B A/C (DAIKIN312)
+//   Brand: Daikin,  Model: ARC466A67 remote (DAIKIN312)
 
 #ifndef IR_DAIKIN_H_
 #define IR_DAIKIN_H_
@@ -227,9 +236,10 @@ union Daikin2Protocol{
     uint64_t          :1;
     // Byte 26
     uint64_t          :1;
-    uint64_t Temp     :7;
+    uint64_t Temp     :6;
+    uint64_t HumidOn  :1;
     // Byte 27
-    uint64_t          :8;
+    uint64_t Humidity :8;
     // Byte 28
     uint64_t          :4;
     uint64_t Fan      :4;
@@ -298,6 +308,19 @@ const uint8_t kDaikin2SwingHRightMax = 0xAC;
 const uint8_t kDaikin2SwingHAuto =     0xBE;  // A.k.a "Swing"
 const uint8_t kDaikin2SwingHOff =      0xBF;
 const uint8_t kDaikin2SwingHSwing =  kDaikin2SwingHAuto;
+
+// Ref:
+//   https://github.com/crankyoldgit/IRremoteESP8266/issues/1535#issuecomment-882092486
+//   https://docs.google.com/spreadsheets/d/1kxHgFqiUB9ETXYEkszAIN5gE-t2ykvnPCnOV-sPUE0A/edit?usp=sharing
+const uint8_t kDaikin2HumidityOff        = 0x00;
+const uint8_t kDaikin2HumidityHeatLow    = 0x28;  // Humidify (Heat) only (40%?)
+const uint8_t kDaikin2HumidityHeatMedium = 0x2D;  // Humidify (Heat) only (45%?)
+const uint8_t kDaikin2HumidityHeatHigh   = 0x32;  // Humidify (Heat) only (50%?)
+const uint8_t kDaikin2HumidityDryLow     = 0x32;  // Dry only (50%?)
+const uint8_t kDaikin2HumidityDryMedium  = 0x37;  // Dry only (55%?)
+const uint8_t kDaikin2HumidityDryHigh    = 0x3C;  // Dry only (60%?)
+const uint8_t kDaikin2HumidityAuto       = 0xFF;
+
 
 const uint8_t kDaikin2MinCoolTemp = 18;  // Min temp (in C) when in Cool mode.
 
@@ -411,12 +434,28 @@ const uint8_t kDaikin160SwingVAuto =    0xF;
 union Daikin176Protocol{
   uint8_t raw[kDaikin176StateLength];  ///< The state of the IR remote.
   struct {
-    // Byte 0~5
-    uint8_t pad0[6];
+    // Byte 0~2
+    uint8_t      :8;
+    uint8_t      :8;
+    uint8_t      :8;
+    // Byte 3
+    uint8_t Id1  :1;
+    uint8_t      :7;
+    // Byte 4
+    uint8_t      :8;
+    // Byte 5
+    uint8_t      :8;
     // Byte 6
     uint8_t Sum1 :8;
-    // Byte 7~11
-    uint8_t pad1[5];
+    // Byte 7-9
+    uint8_t      :8;
+    uint8_t      :8;
+    uint8_t      :8;
+    // Byte 10
+    uint8_t Id2  :1;
+    uint8_t      :7;
+    // Byte 11
+    uint8_t      :8;
     // Byte 12
     uint8_t         :4;
     uint8_t AltMode :3;
@@ -643,6 +682,30 @@ const uint8_t kDaikin64MaxTemp = 30;  // Celsius
 const uint8_t kDaikin64ChecksumOffset = 60;
 const uint8_t kDaikin64ChecksumSize = 4;  // Mask 0b1111 << 59
 
+const uint16_t kDaikin200Freq = 38000;  // Modulation Frequency in Hz.
+const uint16_t kDaikin200HdrMark = 4920;
+const uint16_t kDaikin200HdrSpace = 2230;
+const uint16_t kDaikin200BitMark = 290;
+const uint16_t kDaikin200OneSpace = 1850;
+const uint16_t kDaikin200ZeroSpace = 780;
+const uint16_t kDaikin200Gap = 29400;
+const uint16_t kDaikin200Sections = 2;
+const uint16_t kDaikin200Section1Length = 7;
+const uint16_t kDaikin200Section2Length = kDaikin200StateLength -
+                                          kDaikin200Section1Length;
+
+const uint16_t kDaikin312HdrMark = 3518;
+const uint16_t kDaikin312HdrSpace = 1688;
+const uint16_t kDaikin312BitMark = 453;
+const uint16_t kDaikin312ZeroSpace = 414;
+const uint16_t kDaikin312OneSpace = 1275;
+const uint16_t kDaikin312HdrGap = 25100;
+const uint16_t kDaikin312SectionGap = 35512;
+const uint16_t kDaikin312Sections = 2;
+const uint16_t kDaikin312Section1Length = 20;
+const uint16_t kDaikin312Section2Length = kDaikin312StateLength -
+                                          kDaikin312Section1Length;
+
 // Legacy defines.
 #define DAIKIN_COOL kDaikinCool
 #define DAIKIN_HEAT kDaikinHeat
@@ -805,6 +868,8 @@ class IRDaikin2 {
   bool getFreshAir(void) const;
   void setFreshAirHigh(const bool on);
   bool getFreshAirHigh(void) const;
+  uint8_t getHumidity(void) const;
+  void setHumidity(const uint8_t percent);
   uint8_t* getRaw(void);
   void setRaw(const uint8_t new_code[]);
   static bool validChecksum(uint8_t state[],
@@ -975,6 +1040,8 @@ class IRDaikin176 {
   static uint8_t convertFan(const stdAc::fanspeed_t speed);
   void setSwingHorizontal(const uint8_t position);
   uint8_t getSwingHorizontal(void) const;
+  uint8_t getId(void) const;
+  void setId(const uint8_t num);
   static uint8_t convertSwingH(const stdAc::swingh_t position);
   static stdAc::fanspeed_t toCommonFanSpeed(const uint8_t speed);
   static stdAc::opmode_t toCommonMode(const uint8_t mode);

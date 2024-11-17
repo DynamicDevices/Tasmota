@@ -19,7 +19,7 @@ jobs:
     environment:
       name: build
     env:
-      PLATFORMIO_BUILD_FLAGS: -D MQTT_CLIENT_ID='"${{ secrets.MQTT_CLIENT_ID }}"' -D MQTT_PASS='"${{ secrets.MQTT_PASS }}"'
+      PLATFORMIO_BUILD_FLAGS: -D MQTT_CLIENT_ID='"${{ secrets.MQTT_CLIENT_ID }}"' -D MQTT_USER='"${{ secrets.MQTT_USER }}"' -D MQTT_PASS='"${{ secrets.MQTT_PASS }}"'
     steps:
     - name: Set environment for branch
       run: |
@@ -45,13 +45,21 @@ jobs:
         export PLATFORMIO_BUILD_FLAGS="${PLATFORMIO_BUILD_FLAGS} -D BUILD_TYPE=${BUILD_TYPE}"
         platformio run -e tasmota-minimal
     - name: Store artifacts
+<<<<<<< HEAD
       uses: actions/upload-artifact@v4
+=======
+      uses: actions/upload-artifact@v3.1.2
+>>>>>>> kettlecompanion
       with:
         name: firmware-minimal-${{ github.sha }}
         path: ./build_output/firmware
     - name: Deploy Development (if 'kettlecompanion' branch)
       if: ${{ github.ref == 'refs/heads/kettlecompanion' }}
+<<<<<<< HEAD
       uses: JamesIves/github-pages-deploy-action@v4.6.9
+=======
+      uses: JamesIves/github-pages-deploy-action@v4.4.1
+>>>>>>> kettlecompanion
       with:
         branch: gh-pages # The branch the action should deploy to.
         folder: build_output/firmware  # The folder the action should deploy.
@@ -59,7 +67,63 @@ jobs:
         clean: false
     - name: Deploy Production (if 'kettlecompanion-prod' branch)
       if: ${{ github.ref == 'refs/heads/kettlecompanion-prod' }}
+<<<<<<< HEAD
       uses: JamesIves/github-pages-deploy-action@v4.6.9
+=======
+      uses: JamesIves/github-pages-deploy-action@v4.4.1
+      with:
+        branch: gh-pages # The branch the action should deploy to.
+        folder: build_output/firmware  # The folder the action should deploy.
+        target-folder: prod
+        clean: false
+  tasmota-kettle-minimal:
+    runs-on: ubuntu-latest
+#    runs-on: [self-hosted, linux]
+    environment: 
+      name: build
+    env:
+      PLATFORMIO_BUILD_FLAGS: -D MQTT_CLIENT_ID='"${{ secrets.MQTT_CLIENT_ID }}"' -D MQTT_USER='"${{ secrets.MQTT_USER }}"' -D MQTT_PASS='"${{ secrets.MQTT_PASS }}"'
+    steps:
+    - name: Set environment for branch
+      run: |
+        if [[ $GITHUB_REF == 'refs/heads/kettlecompanion' ]]; then
+          echo "BUILD_TYPE=devel" >> "$GITHUB_ENV"
+        fi
+        if [[ $GITHUB_REF == 'refs/heads/kettlecompanion-prod' ]]; then
+          echo "BUILD_TYPE=prod" >> "$GITHUB_ENV"
+        fi
+    - name: Checkout
+      uses: actions/checkout@v1
+#    - name: Set up Python
+#      uses: actions/setup-python@v1
+    - name: Install dependencies
+      run: |
+        sudo apt install python3-pip
+        python -m pip install --upgrade pip
+        pip install -U platformio
+        platformio upgrade --dev
+        platformio update
+    - name: Run PlatformIO
+      run: |
+        export PLATFORMIO_BUILD_FLAGS="${PLATFORMIO_BUILD_FLAGS} -D BUILD_TYPE=${BUILD_TYPE}"
+        platformio run -e tasmota-kettle-minimal
+    - name: Store artifacts
+      uses: actions/upload-artifact@v3.1.2
+      with:
+        name: firmware-${{ github.sha }}
+        path: ./build_output/firmware
+    - name: Deploy Development (if 'kettlecompanion' branch)
+      if: ${{ github.ref == 'refs/heads/kettlecompanion' }}
+      uses: JamesIves/github-pages-deploy-action@v4.4.1
+      with:
+        branch: gh-pages # The branch the action should deploy to.
+        folder: build_output/firmware  # The folder the action should deploy.
+        target-folder: devel
+        clean: false
+    - name: Deploy Production (if 'kettlecompanion-prod' branch)
+      if: ${{ github.ref == 'refs/heads/kettlecompanion-prod' }}
+      uses: JamesIves/github-pages-deploy-action@v4.4.1
+>>>>>>> kettlecompanion
       with:
         branch: gh-pages # The branch the action should deploy to.
         folder: build_output/firmware  # The folder the action should deploy.
@@ -71,7 +135,7 @@ jobs:
     environment:
       name: build
     env:
-      PLATFORMIO_BUILD_FLAGS: -D MQTT_CLIENT_ID='"${{ secrets.MQTT_CLIENT_ID }}"' -D MQTT_PASS='"${{ secrets.MQTT_PASS }}"'
+      PLATFORMIO_BUILD_FLAGS: -D MQTT_CLIENT_ID='"${{ secrets.MQTT_CLIENT_ID }}"' -D MQTT_USER='"${{ secrets.MQTT_USER }}"' -D MQTT_PASS='"${{ secrets.MQTT_PASS }}"'
     needs: tasmota-minimal
     steps:
     - name: Set environment for branch
@@ -117,7 +181,6 @@ jobs:
         folder: build_output/firmware  # The folder the action should deploy.
         target-folder: prod
         clean: false
-
   tasmota-lite:
     runs-on: ubuntu-latest
 #    runs-on: [self-hosted, linux]
@@ -125,7 +188,7 @@ jobs:
     environment:
       name: build
     env:
-      PLATFORMIO_BUILD_FLAGS: -D MQTT_CLIENT_ID='"${{ secrets.MQTT_CLIENT_ID }}"' -D MQTT_PASS='"${{ secrets.MQTT_PASS }}"'
+      PLATFORMIO_BUILD_FLAGS: -D MQTT_CLIENT_ID='"${{ secrets.MQTT_CLIENT_ID }}"' -D MQTT_USER='"${{ secrets.MQTT_USER }}"' -D MQTT_PASS='"${{ secrets.MQTT_PASS }}"'
     steps:
     - name: Set environment for branch
       run: |
@@ -177,7 +240,7 @@ jobs:
     environment:
       name: build
     env:
-      PLATFORMIO_BUILD_FLAGS: -D MQTT_CLIENT_ID='"${{ secrets.MQTT_CLIENT_ID }}"' -D MQTT_PASS='"${{ secrets.MQTT_PASS }}"'
+      PLATFORMIO_BUILD_FLAGS: -D MQTT_CLIENT_ID='"${{ secrets.MQTT_CLIENT_ID }}"' -D MQTT_USER='"${{ secrets.MQTT_USER }}"' -D MQTT_PASS='"${{ secrets.MQTT_PASS }}"'
     needs: tasmota-lite
     steps:
     - name: Set environment for branch
@@ -230,7 +293,7 @@ jobs:
     environment:
       name: build
     env:
-      PLATFORMIO_BUILD_FLAGS: -D MQTT_CLIENT_ID='"${{ secrets.MQTT_CLIENT_ID }}"' -D MQTT_PASS='"${{ secrets.MQTT_PASS }}"'
+      PLATFORMIO_BUILD_FLAGS: -D MQTT_CLIENT_ID='"${{ secrets.MQTT_CLIENT_ID }}"' -D MQTT_USER='"${{ secrets.MQTT_USER }}"' -D MQTT_PASS='"${{ secrets.MQTT_PASS }}"'
     needs: tasmota-lite-trampoline
     steps:
     - name: Set environment for branch
