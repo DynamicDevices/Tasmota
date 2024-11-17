@@ -47,7 +47,7 @@ jobs:
     - name: Store artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: firmware-${{ github.sha }}
+        name: firmware-minimal-${{ github.sha }}
         path: ./build_output/firmware
     - name: Deploy Development (if 'kettlecompanion' branch)
       if: ${{ github.ref == 'refs/heads/kettlecompanion' }}
@@ -99,7 +99,7 @@ jobs:
     - name: Store artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: firmware-${{ github.sha }}
+        name: firmware-minimal-trampoline-${{ github.sha }}
         path: ./build_output/firmware
     - name: Deploy Development (if 'kettlecompanion' branch)
       if: ${{ github.ref == 'refs/heads/kettlecompanion' }}
@@ -153,7 +153,7 @@ jobs:
     - name: Store artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: firmware-${{ github.sha }}
+        name: firmware-lite-${{ github.sha }}
         path: ./build_output/firmware
     - name: Deploy Development (if 'kettlecompanion' branch)
       if: ${{ github.ref == 'refs/heads/kettlecompanion' }}
@@ -205,7 +205,7 @@ jobs:
     - name: Store artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: firmware-${{ github.sha }}
+        name: firmware-lite-trampoline-${{ github.sha }}
         path: ./build_output/firmware
     - name: Deploy Development (if 'kettlecompanion' branch)
       if: ${{ github.ref == 'refs/heads/kettlecompanion' }}
