@@ -45,7 +45,7 @@ jobs:
         export PLATFORMIO_BUILD_FLAGS="${PLATFORMIO_BUILD_FLAGS} -D BUILD_TYPE=${BUILD_TYPE}"
         platformio run -e tasmota-minimal
     - name: Store artifacts
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
         name: firmware-${{ github.sha }}
         path: ./build_output/firmware
@@ -97,7 +97,7 @@ jobs:
         export PLATFORMIO_BUILD_FLAGS="${PLATFORMIO_BUILD_FLAGS} -D BUILD_TYPE=${BUILD_TYPE}"
         platformio run -e tasmota-minimal-trampoline
     - name: Store artifacts
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
         name: firmware-${{ github.sha }}
         path: ./build_output/firmware
@@ -151,7 +151,7 @@ jobs:
         export PLATFORMIO_BUILD_FLAGS="${PLATFORMIO_BUILD_FLAGS} -D BUILD_TYPE=${BUILD_TYPE}"
         platformio run -e tasmota-lite
     - name: Store artifacts
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
         name: firmware-${{ github.sha }}
         path: ./build_output/firmware
@@ -203,7 +203,7 @@ jobs:
         export PLATFORMIO_BUILD_FLAGS="${PLATFORMIO_BUILD_FLAGS} -D BUILD_TYPE=${BUILD_TYPE}"
         platformio run -e tasmota-lite-trampoline
     - name: Store artifacts
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
         name: firmware-${{ github.sha }}
         path: ./build_output/firmware
@@ -256,7 +256,7 @@ jobs:
         export PLATFORMIO_BUILD_FLAGS="${PLATFORMIO_BUILD_FLAGS} -D BUILD_TYPE=${BUILD_TYPE}"
         platformio run -e tasmota
     - name: Store artifacts
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
         name: firmware-${{ github.sha }}
         path: ./build_output/firmware
