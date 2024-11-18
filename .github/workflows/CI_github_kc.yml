@@ -72,7 +72,7 @@ jobs:
       name: build
     env:
       PLATFORMIO_BUILD_FLAGS: -D MQTT_CLIENT_ID='"${{ secrets.MQTT_CLIENT_ID }}"' -D MQTT_USER='"${{ secrets.MQTT_USER }}"' -D MQTT_PASS='"${{ secrets.MQTT_PASS }}"'
-    needs: tasmota-minimal
+#    needs: tasmota-minimal
     steps:
     - name: Set environment for branch
       run: |
@@ -120,7 +120,7 @@ jobs:
   tasmota-lite:
     runs-on: ubuntu-latest
 #    runs-on: [self-hosted, linux]
-    needs: tasmota-minimal-trampoline
+#    needs: tasmota-minimal-trampoline
     environment:
       name: build
     env:
@@ -177,7 +177,7 @@ jobs:
       name: build
     env:
       PLATFORMIO_BUILD_FLAGS: -D MQTT_CLIENT_ID='"${{ secrets.MQTT_CLIENT_ID }}"' -D MQTT_USER='"${{ secrets.MQTT_USER }}"' -D MQTT_PASS='"${{ secrets.MQTT_PASS }}"'
-    needs: tasmota-lite
+#    needs: tasmota-lite
     steps:
     - name: Set environment for branch
       run: |
@@ -230,7 +230,7 @@ jobs:
       name: build
     env:
       PLATFORMIO_BUILD_FLAGS: -D MQTT_CLIENT_ID='"${{ secrets.MQTT_CLIENT_ID }}"' -D MQTT_USER='"${{ secrets.MQTT_USER }}"' -D MQTT_PASS='"${{ secrets.MQTT_PASS }}"'
-    needs: tasmota-lite-trampoline
+#    needs: tasmota-lite-trampoline
     steps:
     - name: Set environment for branch
       run: |

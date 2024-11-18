@@ -1,3 +1,11 @@
+18/11/2024  v12.4.0/v2.1.0.0    - Started provisioning devices again. We found a couple of issues (a) the MQTT_PASSWD secret in the CI build
+                                  needed updating. (b) the full build was too big and meant we could no longer update via the trampoline. I
+                                  have taken out scripting support to reduce the full build size and the trampoline now works (c) there was
+                                  a strange problem with the Rule we use in the trampline to auto-update not being accepted but I have simplified
+                                  this now and auto-update seems to work.
+
+                                  As of this point these devices now connect to mqtt.kettlecompanion.com broker over TLS
+
 19/03/2023  v12.4.0/v2.0.0.0    - Found issues with our TLS configuration as we had a trust anchor for USE_MOSQUITTO for BearSSL
                                   which directly trusted broker-new.kettlecompanion.com. What we actually need is to trust the CA key
                                   which has been used to signed the certificate for the named server. This is changed now to use our
