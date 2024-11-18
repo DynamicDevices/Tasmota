@@ -2331,7 +2331,20 @@ bool GetLog(uint32_t req_loglevel, uint32_t* index_p, char** entry_pp, size_t* l
   return false;
 }
 
+#if DISABLED_USE_TRAMPOLINE
+
+void AddLogData(uint32_t loglevel, const char* log_data, const char* log_data_payload = nullptr, const char* log_data_retained = nullptr) { }
+void AddLog(uint32_t loglevel, PGM_P formatP, ...) { }
+void AddLogBuffer(uint32_t loglevel, uint8_t *buffer, uint32_t count) { }
+void AddLogSerial() { }
+void AddLogMissed(const char *sensor, uint32_t misses) { }
+void AddLogSpi(bool hardware, uint32_t clk, uint32_t mosi, uint32_t miso) { }
+
+#else
+
+#undef AddLogData
 void AddLogData(uint32_t loglevel, const char* log_data, const char* log_data_payload = nullptr, const char* log_data_retained = nullptr) {
+
   if (!TasmotaGlobal.enable_logging) { return; }
   // Store log_data in buffer
   // To lower heap usage log_data_payload may contain the payload data from MqttPublishPayload()
@@ -2467,6 +2480,8 @@ void AddLogSpi(bool hardware, uint32_t clk, uint32_t mosi, uint32_t miso) {
       break;
   }
 }
+
+#endif // USE_TRAMPOLINE
 
 /*********************************************************************************************\
  * HTML and URL encode

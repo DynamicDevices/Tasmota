@@ -101,9 +101,9 @@
 // Use our own build for minimal trampoline to full fat firmware
 #undef OTA_URL
 #ifdef KC_KETTLE
-#define OTA_URL "http://dl.kettlecompanion.com/devel/tasmota-kettle-min-tramp.bin.gz"
+#define OTA_URL "http://dl.kettlecompanion.com/prod/tasmota-kettle-min-tramp.bin.gz"
 #else
-#define OTA_URL "http://dl.kettlecompanion.com/devel/tasmota-minimal-trampoline.bin.gz"
+#define OTA_URL "http://dl.kettlecompanion.com/prod/tasmota-minimal-trampoline.bin.gz"
 #endif
 
 // Are we building a minimal build that will auto-install and auto-trampoline to a full build?
@@ -271,8 +271,9 @@
 // disable rules in the full version so we don't loop constantly
 #undef USE_RULES
 
-// Enable scripting
-#define USE_SCRIPT
+// Don't allow scripting as we were using this for cellular but it makes the
+// full image to update via the trampoline image
+//#define USE_SCRIPT
 
 #ifdef KC_KETTLE
 
@@ -290,9 +291,9 @@
 
 // Run this rule then turn it off
 #ifdef KC_KETTLE
-#define USER_RULE1 "ON Wifi#Connected DO OTAURL http://dl.kettlecompanion.com/devel/tasmota-kettle.bin.gz ENDON ON Wifi#Connected DO BACKLOG UPGRADE 1; RULE1 0 ENDON\r\nRULE1 1"          // Add rule1 data saved at initial firmware load or when command reset is executed
+#define USER_RULE1 "ON Wifi#Connected DO OTAURL http://dl.kettlecompanion.com/prod/tasmota-kettle.bin.gz ENDON ON Wifi#Connected DO UPGRADE 1; RULE1 0 ENDON\r\nRULE1 1"          // Add rule1 data saved at initial firmware load or when command reset is executed
 #else
-#define USER_RULE1 "ON Wifi#Connected DO OTAURL http://dl.kettlecompanion.com/devel/tasmota.bin.gz ENDON ON Wifi#Connected DO BACKLOG UPGRADE 1; RULE1 0 ENDON\r\nRULE1 1"          // Add rule1 data saved at initial firmware load or when command reset is executed
+#define USER_RULE1 "ON Wifi#Connected DO OTAURL http://dl.kettlecompanion.com/prod/tasmota.bin.gz ENDON ON Wifi#Connected DO UPGRADE 1 ENDON\r\nRULE1 1"          // Add rule1 data saved at initial firmware load or when command reset is executed
 #endif
 
 #endif
