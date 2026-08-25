@@ -30,7 +30,7 @@ jobs:
           echo "BUILD_TYPE=prod" >> "$GITHUB_ENV"
         fi
     - name: Checkout
-      uses: actions/checkout@v1
+      uses: actions/checkout@v5
 #    - name: Set up Python
 #      uses: actions/setup-python@v1
     - name: Install dependencies
@@ -45,7 +45,7 @@ jobs:
         export PLATFORMIO_BUILD_FLAGS="${PLATFORMIO_BUILD_FLAGS} -D BUILD_TYPE=${BUILD_TYPE}"
         platformio run -e tasmota-minimal
     - name: Store artifacts
-      uses: actions/upload-artifact@v3.1.2
+      uses: actions/upload-artifact@v5
       with:
         name: firmware-minimal-${{ github.sha }}
         path: ./build_output/firmware
@@ -82,7 +82,7 @@ jobs:
           echo "BUILD_TYPE=prod" >> "$GITHUB_ENV"
         fi
     - name: Checkout
-      uses: actions/checkout@v1
+      uses: actions/checkout@v5
 #    - name: Set up Python
 #      uses: actions/setup-python@v1
     - name: Install dependencies
@@ -97,7 +97,7 @@ jobs:
         export PLATFORMIO_BUILD_FLAGS="${PLATFORMIO_BUILD_FLAGS} -D BUILD_TYPE=${BUILD_TYPE}"
         platformio run -e tasmota-kettle-minimal
     - name: Store artifacts
-      uses: actions/upload-artifact@v3.1.2
+      uses: actions/upload-artifact@v5
       with:
         name: firmware-kettle-minimal-${{ github.sha }}
         path: ./build_output/firmware
@@ -135,7 +135,7 @@ jobs:
           echo "BUILD_TYPE=prod" >> "$GITHUB_ENV"
         fi
     - name: Checkout
-      uses: actions/checkout@v1
+      uses: actions/checkout@v5
  #   - name: Set up Python
  #     uses: actions/setup-python@v1
     - name: Install dependencies
@@ -149,7 +149,7 @@ jobs:
         export PLATFORMIO_BUILD_FLAGS="${PLATFORMIO_BUILD_FLAGS} -D BUILD_TYPE=${BUILD_TYPE}"
         platformio run -e tasmota-minimal-trampoline
     - name: Store artifacts
-      uses: actions/upload-artifact@v3.1.2
+      uses: actions/upload-artifact@v5
       with:
         name: firmware-minimal-trampoline${{ github.sha }}
         path: ./build_output/firmware
@@ -187,7 +187,7 @@ jobs:
           echo "BUILD_TYPE=prod" >> "$GITHUB_ENV"
         fi
     - name: Checkout
-      uses: actions/checkout@v1
+      uses: actions/checkout@v5
  #   - name: Set up Python
  #     uses: actions/setup-python@v1
     - name: Install dependencies
@@ -201,7 +201,7 @@ jobs:
         export PLATFORMIO_BUILD_FLAGS="${PLATFORMIO_BUILD_FLAGS} -D BUILD_TYPE=${BUILD_TYPE}"
         platformio run -e tasmota-kettle-min-tramp
     - name: Store artifacts
-      uses: actions/upload-artifact@v3.1.2
+      uses: actions/upload-artifact@v5
       with:
         name: firmware-kettle-minimal-trampoline-${{ github.sha }}
         path: ./build_output/firmware
@@ -239,7 +239,7 @@ jobs:
           echo "BUILD_TYPE=prod" >> "$GITHUB_ENV"
         fi
     - name: Checkout
-      uses: actions/checkout@v1
+      uses: actions/checkout@v5
 #    - name: Set up Python
 #      uses: actions/setup-python@v1
     - name: Install dependencies
@@ -254,7 +254,7 @@ jobs:
         export PLATFORMIO_BUILD_FLAGS="${PLATFORMIO_BUILD_FLAGS} -D BUILD_TYPE=${BUILD_TYPE}"
         platformio run -e tasmota-lite
     - name: Store artifacts
-      uses: actions/upload-artifact@v3.1.2
+      uses: actions/upload-artifact@v5
       with:
         name: firmware-lite-${{ github.sha }}
         path: ./build_output/firmware
@@ -292,7 +292,7 @@ jobs:
           echo "BUILD_TYPE=prod" >> "$GITHUB_ENV"
         fi
     - name: Checkout
-      uses: actions/checkout@v1
+      uses: actions/checkout@v5
  #   - name: Set up Python
  #     uses: actions/setup-python@v1
     - name: Install dependencies
@@ -306,7 +306,7 @@ jobs:
         export PLATFORMIO_BUILD_FLAGS="${PLATFORMIO_BUILD_FLAGS} -D BUILD_TYPE=${BUILD_TYPE}"
         platformio run -e tasmota-lite-trampoline
     - name: Store artifacts
-      uses: actions/upload-artifact@v3.1.2
+      uses: actions/upload-artifact@v5
       with:
         name: firmware-lite-trampoline${{ github.sha }}
         path: ./build_output/firmware
@@ -345,7 +345,7 @@ jobs:
           echo "BUILD_TYPE=prod" >> "$GITHUB_ENV"
         fi
     - name: Checkout
-      uses: actions/checkout@v1
+      uses: actions/checkout@v5
   #  - name: Set up Python
   #    uses: actions/setup-python@v1
     - name: Install dependencies
@@ -359,7 +359,7 @@ jobs:
         export PLATFORMIO_BUILD_FLAGS="${PLATFORMIO_BUILD_FLAGS} -D BUILD_TYPE=${BUILD_TYPE}"
         platformio run -e tasmota
     - name: Store artifacts
-      uses: actions/upload-artifact@v3.1.2
+      uses: actions/upload-artifact@v5
       with:
         name: firmware-${{ github.sha }}
         path: ./build_output/firmware
@@ -398,7 +398,7 @@ jobs:
           echo "BUILD_TYPE=prod" >> "$GITHUB_ENV"
         fi
     - name: Checkout
-      uses: actions/checkout@v1
+      uses: actions/checkout@v5
   #  - name: Set up Python
   #    uses: actions/setup-python@v1
     - name: Install dependencies
@@ -412,7 +412,7 @@ jobs:
         export PLATFORMIO_BUILD_FLAGS="${PLATFORMIO_BUILD_FLAGS} -D BUILD_TYPE=${BUILD_TYPE}"
         platformio run -e tasmota-kettle
     - name: Store artifacts
-      uses: actions/upload-artifact@v3.1.2
+      uses: actions/upload-artifact@v5
       with:
         name: firmware-kettle-${{ github.sha }}
         path: ./build_output/firmware

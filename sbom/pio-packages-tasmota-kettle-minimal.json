@@ -1,0 +1,30 @@
+{
+  "env": "tasmota-kettle-minimal",
+  "packages": [
+    {
+      "name": "espressif8266",
+      "version": "2024.9.0",
+      "required": "https://github.com/tasmota/platform-espressif8266/releases/download/2024.09.00/platform-espressif8266.zip"
+    },
+    {
+      "name": "framework-arduinoespressif8266",
+      "version": "2.7.8",
+      "required": "https://github.com/tasmota/Arduino/releases/download/2.7.8/esp8266-2.7.8.zip)"
+    },
+    {
+      "name": "tool-esptoolpy",
+      "version": "4.7.6",
+      "required": "https://github.com/tasmota/esptool/releases/download/v4.7.6/esptool.zip)"
+    },
+    {
+      "name": "tool-mklittlefs",
+      "version": "1.203.210628",
+      "required": "platformio/tool-mklittlefs"
+    },
+    {
+      "name": "toolchain-xtensa",
+      "version": "2.40802.200502",
+      "required": "platformio/toolchain-xtensa"
+    }
+  ]
+}

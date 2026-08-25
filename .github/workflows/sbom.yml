@@ -1,0 +1,102 @@
+name: SBOM
+
+on:
+  push:
+    branches: [kettlecompanion, main, master]
+  pull_request:
+    branches: [kettlecompanion, main, master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  lib-manifest-cyclonedx:
+    name: Vendored-lib CycloneDX
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Generate CycloneDX from lib manifests
+        run: |
+          mkdir -p sbom
+          python3 tools/sbom/generate_lib_cyclonedx.py \
+            --root . \
+            --out sbom/kettlecompanion-libs.cdx.json \
+            --name kettlecompanion-tasmota \
+            --version "${GITHUB_SHA}"
+
+      - name: Gate version coverage
+        run: python3 tools/sbom/check_min_elements.py sbom/kettlecompanion-libs.cdx.json
+
+      - name: Upload SBOM artifact
+        uses: actions/upload-artifact@v5
+        with:
+          name: kettlecompanion-libs-cdx
+          path: sbom/kettlecompanion-libs.cdx.json
+          if-no-files-found: error
+
+  build-attested-cyclonedx:
+    name: Build-attested CycloneDX (tasmota-kettle)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install PlatformIO
+        run: pip install -U "platformio>=6.1.19"
+
+      - name: Build firmware
+        env:
+          PLATFORMIO_BUILD_FLAGS: "-DBUILD_TYPE=devel"
+        run: |
+          set -o pipefail
+          mkdir -p sbom
+          pio run -e tasmota-kettle 2>&1 | tee sbom/pio-run-tasmota-kettle.log
+
+      - name: Generate build-attested CycloneDX
+        run: |
+          PYTHONPATH=tools/sbom python3 tools/sbom/generate_build_attested_cyclonedx.py \
+            --root . \
+            --env tasmota-kettle \
+            --out sbom/tasmota-kettle.build-attested.cdx.json \
+            --firmware build_output/firmware/tasmota-kettle.bin \
+            --ldf-log sbom/pio-run-tasmota-kettle.log \
+            --name kettlecompanion-tasmota
+          python3 tools/sbom/check_min_elements.py sbom/tasmota-kettle.build-attested.cdx.json
+
+      - name: Upload build-attested SBOM
+        uses: actions/upload-artifact@v5
+        with:
+          name: tasmota-kettle-build-attested-cdx
+          path: |
+            sbom/tasmota-kettle.build-attested.cdx.json
+            sbom/pio-run-tasmota-kettle.log
+          if-no-files-found: error
+
+  syft-filesystem:
+    name: Syft filesystem scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Generate Syft CycloneDX
+        uses: anchore/sbom-action@v0
+        with:
+          path: .
+          format: cyclonedx-json
+          artifact-name: kettlecompanion-syft.cdx.json
+          output-file: sbom/kettlecompanion-syft.cdx.json
+          upload-artifact: true
