@@ -1,0 +1,3899 @@
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.5",
+  "serialNumber": "urn:uuid:6aba3104-914f-4757-9200-d4ad8e263c7d",
+  "version": 1,
+  "metadata": {
+    "timestamp": "2026-08-25T14:06:06Z",
+    "tools": {
+      "components": [
+        {
+          "type": "application",
+          "name": "generate_build_attested_cyclonedx.py",
+          "version": "0.1.0"
+        }
+      ]
+    },
+    "component": {
+      "type": "firmware",
+      "name": "kettlecompanion-tasmota",
+      "version": "2525f410213a279271db06bf851cd74806ed2b53",
+      "purl": "pkg:github/DynamicDevices/Tasmota@2525f410213a279271db06bf851cd74806ed2b53?env=tasmota-kettle",
+      "properties": [
+        {
+          "name": "dd:provenance",
+          "value": "build-attested via platformio run"
+        },
+        {
+          "name": "dd:build-env",
+          "value": "tasmota-kettle"
+        },
+        {
+          "name": "dd:git-sha",
+          "value": "2525f410213a279271db06bf851cd74806ed2b53"
+        },
+        {
+          "name": "dd:built-at",
+          "value": "2026-08-25T14:06:06Z"
+        },
+        {
+          "name": "dd:firmware-path",
+          "value": "build_output/firmware/tasmota-kettle.bin"
+        },
+        {
+          "name": "dd:firmware-sha256",
+          "value": "9a5ecbd53faf44b039634fefba5fafebcbfe963a370ec5efe1acb83e80a65883"
+        },
+        {
+          "name": "dd:firmware-bytes",
+          "value": "769520"
+        }
+      ]
+    }
+  },
+  "components": [
+    {
+      "type": "platform",
+      "bom-ref": "pio:espressif8266@2024.9.0",
+      "name": "espressif8266",
+      "version": "2024.9.0",
+      "purl": "pkg:generic/espressif8266@2024.9.0?download_url=https://github.com/tasmota/platform-espressif8266/releases/download/2024.09.00/platform-espressif8266.zip",
+      "properties": [
+        {
+          "name": "dd:provenance",
+          "value": "platformio-pkg-list; build-attested"
+        },
+        {
+          "name": "dd:package-manager",
+          "value": "platformio"
+        },
+        {
+          "name": "dd:pio-required",
+          "value": "https://github.com/tasmota/platform-espressif8266/releases/download/2024.09.00/platform-espressif8266.zip"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://github.com/tasmota/platform-espressif8266/releases/download/2024.09.00/platform-espressif8266.zip"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pio:framework-arduinoespressif8266@2.7.8",
+      "name": "framework-arduinoespressif8266",
+      "version": "2.7.8",
+      "purl": "pkg:generic/framework-arduinoespressif8266@2.7.8?download_url=https://github.com/tasmota/Arduino/releases/download/2.7.8/esp8266-2.7.8.zip",
+      "properties": [
+        {
+          "name": "dd:provenance",
+          "value": "platformio-pkg-list; build-attested"
+        },
+        {
+          "name": "dd:package-manager",
+          "value": "platformio"
+        },
+        {
+          "name": "dd:pio-required",
+          "value": "https://github.com/tasmota/Arduino/releases/download/2.7.8/esp8266-2.7.8.zip"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://github.com/tasmota/Arduino/releases/download/2.7.8/esp8266-2.7.8.zip"
+        }
+      ]
+    },
+    {
+      "type": "application",
+      "bom-ref": "pio:tool-esptoolpy@4.7.6",
+      "name": "tool-esptoolpy",
+      "version": "4.7.6",
+      "purl": "pkg:generic/tool-esptoolpy@4.7.6?download_url=https://github.com/tasmota/esptool/releases/download/v4.7.6/esptool.zip",
+      "properties": [
+        {
+          "name": "dd:provenance",
+          "value": "platformio-pkg-list; build-attested"
+        },
+        {
+          "name": "dd:package-manager",
+          "value": "platformio"
+        },
+        {
+          "name": "dd:pio-required",
+          "value": "https://github.com/tasmota/esptool/releases/download/v4.7.6/esptool.zip"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://github.com/tasmota/esptool/releases/download/v4.7.6/esptool.zip"
+        }
+      ]
+    },
+    {
+      "type": "application",
+      "bom-ref": "pio:tool-mklittlefs@1.203.210628",
+      "name": "tool-mklittlefs",
+      "version": "1.203.210628",
+      "purl": "pkg:platformio/platformio/tool-mklittlefs@1.203.210628",
+      "properties": [
+        {
+          "name": "dd:provenance",
+          "value": "platformio-pkg-list; build-attested"
+        },
+        {
+          "name": "dd:package-manager",
+          "value": "platformio"
+        },
+        {
+          "name": "dd:pio-required",
+          "value": "platformio/tool-mklittlefs"
+        }
+      ]
+    },
+    {
+      "type": "application",
+      "bom-ref": "pio:toolchain-xtensa@2.40802.200502",
+      "name": "toolchain-xtensa",
+      "version": "2.40802.200502",
+      "purl": "pkg:platformio/platformio/toolchain-xtensa@2.40802.200502",
+      "properties": [
+        {
+          "name": "dd:provenance",
+          "value": "platformio-pkg-list; build-attested"
+        },
+        {
+          "name": "dd:package-manager",
+          "value": "platformio"
+        },
+        {
+          "name": "dd:pio-required",
+          "value": "platformio/toolchain-xtensa"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "EEPROM 24C128_256_521@unknown",
+      "name": "EEPROM 24C128_256_521",
+      "purl": "pkg:generic/EEPROM%2024C128_256_521@unknown",
+      "properties": [
+        {
+          "name": "dd:evidence-source",
+          "value": "lib/default/AT24C256_512/library.properties"
+        },
+        {
+          "name": "dd:provenance",
+          "value": "manifest/repo-scan; included in build-attested BOM (library identity from manifests; link status below)"
+        },
+        {
+          "name": "dd:build-env",
+          "value": "tasmota-kettle"
+        },
+        {
+          "name": "dd:build-linked",
+          "value": "true"
+        }
+      ],
+      "description": "EEPROM 24C128 / 24C256 / 24C512 memory driver."
+    },
+    {
+      "type": "library",
+      "bom-ref": "Ext-printf@1.0",
+      "name": "Ext-printf",
+      "purl": "pkg:generic/Ext-printf@1.0",
+      "properties": [
+        {
+          "name": "dd:evidence-source",
+          "value": "lib/default/Ext-printf/library.properties"
+        },
+        {
+          "name": "dd:provenance",
+          "value": "manifest/repo-scan; included in build-attested BOM (library identity from manifests; link status below)"
+        },
+        {
+          "name": "dd:build-env",
+          "value": "tasmota-kettle"
+        },
+        {
+          "name": "dd:build-linked",
+          "value": "true"
+        }
+      ],
+      "version": "1.0",
+      "description": "This library provides extended types support for snprintf (float, uint64_t)"
+    },
+    {
+      "type": "library",
+      "bom-ref": "LinkedList@1.2.3",
+      "name": "LinkedList",
+      "purl": "pkg:generic/LinkedList@1.2.3?vcs_url=git+https://github.com/ivanseidel/LinkedList.git",
+      "properties": [
+        {
+          "name": "dd:evidence-source",
+          "value": "lib/default/LinkedList-1.2.3/library.json;lib/default/LinkedList-1.2.3/library.properties"
+        },
+        {
+          "name": "dd:provenance",
+          "value": "manifest/repo-scan; included in build-attested BOM (library identity from manifests; link status below)"
+        },
+        {
+          "name": "dd:build-env",
+          "value": "tasmota-kettle"
+        },
+        {
+          "name": "dd:build-linked",
+          "value": "true"
+        }
+      ],
+      "version": "1.2.3",
+      "description": "A fully implemented LinkedList (int, float, objects, Lists or Wales) made to work with Arduino projects",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/ivanseidel/LinkedList.git"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "TasmotaLList@1.0",
+      "name": "TasmotaLList",
+      "purl": "pkg:generic/TasmotaLList@1.0?vcs_url=git+https://github.com/arendst/Tasmota",
+      "properties": [
+        {
+          "name": "dd:evidence-source",
+          "value": "lib/default/TasmotaLList/library.json"
+        },
+        {
+          "name": "dd:provenance",
+          "value": "manifest/repo-scan; included in build-attested BOM (library identity from manifests; link status below)"
+        },
+        {
+          "name": "dd:build-env",
+          "value": "tasmota-kettle"
+        },
+        {
+          "name": "dd:build-linked",
+          "value": "true"
+        }
+      ],
+      "version": "1.0",
+      "description": "Simple yet powerful linked-list",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/arendst/Tasmota"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "TasmotaSerial@3.6.0",
+      "name": "TasmotaSerial",
+      "purl": "pkg:generic/TasmotaSerial@3.6.0?vcs_url=git+https://github.com/arendst/Tasmota/lib/TasmotaSerial",
+      "properties": [
+        {
+          "name": "dd:evidence-source",
+          "value": "lib/default/TasmotaSerial-3.6.0/library.json;lib/default/TasmotaSerial-3.6.0/library.properties"
+        },
+        {
+          "name": "dd:provenance",
+          "value": "manifest/repo-scan; included in build-attested BOM (library identity from manifests; link status below)"
+        },
+        {
+          "name": "dd:build-env",
+          "value": "tasmota-kettle"
+        },
+        {
+          "name": "dd:build-linked",
+          "value": "true"
+        }
+      ],
+      "version": "3.6.0",
+      "description": "Implementation of software serial with hardware serial fallback for ESP8266 and ESP32.",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/arendst/Tasmota/lib/TasmotaSerial"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "UdpListener@1.0",
+      "name": "UdpListener",
+      "purl": "pkg:generic/UdpListener@1.0",
+      "properties": [
+        {
+          "name": "dd:evidence-source",
+          "value": "lib/default/UdpListener/library.properties"
+        },
+        {
+          "name": "dd:provenance",
+          "value": "manifest/repo-scan; included in build-attested BOM (library identity from manifests; link status below)"
+        },
+        {
+          "name": "dd:build-env",
+          "value": "tasmota-kettle"
+        },
+        {
+          "name": "dd:build-linked",
+          "value": "true"
+        }
+      ],
+      "version": "1.0",
+      "description": "This class only handles receiving UDP Multicast packets. For sending packets, use WifiUdp."
+    },
+    {
+      "type": "library",
+      "bom-ref": "Unishox Compressor Decompressor highly customized and optimized for ESP8266 and Tasmota@1.0",
+      "name": "Unishox Compressor Decompressor highly customized and optimized for ESP8266 and Tasmota",
+      "purl": "pkg:generic/Unishox%20Compressor%20Decompressor%20highly%20customized%20and%20optimized%20for%20ESP8266%20and%20Tasmota@1.0?vcs_url=git+https://github.com/siara-cc/Unishox",
+      "properties": [
+        {
+          "name": "dd:evidence-source",
+          "value": "lib/default/Unishox-1.0-shadinger/library.properties"
+        },
+        {
+          "name": "dd:provenance",
+          "value": "manifest/repo-scan; included in build-attested BOM (library identity from manifests; link status below)"
+        },
+        {
+          "name": "dd:build-env",
+          "value": "tasmota-kettle"
+        },
+        {
+          "name": "dd:build-linked",
+          "value": "true"
+        }
+      ],
+      "version": "1.0",
+      "description": "It is based on Unishox hybrid encoding technique. This version has specific Unicode code removed for size.",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/siara-cc/Unishox"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "WiFiHelper@1.0.0",
+      "name": "WiFiHelper",
+      "purl": "pkg:generic/WiFiHelper@1.0.0",
+      "properties": [
+        {
+          "name": "dd:evidence-source",
+          "value": "lib/default/WiFiHelper/library.json"
+        },
+        {
+          "name": "dd:provenance",
+          "value": "manifest/repo-scan; included in build-attested BOM (library identity from manifests; link status below)"
+        },
+        {
+          "name": "dd:build-env",
+          "value": "tasmota-kettle"
+        },
+        {
+          "name": "dd:build-linked",
+          "value": "true"
+        }
+      ],
+      "version": "1.0.0",
+      "description": "Bridges differences in Arduino WiFi between ESP32 and ESP8266"
+    },
+    {
+      "type": "library",
+      "bom-ref": "base64@1.1.1",
+      "name": "base64",
+      "purl": "pkg:generic/base64@1.1.1?vcs_url=git+https://github.com/Densaugeo/base64_arduino",
+      "properties": [
+        {
+          "name": "dd:evidence-source",
+          "value": "lib/default/base64-1.1.1/library.properties"
+        },
+        {
+          "name": "dd:provenance",
+          "value": "manifest/repo-scan; included in build-attested BOM (library identity from manifests; link status below)"
+        },
+        {
+          "name": "dd:build-env",
+          "value": "tasmota-kettle"
+        },
+        {
+          "name": "dd:build-linked",
+          "value": "true"
+        }
+      ],
+      "version": "1.1.1",
+      "description": "Uses common web conventions - '+' for 62, '/' for 63, '=' for padding. Note that invalid base64 characters are interpreted as padding.",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/Densaugeo/base64_arduino"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "JSMN JSON parser customized and optimized for ESP8266 and Tasmota@1.0",
+      "name": "JSMN JSON parser customized and optimized for ESP8266 and Tasmota",
+      "purl": "pkg:generic/JSMN%20JSON%20parser%20customized%20and%20optimized%20for%20ESP8266%20and%20Tasmota@1.0?vcs_url=git+https://github.com/zserge/jsmn",
+      "properties": [
+        {
+          "name": "dd:evidence-source",
+          "value": "lib/default/jsmn-shadinger-1.0/library.properties"
+        },
+        {
+          "name": "dd:provenance",
+          "value": "manifest/repo-scan; included in build-attested BOM (library identity from manifests; link status below)"
+        },
+        {
+          "name": "dd:build-env",
+          "value": "tasmota-kettle"
+        },
+        {
+          "name": "dd:build-linked",
+          "value": "true"
+        }
+      ],
+      "version": "1.0",
+      "description": "Lightweight in-place JSON parser",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/zserge/jsmn"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "PubSubClient@2.8",
+      "name": "PubSubClient",
+      "purl": "pkg:generic/PubSubClient@2.8?vcs_url=git+https://github.com/knolleary/pubsubclient.git",
+      "properties": [
+        {
+          "name": "dd:evidence-source",
+          "value": "lib/default/pubsubclient-2.8.13/library.json;lib/default/pubsubclient-2.8.13/library.properties"
+        },
+        {
+          "name": "dd:provenance",
+          "value": "manifest/repo-scan; included in build-attested BOM (library identity from manifests; link status below)"
+        },
+        {
+          "name": "dd:build-env",
+          "value": "tasmota-kettle"
+        },
+        {
+          "name": "dd:build-linked",
+          "value": "true"
+        }
+      ],
+      "version": "2.8",
+      "description": "A client library for MQTT messaging. MQTT is a lightweight messaging protocol ideal for small devices. This library allows you to send and receive MQTT messages. It supports the latest MQTT 3.1.1 protocol and can be configured to use the...",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/knolleary/pubsubclient.git"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "ESP8266Audio@1.9.5",
+      "name": "ESP8266Audio",
+      "purl": "pkg:generic/ESP8266Audio@1.9.5?vcs_url=git+https://github.com/earlephilhower/ESP8266Audio",
+      "properties": [
+        {
+          "name": "dd:evidence-source",
+          "value": "lib/lib_audio/ESP8266Audio/library.json;lib/lib_audio/ESP8266Audio/library.properties"
+        },
+        {
+          "name": "dd:provenance",
+          "value": "manifest/repo-scan; included in build-attested BOM (library identity from manifests; link status below)"
+        },
+        {
+          "name": "dd:build-env",
+          "value": "tasmota-kettle"
+        },
+        {
+          "name": "dd:build-linked",
+          "value": "true"
+        }
+      ],
+      "version": "1.9.5",
+      "description": "Audio file format and I2S DAC library for ESP8266, ESP32, and Raspberry Pi Pico RP2040",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/earlephilhower/ESP8266Audio"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "ESP8266SAM@1.0.1",
+      "name": "ESP8266SAM",
+      "purl": "pkg:generic/ESP8266SAM@1.0.1?vcs_url=git+https://github.com/earlephilhower/ESP8266SAM",
+      "properties": [
+        {
+          "name": "dd:evidence-source",
+          "value": "lib/lib_audio/ESP8266SAM/library.json;lib/lib_audio/ESP8266SAM/library.properties"
+        },
+        {
+          "name": "dd:provenance",
+          "value": "manifest/repo-scan; included in build-attested BOM (library identity from manifests; link status below)"
+        },
+        {
+          "name": "dd:build-env",
+          "value": "tasmota-kettle"
+        },
+        {
+          "name": "dd:build-linked",
+          "value": "true"
+        }
+      ],
+      "version": "1.0.1",
+      "description": "Speech synthesizer SAM ported to ESP8266/ESP32/RP2040",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/earlephilhower/ESP8266SAM"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "mp3_shine_esp32@1.0.0",
+      "name": "mp3_shine_esp32",
+      "purl": "pkg:generic/mp3_shine_esp32@1.0.0",
+      "properties": [
+        {
+          "name": "dd:evidence-source",
+          "value": "lib/lib_audio/mp3_shine_esp32/library.json;lib/lib_audio/mp3_shine_esp32/library.properties"
+        },
+        {
+          "name": "dd:provenance",
+          "value": "manifest/repo-scan; included in build-attested BOM (library identity from manifests; link status below)"
+        },
+        {
+          "name": "dd:version-conflict",
+          "value": "library.json=1.0.0; library.properties=1.0"
+        },
+        {
+          "name": "dd:build-env",
+          "value": "tasmota-kettle"
+        },
+        {
+          "name": "dd:build-linked",
+          "value": "false"
+        }
+      ],
+      "version": "1.0.0",
+      "description": "mp3 encoder"
+    },
+    {
+      "type": "library",
+      "bom-ref": "IRremoteESP8266@2.8.6",
+      "name": "IRremoteESP8266",
+      "purl": "pkg:generic/IRremoteESP8266@2.8.6?vcs_url=git+https://github.com/crankyoldgit/IRremoteESP8266.git",
+      "properties": [
+        {
+          "name": "dd:evidence-source",
+          "value": "lib/lib_basic/IRremoteESP8266/library.json"
+        },
+        {
+          "name": "dd:provenance",
+          "value": "manifest/repo-scan; included in build-attested BOM (library identity from manifests; link status below)"
+        },
+        {
+          "name": "dd:build-env",
+          "value": "tasmota-kettle"
+        },
+        {
+          "name": "dd:build-linked",
+          "value": "true"
+        }
+      ],
+      "version": "2.8.6",
+      "description": "Send and receive infrared signals with multiple protocols (ESP8266/ESP32)",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/crankyoldgit/IRremoteESP8266.git"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "IRremoteESP8266@2.8.6#15",
+      "name": "IRremoteESP8266",
+      "purl": "pkg:generic/IRremoteESP8266@2.8.6?vcs_url=git+https://github.com/crankyoldgit/IRremoteESP8266.git",
+      "properties": [
+        {
+          "name": "dd:evidence-source",
+          "value": "lib/lib_basic/IRremoteESP8266/IRremoteESP8266/library.json;lib/lib_basic/IRremoteESP8266/IRremoteESP8266/library.properties"
+        },
+        {
+          "name": "dd:provenance",
+          "value": "manifest/repo-scan; included in build-attested BOM (library identity from manifests; link status below)"
+        },
+        {
+          "name": "dd:build-env",
+          "value": "tasmota-kettle"
+        },
+        {
+          "name": "dd:build-linked",
+          "value": "true"
+        }
+      ],
+      "version": "2.8.6",
+      "description": "Send and receive infrared signals with multiple protocols (ESP8266/ESP32)",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/crankyoldgit/IRremoteESP8266.git"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "NeoPixelBus@2.6.7",
+      "name": "NeoPixelBus",
+      "purl": "pkg:generic/NeoPixelBus@2.6.7?vcs_url=git+https://github.com/Makuna/NeoPixelBus",
+      "properties": [
+        {
+          "name": "dd:evidence-source",
+          "value": "lib/lib_basic/NeoPixelBus/library.json;lib/lib_basic/NeoPixelBus/library.properties"
+        },
+        {
+          "name": "dd:provenance",
+          "value": "manifest/repo-scan; included in build-attested BOM (library identity from manifests; link status below)"
+        },
+        {
+          "name": "dd:build-env",
+          "value": "tasmota-kettle"
+        },
+        {
+          "name": "dd:build-linked",
+          "value": "true"
+        }
+      ],
+      "version": "2.6.7",
+      "description": "A library that makes controlling NeoPixels (APA106, WS2811, WS2812, WS2813, SK6812, TM1829, TM1814, TM1914, TX1812) and DotStars (APA102, LPD8806, LPD6803, SK9822, WS2801, P9813) easy.  Supports most Arduino platforms, including async ha...",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/Makuna/NeoPixelBus"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "TasmotaModbus@3.6.0",
+      "name": "TasmotaModbus",
+      "purl": "pkg:generic/TasmotaModbus@3.6.0?vcs_url=git+https://github.com/arendst/Tasmota/lib/TasmotaModbus",
+      "properties": [
+        {
+          "name": "dd:evidence-source",
+          "value": "lib/lib_basic/TasmotaModbus-3.6.0/library.json;lib/lib_basic/TasmotaModbus-3.6.0/library.properties"
+        },
+        {
+          "name": "dd:provenance",
+          "value": "manifest/repo-scan; included in build-attested BOM (library identity from manifests; link status below)"
+        },
+        {
+          "name": "dd:build-env",
+          "value": "tasmota-kettle"
+        },
+        {
+          "name": "dd:build-linked",
+          "value": "true"
+        }
+      ],
+      "version": "3.6.0",
+      "description": "Modbus wrapper for TasmotaSerial.",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/arendst/Tasmota/lib/TasmotaModbus"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "OneWire@2.3.2",
+      "name": "OneWire",
+      "purl": "pkg:generic/OneWire@2.3.2?vcs_url=git+https://github.com/PaulStoffregen/OneWire",
+      "properties": [
+        {
+          "name": "dd:evidence-source",
+          "value": "lib/lib_basic/TasmotaOneWire-2.3.3/library.json;lib/lib_basic/TasmotaOneWire-2.3.3/library.properties"
+        },
+        {
+          "name": "dd:provenance",
+          "value": "manifest/repo-scan; included in build-attested BOM (library identity from manifests; link status below)"
+        },
+        {
+          "name": "dd:version-conflict",
+          "value": "library.json=2.3.2; library.properties=2.3.3"
+        },
+        {
+          "name": "dd:build-env",
+          "value": "tasmota-kettle"
+        },
+        {
+          "name": "dd:build-linked",
+          "value": "true"
+        }
+      ],
+      "version": "2.3.2",
+      "description": "Control 1-Wire protocol (DS18S20, DS18B20, DS2408 and etc)",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/PaulStoffregen/OneWire"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "TTGO TWatch Library@1.2.0",
+      "name": "TTGO TWatch Library",
+      "purl": "pkg:generic/TTGO%20TWatch%20Library@1.2.0?vcs_url=git+https://github.com/Xinyuan-LilyGO/TTGO_TWatch_Library.git",
+      "properties": [
+        {
+          "name": "dd:evidence-source",
+          "value": "lib/lib_deprecated/TTGO_TWatch_Library/library.json;lib/lib_deprecated/TTGO_TWatch_Library/library.properties"
+        },
+        {
+          "name": "dd:provenance",
+          "value": "manifest/repo-scan; included in build-attested BOM (library identity from manifests; link status below)"
+        },
+        {
+          "name": "dd:build-env",
+          "value": "tasmota-kettle"
+        },
+        {
+          "name": "dd:build-linked",
+          "value": "false"
+        }
+      ],
+      "version": "1.2.0",
+      "description": "Arduino Library for TTGO T-Watch development kit",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/Xinyuan-LilyGO/TTGO_TWatch_Library.git"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "ES7210@1.0.0",
+      "name": "ES7210",
+      "purl": "pkg:generic/ES7210@1.0.0",
+      "properties": [
+        {
+          "name": "dd:evidence-source",
+          "value": "lib/lib_deprecated/es7210/library.json;lib/lib_deprecated/es7210/library.properties"
+        },
+        {
+          "name": "dd:provenance",
+          "value": "manifest/repo-scan; included in build-attested BOM (library identity from manifests; link status below)"
+        },
+        {
+          "name": "dd:version-conflict",
+          "value": "library.json=1.0.0; library.properties=1.0"
+        },
+        {
+          "name": "dd:build-env",
+          "value": "tasmota-kettle"
+        },
+        {
+          "name": "dd:build-linked",
+          "value": "false"
+        }
+      ],
+      "version": "1.0.0",
+      "description": "Audio codec"
+    },
+    {
+      "type": "library",
+      "bom-ref": "ES7243e@1.0.0",
+      "name": "ES7243e",
+      "purl": "pkg:generic/ES7243e@1.0.0",
+      "properties": [
+        {
+          "name": "dd:evidence-source",
+          "value": "lib/lib_deprecated/es7243e/library.json;lib/lib_deprecated/es7243e/library.properties"
+        },
+        {
+          "name": "dd:provenance",
+          "value": "manifest/repo-scan; included in build-attested BOM (library identity from manifests; link status below)"
+        },
+        {
+          "name": "dd:version-conflict",
+          "value": "library.json=1.0.0; library.properties=1.0"
+        },
+        {
+          "name": "dd:build-env",
+          "value": "tasmota-kettle"
+        },
+        {
+          "name": "dd:build-linked",
+          "value": "false"
+        }
+      ],
+      "version": "1.0.0",
+      "description": "Audio codec"
+    },
+    {
+      "type": "library",
+      "bom-ref": "ES8156@1.0.0",
+      "name": "ES8156",
+      "purl": "pkg:generic/ES8156@1.0.0",
+      "properties": [
+        {
+          "name": "dd:evidence-source",
+          "value": "lib/lib_deprecated/es8156/library.json;lib/lib_deprecated/es8156/library.properties"
+        },
+        {
+          "name": "dd:provenance",
+          "value": "manifest/repo-scan; included in build-attested BOM (library identity from manifests; link status below)"
+        },
+        {
+          "name": "dd:version-conflict",
+          "value": "library.json=1.0.0; library.properties=1.0"
+        },
+        {
+          "name": "dd:build-env",
+          "value": "tasmota-kettle"
+        },
+        {
+          "name": "dd:build-linked",
+          "value": "false"
+        }
+      ],
+      "version": "1.0.0",
+      "description": "Audio codec"
+    },
+    {
+      "type": "library",
+      "bom-ref": "ES8311@1.0.0",
+      "name": "ES8311",
+      "purl": "pkg:generic/ES8311@1.0.0",
+      "properties": [
+        {
+          "name": "dd:evidence-source",
+          "value": "lib/lib_deprecated/es8311/library.json;lib/lib_deprecated/es8311/library.properties"
+        },
+        {
+          "name": "dd:provenance",
+          "value": "manifest/repo-scan; included in build-attested BOM (library identity from manifests; link status below)"
+        },
+        {
+          "name": "dd:version-conflict",
+          "value": "library.json=1.0.0; library.properties=1.0"
+        },
+        {
+          "name": "dd:build-env",
+          "value": "tasmota-kettle"
+        },
+        {
+          "name": "dd:build-linked",
+          "value": "false"
+        }
+      ],
+      "version": "1.0.0",
+      "description": "Audio codec"
+    },
+    {
+      "type": "library",
+      "bom-ref": "WM8960@1.0.0",
+      "name": "WM8960",
+      "purl": "pkg:generic/WM8960@1.0.0",
+      "properties": [
+        {
+          "name": "dd:evidence-source",
+          "value": "lib/lib_deprecated/wm8960/library.json;lib/lib_deprecated/wm8960/library.properties"
+        },
+        {
+          "name": "dd:provenance",
+          "value": "manifest/repo-scan; included in build-attested BOM (library identity from manifests; link status below)"
+        },
+        {
+          "name": "dd:version-conflict",
+          "value": "library.json=1.0.0; library.properties=1.0"
+        },
+        {
+          "name": "dd:build-env",
+          "value": "tasmota-kettle"
+        },
+        {
+          "name": "dd:build-linked",
+          "value": "false"
+        }
+      ],
+      "version": "1.0.0",
+      "description": "Audio codec"
+    },
+    {
+      "type": "library",
+      "bom-ref": "Adafruit GFX Library@1.5.6",
+      "name": "Adafruit GFX Library",
+      "purl": "pkg:generic/Adafruit%20GFX%20Library@1.5.6?vcs_url=git+https://github.com/adafruit/Adafruit-GFX-Library",
+      "properties": [
+        {
+          "name": "dd:evidence-source",
+          "value": "lib/lib_display/Adafruit-GFX-Library-1.5.6-gemu-1.0/library.properties"
+        },
+        {
+          "name": "dd:provenance",
+          "value": "manifest/repo-scan; included in build-attested BOM (library identity from manifests; link status below)"
+        },
+        {
+          "name": "dd:build-env",
+          "value": "tasmota-kettle"
+        },
+        {
+          "name": "dd:build-linked",
+          "value": "true"
+        }
+      ],
+      "version": "1.5.6",
+      "description": "Install this library in addition to the display library for your hardware.",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/adafruit/Adafruit-GFX-Library"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "Adafruit LED Backpack Library@1.1.6",
+      "name": "Adafruit LED Backpack Library",
+      "purl": "pkg:generic/Adafruit%20LED%20Backpack%20Library@1.1.6?vcs_url=git+https://github.com/adafruit/Adafruit-LED-Backpack-Library",
+      "properties": [
+        {
+          "name": "dd:evidence-source",
+          "value": "lib/lib_display/Adafruit_LED_Backpack-1.1.6/library.properties"
+        },
+        {
+          "name": "dd:provenance",
+          "value": "manifest/repo-scan; included in build-attested BOM (library identity from manifests; link status below)"
+        },
+        {
+          "name": "dd:build-env",
+          "value": "tasmota-kettle"
+        },
+        {
+          "name": "dd:build-linked",
+          "value": "true"
+        }
+      ],
+      "version": "1.1.6",
+      "description": "Adafruit LED Backpack Library for our 8x8 matrix and 7-segment LED backpacks",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/adafruit/Adafruit-LED-Backpack-Library"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "Display renderer@1.0",
+      "name": "Display renderer",
+      "purl": "pkg:generic/Display%20renderer@1.0?vcs_url=git+https://github.com/arendst/Tasmota",
+      "properties": [
+        {
+          "name": "dd:evidence-source",
+          "value": "lib/lib_display/Display_Renderer-gemu-1.0/library.json;lib/lib_display/Display_Renderer-gemu-1.0/library.properties"
+        },
+        {
+          "name": "dd:provenance",
+          "value": "manifest/repo-scan; included in build-attested BOM (library identity from manifests; link status below)"
+        },
+        {
+          "name": "dd:build-env",
+          "value": "tasmota-kettle"
+        },
+        {
+          "name": "dd:build-linked",
+          "value": "true"
+        }
+      ],
+      "version": "1.0",
+      "description": "ESP8266 ESP32 library for Tasmota displays",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/arendst/Tasmota"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "Waveshare esp 2.9 inch e-paper display driver@1.0",
+      "name": "Waveshare esp 2.9 inch e-paper display driver",
+      "purl": "pkg:generic/Waveshare%20esp%202.9%20inch%20e-paper%20display%20driver@1.0?vcs_url=git+https://github.com/arendst/Tasmota",
+      "properties": [
+        {
+          "name": "dd:evidence-source",
+          "value": "lib/lib_display/Epaper_29-gemu-1.0/library.properties"
+        },
+        {
+          "name": "dd:provenance",
+          "value": "manifest/repo-scan; included in build-attested BOM (library identity from manifests; link status below)"
+        },
+        {
+          "name": "dd:build-env",
+          "value": "tasmota-kettle"
+        },
+        {
+          "name": "dd:build-linked",
+          "value": "true"
+        }
+      ],
+      "version": "1.0",
+      "description": "ESP8266 ESP32 library for Waveshare 2.9 inch e-paper display",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/arendst/Tasmota"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "Waveshare esp 4.2 inch e-paper display driver@1.0",
+      "name": "Waveshare esp 4.2 inch e-paper display driver",
+      "purl": "pkg:generic/Waveshare%20esp%204.2%20inch%20e-paper%20display%20driver@1.0?vcs_url=git+https://github.com/arendst/Tasmota",
+      "properties": [
+        {
+          "name": "dd:evidence-source",
+          "value": "lib/lib_display/Epaper_42-gemu-1.0/library.properties"
+        },
+        {
+          "name": "dd:provenance",
+          "value": "manifest/repo-scan; included in build-attested BOM (library identity from manifests; link status below)"
+        },
+        {
+          "name": "dd:build-env",
+          "value": "tasmota-kettle"
+        },
+        {
+          "name": "dd:build-linked",
+          "value": "true"
+        }
+      ],
+      "version": "1.0",
+      "description": "ESP8266 ESP32 library for Waveshare e-paper display.",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/arendst/Tasmota"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "FT5206_Library@1.0.0",
+      "name": "FT5206_Library",
+      "purl": "pkg:generic/FT5206_Library@1.0.0?vcs_url=git+https://github.com/lewisxhe/FT5206_Library",
+      "properties": [
+        {
+          "name": "dd:evidence-source",
+          "value": "lib/lib_display/FT5206_Library/library.properties"
+        },
+        {
+          "name": "dd:provenance",
+          "value": "manifest/repo-scan; included in build-attested BOM (library identity from manifests; link status below)"
+        },
+        {
+          "name": "dd:build-env",
+          "value": "tasmota-kettle"
+        },
+        {
+          "name": "dd:build-linked",
+          "value": "true"
+        }
+      ],
+      "version": "1.0.0",
+      "description": "Arduino library for FT5206 chip. Tested with ESP32",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/lewisxhe/FT5206_Library"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "LedControl@1.0.6",
+      "name": "LedControl",
+      "purl": "pkg:generic/LedControl@1.0.6",
+      "properties": [
+        {
+          "name": "dd:evidence-source",
+          "value": "lib/lib_display/LedControl/library.properties"
+        },
+        {
+          "name": "dd:provenance",
+          "value": "manifest/repo-scan; included in build-attested BOM (library identity from manifests; link status below)"
+        },
+        {
+          "name": "dd:build-env",
+          "value": "tasmota-kettle"
+        },
+        {
+          "name": "dd:build-linked",
+          "value": "true"
+        }
+      ],
+      "version": "1.0.6",
+      "description": "The library supports multiple daisychained drivers and supports Led-Matrix displays as well as 7-Segment displays."
+    },
+    {
+      "type": "library",
+      "bom-ref": "LiquidCrystal_I2C@1.1.2",
+      "name": "LiquidCrystal_I2C",
+      "purl": "pkg:generic/LiquidCrystal_I2C@1.1.2?vcs_url=git+https://github.com/marcoschwartz/LiquidCrystal_I2C.git",
+      "properties": [
+        {
+          "name": "dd:evidence-source",
+          "value": "lib/lib_display/LiquidCrystal_I2C-1.1.3/library.json;lib/lib_display/LiquidCrystal_I2C-1.1.3/library.properties"
+        },
+        {
+          "name": "dd:provenance",
+          "value": "manifest/repo-scan; included in build-attested BOM (library identity from manifests; link status below)"
+        },
+        {
+          "name": "dd:build-env",
+          "value": "tasmota-kettle"
+        },
+        {
+          "name": "dd:build-linked",
+          "value": "true"
+        }
+      ],
+      "version": "1.1.2",
+      "description": "A library for DFRobot I2C LCD displays",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/marcoschwartz/LiquidCrystal_I2C.git"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "TM1638plus@1.7.0",
+      "name": "TM1638plus",
+      "purl": "pkg:generic/TM1638plus@1.7.0?vcs_url=git+https://github.com/gavinlyonsrepo/TM1638plus",
+      "properties": [
+        {
+          "name": "dd:evidence-source",
+          "value": "lib/lib_display/TM1638plus/library.properties"
+        },
+        {
+          "name": "dd:provenance",
+          "value": "manifest/repo-scan; included in build-attested BOM (library identity from manifests; link status below)"
+        },
+        {
+          "name": "dd:build-env",
+          "value": "tasmota-kettle"
+        },
+        {
+          "name": "dd:build-linked",
+          "value": "true"
+        }
+      ],
+      "version": "1.7.0",
+      "description": "It supports Push Buttons, LEDs, ASCII, Decimal, Hexadecimal,text strings and the decimal point. Small Memory footprint.",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/gavinlyonsrepo/TM1638plus"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "universal display Library@0.1",
+      "name": "universal display Library",
+      "purl": "pkg:generic/universal%20display%20Library@0.1?vcs_url=git+https://github.com/arendst/Tasmota",
+      "properties": [
+        {
+          "name": "dd:evidence-source",
+          "value": "lib/lib_display/UDisplay/library.json;lib/lib_display/UDisplay/library.properties"
+        },
+        {
+          "name": "dd:provenance",
+          "value": "manifest/repo-scan; included in build-attested BOM (library identity from manifests; link status below)"
+        },
+        {
+          "name": "dd:build-env",
+          "value": "tasmota-kettle"
+        },
+        {
+          "name": "dd:build-linked",
+          "value": "true"
+        }
+      ],
+      "version": "0.1",
+      "description": "This is a library a couple of displays.",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/arendst/Tasmota"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "XPT2046_Touchscreen@1.3",
+      "name": "XPT2046_Touchscreen",
+      "purl": "pkg:generic/XPT2046_Touchscreen@1.3?vcs_url=git+https://github.com/PaulStoffregen/XPT2046_Touchscreen.git",
+      "properties": [
+        {
+          "name": "dd:evidence-source",
+          "value": "lib/lib_display/XPT2046_Touchscreen/library.json;lib/lib_display/XPT2046_Touchscreen/library.properties"
+        },
+        {
+          "name": "dd:provenance",
+          "value": "manifest/repo-scan; included in build-attested BOM (library identity from manifests; link status below)"
+        },
+        {
+          "name": "dd:build-env",
+          "value": "tasmota-kettle"
+        },
+        {
+          "name": "dd:build-linked",
+          "value": "true"
+        }
+      ],
+      "version": "1.3",
+      "description": "Touchscreens using the XPT2046 controller chip. Many very low cost color TFT displays with touch screens have this chip.",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/PaulStoffregen/XPT2046_Touchscreen.git"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "RA8876@1.0.2",
+      "name": "RA8876",
+      "purl": "pkg:generic/RA8876@1.0.2?vcs_url=git+https://github.com/jaretburkett/ILI9488",
+      "properties": [
+        {
+          "name": "dd:evidence-source",
+          "value": "lib/lib_display/Xlatb_RA8876-gemu-1.0/library.properties"
+        },
+        {
+          "name": "dd:provenance",
+          "value": "manifest/repo-scan; included in build-attested BOM (library identity from manifests; link status below)"
+        },
+        {
+          "name": "dd:build-env",
+          "value": "tasmota-kettle"
+        },
+        {
+          "name": "dd:build-linked",
+          "value": "true"
+        }
+      ],
+      "version": "1.0.2",
+      "description": "Library for RA8876 displays",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/jaretburkett/ILI9488"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "SevenSegmentTM1637@1.1.0",
+      "name": "SevenSegmentTM1637",
+      "purl": "pkg:generic/SevenSegmentTM1637@1.1.0?vcs_url=git+https://github.com/bremme/arduino-tm1637",
+      "properties": [
+        {
+          "name": "dd:evidence-source",
+          "value": "lib/lib_display/arduino-tm1637/library.properties"
+        },
+        {
+          "name": "dd:provenance",
+          "value": "manifest/repo-scan; included in build-attested BOM (library identity from manifests; link status below)"
+        },
+        {
+          "name": "dd:build-env",
+          "value": "tasmota-kettle"
+        },
+        {
+          "name": "dd:build-linked",
+          "value": "true"
+        }
+      ],
+      "version": "1.1.0",
+      "description": "Extensive library for controlling a 4 digit seven segment display. This library inherent the Print class and uses the LCDAPI 1.0. For example you can use all normal Print methods like: print() and println(). From the LCDAPI among others ...",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/bremme/arduino-tm1637"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "A4988_Stepper@0.0.1",
+      "name": "A4988_Stepper",
+      "purl": "pkg:generic/A4988_Stepper@0.0.1",
+      "properties": [
+        {
+          "name": "dd:evidence-source",
+          "value": "lib/lib_div/A4988_Stepper/library.properties"
+        },
+        {
+          "name": "dd:provenance",
+          "value": "manifest/repo-scan; included in build-attested BOM (library identity from manifests; link status below)"
+        },
+        {
+          "name": "dd:build-env",
+          "value": "tasmota-kettle"
+        },
+        {
+          "name": "dd:build-linked",
+          "value": "true"
+        }
+      ],
+      "version": "0.0.1",
+      "description": "This library allows you to control bipolar stepper motors, controlled by A4988-stepperDriverCircuit."
+    },
+    {
+      "type": "library",
+      "bom-ref": "Adafruit Fingerprint Sensor Library@2.1.0",
+      "name": "Adafruit Fingerprint Sensor Library",
+      "purl": "pkg:generic/Adafruit%20Fingerprint%20Sensor%20Library@2.1.0?vcs_url=git+https://github.com/adafruit/Adafruit-Fingerprint-Sensor-Library",
+      "properties": [
+        {
+          "name": "dd:evidence-source",
+          "value": "lib/lib_div/Adafruit-Fingerprint-Sensor-Library-2.1.0-Tasmota/library.properties"
+        },
+        {
+          "name": "dd:provenance",
+          "value": "manifest/repo-scan; included in build-attested BOM (library identity from manifests; link status below)"
+        },
+        {
+          "name": "dd:build-env",
+          "value": "tasmota-kettle"
+        },
+        {
+          "name": "dd:build-linked",
+          "value": "true"
+        }
+      ],
+      "version": "2.1.0",
+      "description": "Arduino library for interfacing to the fingerprint sensor in the Adafruit shop",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/adafruit/Adafruit-Fingerprint-Sensor-Library"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "NTP Library@unknown",
+      "name": "NTP Library",
+      "purl": "pkg:generic/NTP%20Library@unknown",
+      "properties": [
+        {
+          "name": "dd:evidence-source",
+          "value": "lib/lib_div/ArduinoNTPd/library.properties"
+        },
+        {
+          "name": "dd:provenance",
+          "value": "manifest/repo-scan; included in build-attested BOM (library identity from manifests; link status below)"
+        },
+        {
+          "name": "dd:build-env",
+          "value": "tasmota-kettle"
+        },
+        {
+          "name": "dd:build-linked",
+          "value": "true"
+        }
+      ],
+      "description": "NTP"
+    },
+    {
+      "type": "library",
+      "bom-ref": "C2Programmer@1.0.0",
+      "name": "C2Programmer",
+      "purl": "pkg:generic/C2Programmer@1.0.0?vcs_url=git+https://github.com/lhartmann/c2_prog_wifi",
+      "properties": [
+        {
+          "name": "dd:evidence-source",
+          "value": "lib/lib_div/C2Programmer-1.0.0/library.json;lib/lib_div/C2Programmer-1.0.0/library.properties"
+        },
+        {
+          "name": "dd:provenance",
+          "value": "manifest/repo-scan; included in build-attested BOM (library identity from manifests; link status below)"
+        },
+        {
+          "name": "dd:build-env",
+          "value": "tasmota-kettle"
+        },
+        {
+          "name": "dd:build-linked",
+          "value": "true"
+        }
+      ],
+      "version": "1.0.0",
+      "description": "Implementation of C2 programmer allowing update of Sonoff Bridge RF chip.",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/lhartmann/c2_prog_wifi"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "DS2480 Library@0.1.0",
+      "name": "DS2480 Library",
+      "purl": "pkg:generic/DS2480%20Library@0.1.0",
+      "properties": [
+        {
+          "name": "dd:evidence-source",
+          "value": "lib/lib_div/DS2480B/library.properties"
+        },
+        {
+          "name": "dd:provenance",
+          "value": "manifest/repo-scan; included in build-attested BOM (library identity from manifests; link status below)"
+        },
+        {
+          "name": "dd:build-env",
+          "value": "tasmota-kettle"
+        },
+        {
+          "name": "dd:build-linked",
+          "value": "true"
+        }
+      ],
+      "version": "0.1.0",
+      "description": "DS2480"
+    },
+    {
+      "type": "library",
+      "bom-ref": "ESPFtpServer@0.1.0",
+      "name": "ESPFtpServer",
+      "purl": "pkg:generic/ESPFtpServer@0.1.0?vcs_url=git+https://github.com/jmwislez/ESPFtpServer.git",
+      "properties": [
+        {
+          "name": "dd:evidence-source",
+          "value": "lib/lib_div/ESPFtpServer/library.json;lib/lib_div/ESPFtpServer/library.properties"
+        },
+        {
+          "name": "dd:provenance",
+          "value": "manifest/repo-scan; included in build-attested BOM (library identity from manifests; link status below)"
+        },
+        {
+          "name": "dd:build-env",
+          "value": "tasmota-kettle"
+        },
+        {
+          "name": "dd:build-linked",
+          "value": "true"
+        }
+      ],
+      "version": "0.1.0",
+      "description": "ESPFtpServer implements a simple FTP server (passive mode, only one connection at a time) on ESP8266 and ESP32, for any file system (SPIFFS/LittleFS/SD_MMC).",
+      "licenses": [
+        {
+          "license": {
+            "name": "GPL"
+          }
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/jmwislez/ESPFtpServer.git"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "LibTeleinfo@1.1.7",
+      "name": "LibTeleinfo",
+      "purl": "pkg:generic/LibTeleinfo@1.1.7?vcs_url=git+https://github.com/hallard/LibTeleinfo.git",
+      "properties": [
+        {
+          "name": "dd:evidence-source",
+          "value": "lib/lib_div/LibTeleinfo/library.json;lib/lib_div/LibTeleinfo/library.properties"
+        },
+        {
+          "name": "dd:provenance",
+          "value": "manifest/repo-scan; included in build-attested BOM (library identity from manifests; link status below)"
+        },
+        {
+          "name": "dd:build-env",
+          "value": "tasmota-kettle"
+        },
+        {
+          "name": "dd:build-linked",
+          "value": "true"
+        }
+      ],
+      "version": "1.1.7",
+      "description": "Decoder for Teleinfo (aka TIC) from French smart power meters",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/hallard/LibTeleinfo.git"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "NewPing@1.9.1",
+      "name": "NewPing",
+      "purl": "pkg:generic/NewPing@1.9.1",
+      "properties": [
+        {
+          "name": "dd:evidence-source",
+          "value": "lib/lib_div/NewPing-1.9.1/library.properties"
+        },
+        {
+          "name": "dd:provenance",
+          "value": "manifest/repo-scan; included in build-attested BOM (library identity from manifests; link status below)"
+        },
+        {
+          "name": "dd:build-env",
+          "value": "tasmota-kettle"
+        },
+        {
+          "name": "dd:build-linked",
+          "value": "true"
+        }
+      ],
+      "version": "1.9.1",
+      "description": "When I first received an ultrasonic sensor I was not happy with how poorly it performed. I soon realized the problem was not the sensor, it was the available ping and ultrasonic libraries causing the problem. The NewPing library totally ..."
+    },
+    {
+      "type": "library",
+      "bom-ref": "OpenTherm Library@0.9.0",
+      "name": "OpenTherm Library",
+      "purl": "pkg:generic/OpenTherm%20Library@0.9.0?vcs_url=git+https://github.com/ihormelnyk/opentherm_library",
+      "properties": [
+        {
+          "name": "dd:evidence-source",
+          "value": "lib/lib_div/OpenTherm-0.9.0/library.properties"
+        },
+        {
+          "name": "dd:provenance",
+          "value": "manifest/repo-scan; included in build-attested BOM (library identity from manifests; link status below)"
+        },
+        {
+          "name": "dd:build-env",
+          "value": "tasmota-kettle"
+        },
+        {
+          "name": "dd:build-linked",
+          "value": "true"
+        }
+      ],
+      "version": "0.9.0",
+      "description": "OpenTherm Library is based on OpenTherm protocol specification v2.2 and works with all OpenTherm compatible boilers.",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/ihormelnyk/opentherm_library"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "Process_control@1.0.0",
+      "name": "Process_control",
+      "purl": "pkg:generic/Process_control@1.0.0?vcs_url=git+https://github.com/colinl/process-control.git",
+      "properties": [
+        {
+          "name": "dd:evidence-source",
+          "value": "lib/lib_div/ProcessControl/library.properties"
+        },
+        {
+          "name": "dd:provenance",
+          "value": "manifest/repo-scan; included in build-attested BOM (library identity from manifests; link status below)"
+        },
+        {
+          "name": "dd:build-env",
+          "value": "tasmota-kettle"
+        },
+        {
+          "name": "dd:build-linked",
+          "value": "true"
+        }
+      ],
+      "version": "1.0.0",
+      "description": "C++ library of process control algorithms",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/colinl/process-control.git"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "ams@1.0",
+      "name": "ams",
+      "purl": "pkg:generic/ams@1.0?vcs_url=git+https://github.com/UtilitechAS/amsreader-firmware",
+      "properties": [
+        {
+          "name": "dd:evidence-source",
+          "value": "lib/lib_div/ams/library.json;lib/lib_div/ams/library.properties"
+        },
+        {
+          "name": "dd:provenance",
+          "value": "manifest/repo-scan; included in build-attested BOM (library identity from manifests; link status below)"
+        },
+        {
+          "name": "dd:version-conflict",
+          "value": "library.json=1.0; library.properties=1.2.0"
+        },
+        {
+          "name": "dd:build-env",
+          "value": "tasmota-kettle"
+        },
+        {
+          "name": "dd:build-linked",
+          "value": "true"
+        }
+      ],
+      "version": "1.0",
+      "description": "ESP8266 ESP32 library for Advanced utility meters",
+      "licenses": [
+        {
+          "license": {
+            "name": "GPL"
+          }
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/UtilitechAS/amsreader-firmware"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "ESP KNX IP Library@0.5.2",
+      "name": "ESP KNX IP Library",
+      "purl": "pkg:generic/ESP%20KNX%20IP%20Library@0.5.2?vcs_url=git+https://github.com/envy/esp-knx-ip.git",
+      "properties": [
+        {
+          "name": "dd:evidence-source",
+          "value": "lib/lib_div/esp-knx-ip-0.5.2/library.json;lib/lib_div/esp-knx-ip-0.5.2/library.properties"
+        },
+        {
+          "name": "dd:provenance",
+          "value": "manifest/repo-scan; included in build-attested BOM (library identity from manifests; link status below)"
+        },
+        {
+          "name": "dd:build-env",
+          "value": "tasmota-kettle"
+        },
+        {
+          "name": "dd:build-linked",
+          "value": "true"
+        }
+      ],
+      "version": "0.5.2",
+      "description": "ESP8266 library for KNX/IP communication.",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/envy/esp-knx-ip.git"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "MFRC522@1.4.7",
+      "name": "MFRC522",
+      "purl": "pkg:generic/MFRC522@1.4.7?vcs_url=git+https://github.com/miguelbalboa/rfid.git",
+      "properties": [
+        {
+          "name": "dd:evidence-source",
+          "value": "lib/lib_div/rfid-1.4.7/library.json;lib/lib_div/rfid-1.4.7/library.properties"
+        },
+        {
+          "name": "dd:provenance",
+          "value": "manifest/repo-scan; included in build-attested BOM (library identity from manifests; link status below)"
+        },
+        {
+          "name": "dd:build-env",
+          "value": "tasmota-kettle"
+        },
+        {
+          "name": "dd:build-linked",
+          "value": "true"
+        }
+      ],
+      "version": "1.4.7",
+      "description": "Read a card using a MFRC522 reader on your SPI interface.",
+      "licenses": [
+        {
+          "license": {
+            "name": "Unlicense"
+          }
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/miguelbalboa/rfid.git"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "stm32_flash@1.0.0",
+      "name": "stm32_flash",
+      "purl": "pkg:generic/stm32_flash@1.0.0",
+      "properties": [
+        {
+          "name": "dd:evidence-source",
+          "value": "lib/lib_div/stm32flash-1.0-tasmota/library.properties"
+        },
+        {
+          "name": "dd:provenance",
+          "value": "manifest/repo-scan; included in build-attested BOM (library identity from manifests; link status below)"
+        },
+        {
+          "name": "dd:build-env",
+          "value": "tasmota-kettle"
+        },
+        {
+          "name": "dd:build-linked",
+          "value": "true"
+        }
+      ],
+      "version": "1.0.0",
+      "description": "STM32 Flaher"
+    },
+    {
+      "type": "library",
+      "bom-ref": "Adafruit BusIO@1.11.0",
+      "name": "Adafruit BusIO",
+      "purl": "pkg:generic/Adafruit%20BusIO@1.11.0?vcs_url=git+https://github.com/adafruit/Adafruit_BusIO",
+      "properties": [
+        {
+          "name": "dd:evidence-source",
+          "value": "lib/lib_i2c/Adafruit_BusIO/library.properties"
+        },
+        {
+          "name": "dd:provenance",
+          "value": "manifest/repo-scan; included in build-attested BOM (library identity from manifests; link status below)"
+        },
+        {
+          "name": "dd:build-env",
+          "value": "tasmota-kettle"
+        },
+        {
+          "name": "dd:build-linked",
+          "value": "false"
+        }
+      ],
+      "version": "1.11.0",
+      "description": "This is a library for abstracting away UART, I2C and SPI interfacing",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/adafruit/Adafruit_BusIO"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "Adafruit CCS811 Library@1.0.0",
+      "name": "Adafruit CCS811 Library",
+      "purl": "pkg:generic/Adafruit%20CCS811%20Library@1.0.0?vcs_url=git+https://github.com/adafruit/Adafruit_CCS811",
+      "properties": [
+        {
+          "name": "dd:evidence-source",
+          "value": "lib/lib_i2c/Adafruit_CCS811-1.0.0.14/library.properties"
+        },
+        {
+          "name": "dd:provenance",
+          "value": "manifest/repo-scan; included in build-attested BOM (library identity from manifests; link status below)"
+        },
+        {
+          "name": "dd:build-env",
+          "value": "tasmota-kettle"
+        },
+        {
+          "name": "dd:build-linked",
+          "value": "true"
+        }
+      ],
+      "version": "1.0.0",
+      "description": "This is a library for the Adafruit CCS811 I2C gas sensor breakou.",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/adafruit/Adafruit_CCS811"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "Adafruit MAX31865 library@1.0.1",
+      "name": "Adafruit MAX31865 library",
+      "purl": "pkg:generic/Adafruit%20MAX31865%20library@1.0.1?vcs_url=git+https://github.com/adafruit/Adafruit_MAX31865",
+      "properties": [
+        {
+          "name": "dd:evidence-source",
+          "value": "lib/lib_i2c/Adafruit_MAX31865-1.1.0-custom/library.properties"
+        },
+        {
+          "name": "dd:provenance",
+          "value": "manifest/repo-scan; included in build-attested BOM (library identity from manifests; link status below)"
+        },
+        {
+          "name": "dd:build-env",
+          "value": "tasmota-kettle"
+        },
+        {
+          "name": "dd:build-linked",
+          "value": "true"
+        }
+      ],
+      "version": "1.0.1",
+      "description": "Library for the Adafruit RTD Amplifier breakout with MAX31865",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/adafruit/Adafruit_MAX31865"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "Adafruit MCP9808 Library@1.1.2",
+      "name": "Adafruit MCP9808 Library",
+      "purl": "pkg:generic/Adafruit%20MCP9808%20Library@1.1.2?vcs_url=git+https://github.com/adafruit/Adafruit_MCP9808_Library",
+      "properties": [
+        {
+          "name": "dd:evidence-source",
+          "value": "lib/lib_i2c/Adafruit_MCP9808_Tasmota/library.properties"
+        },
+        {
+          "name": "dd:provenance",
+          "value": "manifest/repo-scan; included in build-attested BOM (library identity from manifests; link status below)"
+        },
+        {
+          "name": "dd:build-env",
+          "value": "tasmota-kettle"
+        },
+        {
+          "name": "dd:build-linked",
+          "value": "true"
+        }
+      ],
+      "version": "1.1.2",
+      "description": "Arduino library for the MCP9808 sensors in the Adafruit shop",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/adafruit/Adafruit_MCP9808_Library"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "Adafruit PM25 AQI Sensor@1.0.6",
+      "name": "Adafruit PM25 AQI Sensor",
+      "purl": "pkg:generic/Adafruit%20PM25%20AQI%20Sensor@1.0.6?vcs_url=git+https://github.com/adafruit/Adafruit_PM25AQI",
+      "properties": [
+        {
+          "name": "dd:evidence-source",
+          "value": "lib/lib_i2c/Adafruit_PM25AQI-1.0.6/library.properties"
+        },
+        {
+          "name": "dd:provenance",
+          "value": "manifest/repo-scan; included in build-attested BOM (library identity from manifests; link status below)"
+        },
+        {
+          "name": "dd:build-env",
+          "value": "tasmota-kettle"
+        },
+        {
+          "name": "dd:build-linked",
+          "value": "true"
+        }
+      ],
+      "version": "1.0.6",
+      "description": "This is an Arduino library for the Adafruit PM2.5 Air Quality Sensor",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/adafruit/Adafruit_PM25AQI"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "Adafruit SGP30 Sensor@1.2.0",
+      "name": "Adafruit SGP30 Sensor",
+      "purl": "pkg:generic/Adafruit%20SGP30%20Sensor@1.2.0?vcs_url=git+https://github.com/adafruit/Adafruit_SGP30",
+      "properties": [
+        {
+          "name": "dd:evidence-source",
+          "value": "lib/lib_i2c/Adafruit_SGP30-1.2.0/library.properties"
+        },
+        {
+          "name": "dd:provenance",
+          "value": "manifest/repo-scan; included in build-attested BOM (library identity from manifests; link status below)"
+        },
+        {
+          "name": "dd:build-env",
+          "value": "tasmota-kettle"
+        },
+        {
+          "name": "dd:build-linked",
+          "value": "true"
+        }
+      ],
+      "version": "1.2.0",
+      "description": "This is an Arduino library for the Adafruit SGP30 Gas / Air Quality Sensor",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/adafruit/Adafruit_SGP30"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "Adafruit SGP40 Sensor@1.1.0",
+      "name": "Adafruit SGP40 Sensor",
+      "purl": "pkg:generic/Adafruit%20SGP40%20Sensor@1.1.0?vcs_url=git+https://github.com/adafruit/Adafruit_SGP40",
+      "properties": [
+        {
+          "name": "dd:evidence-source",
+          "value": "lib/lib_i2c/Adafruit_SGP40-1.1.0/library.properties"
+        },
+        {
+          "name": "dd:provenance",
+          "value": "manifest/repo-scan; included in build-attested BOM (library identity from manifests; link status below)"
+        },
+        {
+          "name": "dd:build-env",
+          "value": "tasmota-kettle"
+        },
+        {
+          "name": "dd:build-linked",
+          "value": "true"
+        }
+      ],
+      "version": "1.1.0",
+      "description": "This is an Arduino library for the Adafruit SGP40 Gas / Air Quality Sensor",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/adafruit/Adafruit_SGP40"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "Adafruit TSL2591@unknown",
+      "name": "Adafruit TSL2591",
+      "purl": "pkg:generic/Adafruit%20TSL2591@unknown",
+      "properties": [
+        {
+          "name": "dd:evidence-source",
+          "value": "lib/lib_i2c/Adafruit_TSL2591_Library/library.properties"
+        },
+        {
+          "name": "dd:provenance",
+          "value": "manifest/repo-scan; included in build-attested BOM (library identity from manifests; link status below)"
+        },
+        {
+          "name": "dd:build-env",
+          "value": "tasmota-kettle"
+        },
+        {
+          "name": "dd:build-linked",
+          "value": "true"
+        }
+      ],
+      "description": "Library for Adafruit TSL2591"
+    },
+    {
+      "type": "library",
+      "bom-ref": "Adafruit VEML7700 Library@1.0.0",
+      "name": "Adafruit VEML7700 Library",
+      "purl": "pkg:generic/Adafruit%20VEML7700%20Library@1.0.0?vcs_url=git+https://github.com/adafruit/Adafruit_VEML7700",
+      "properties": [
+        {
+          "name": "dd:evidence-source",
+          "value": "lib/lib_i2c/Adafruit_VEML7700/library.properties"
+        },
+        {
+          "name": "dd:provenance",
+          "value": "manifest/repo-scan; included in build-attested BOM (library identity from manifests; link status below)"
+        },
+        {
+          "name": "dd:build-env",
+          "value": "tasmota-kettle"
+        },
+        {
+          "name": "dd:build-linked",
+          "value": "true"
+        }
+      ],
+      "version": "1.0.0",
+      "description": "Arduino library for the VEML7700 sensors in the Adafruit shop",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/adafruit/Adafruit_VEML7700"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "Adafruit seesaw Library@1.3.1",
+      "name": "Adafruit seesaw Library",
+      "purl": "pkg:generic/Adafruit%20seesaw%20Library@1.3.1?vcs_url=git+https://github.com/adafruit/Adafruit_Seesaw",
+      "properties": [
+        {
+          "name": "dd:evidence-source",
+          "value": "lib/lib_i2c/Adafruit_seesaw_soilsensor_1.3.1/library.properties"
+        },
+        {
+          "name": "dd:provenance",
+          "value": "manifest/repo-scan; included in build-attested BOM (library identity from manifests; link status below)"
+        },
+        {
+          "name": "dd:build-env",
+          "value": "tasmota-kettle"
+        },
+        {
+          "name": "dd:build-linked",
+          "value": "true"
+        }
+      ],
+      "version": "1.3.1",
+      "description": "This is a library for the Adafruit seesaw helper IC.",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/adafruit/Adafruit_Seesaw"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "BME8563@unknown",
+      "name": "BME8563",
+      "purl": "pkg:generic/BME8563@unknown",
+      "properties": [
+        {
+          "name": "dd:evidence-source",
+          "value": "lib/lib_i2c/BM8563_RTC/library.properties"
+        },
+        {
+          "name": "dd:provenance",
+          "value": "manifest/repo-scan; included in build-attested BOM (library identity from manifests; link status below)"
+        },
+        {
+          "name": "dd:build-env",
+          "value": "tasmota-kettle"
+        },
+        {
+          "name": "dd:build-linked",
+          "value": "true"
+        }
+      ],
+      "description": "Driver for BM8563 RTC"
+    },
+    {
+      "type": "library",
+      "bom-ref": "BME68x@unknown",
+      "name": "BME68x",
+      "purl": "pkg:generic/BME68x@unknown",
+      "properties": [
+        {
+          "name": "dd:evidence-source",
+          "value": "lib/lib_i2c/BME68x-Sensor-API/library.properties"
+        },
+        {
+          "name": "dd:provenance",
+          "value": "manifest/repo-scan; included in build-attested BOM (library identity from manifests; link status below)"
+        },
+        {
+          "name": "dd:build-env",
+          "value": "tasmota-kettle"
+        },
+        {
+          "name": "dd:build-linked",
+          "value": "true"
+        }
+      ],
+      "description": "Sensor driver for BME68x sensor"
+    },
+    {
+      "type": "library",
+      "bom-ref": "FrogmoreScd30@unknown",
+      "name": "FrogmoreScd30",
+      "purl": "pkg:generic/FrogmoreScd30@unknown",
+      "properties": [
+        {
+          "name": "dd:evidence-source",
+          "value": "lib/lib_i2c/FrogmoreScd30/library.properties"
+        },
+        {
+          "name": "dd:provenance",
+          "value": "manifest/repo-scan; included in build-attested BOM (library identity from manifests; link status below)"
+        },
+        {
+          "name": "dd:build-env",
+          "value": "tasmota-kettle"
+        },
+        {
+          "name": "dd:build-linked",
+          "value": "true"
+        }
+      ],
+      "description": "SCD30"
+    },
+    {
+      "type": "library",
+      "bom-ref": "FrogmoreScd40@unknown",
+      "name": "FrogmoreScd40",
+      "purl": "pkg:generic/FrogmoreScd40@unknown",
+      "properties": [
+        {
+          "name": "dd:evidence-source",
+          "value": "lib/lib_i2c/FrogmoreScd40/library.properties"
+        },
+        {
+          "name": "dd:provenance",
+          "value": "manifest/repo-scan; included in build-attested BOM (library identity from manifests; link status below)"
+        },
+        {
+          "name": "dd:build-env",
+          "value": "tasmota-kettle"
+        },
+        {
+          "name": "dd:build-linked",
+          "value": "true"
+        }
+      ],
+      "description": "SCD40"
+    },
+    {
+      "type": "library",
+      "bom-ref": "HPMA115S0 Arduino Library@1.0.0",
+      "name": "HPMA115S0 Arduino Library",
+      "purl": "pkg:generic/HPMA115S0%20Arduino%20Library@1.0.0?vcs_url=git+https://github.com/felixgalindo/HPMA115S0.git",
+      "properties": [
+        {
+          "name": "dd:evidence-source",
+          "value": "lib/lib_i2c/HPMA115S0/library.properties"
+        },
+        {
+          "name": "dd:provenance",
+          "value": "manifest/repo-scan; included in build-attested BOM (library identity from manifests; link status below)"
+        },
+        {
+          "name": "dd:build-env",
+          "value": "tasmota-kettle"
+        },
+        {
+          "name": "dd:build-linked",
+          "value": "true"
+        }
+      ],
+      "version": "1.0.0",
+      "description": "Supports the HPMA115S0",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/felixgalindo/HPMA115S0.git"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "I2Cdevlib-Core@unknown",
+      "name": "I2Cdevlib-Core",
+      "purl": "pkg:generic/I2Cdevlib-Core@unknown?vcs_url=git+https://github.com/jrowberg/i2cdevlib.git",
+      "properties": [
+        {
+          "name": "dd:evidence-source",
+          "value": "lib/lib_i2c/I2Cdevlib-Core/library.json"
+        },
+        {
+          "name": "dd:provenance",
+          "value": "manifest/repo-scan; included in build-attested BOM (library identity from manifests; link status below)"
+        },
+        {
+          "name": "dd:build-env",
+          "value": "tasmota-kettle"
+        },
+        {
+          "name": "dd:build-linked",
+          "value": "true"
+        }
+      ],
+      "description": "The I2C Device Library (I2Cdevlib) is a collection of uniform and well-documented classes to provide simple and intuitive interfaces to I2C devices.",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/jrowberg/i2cdevlib.git"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "MPU6050 I2C@unknown",
+      "name": "MPU6050 I2C",
+      "purl": "pkg:generic/MPU6050%20I2C@unknown?vcs_url=git+https://github.com/jrowberg/i2cdevlib",
+      "properties": [
+        {
+          "name": "dd:evidence-source",
+          "value": "lib/lib_i2c/I2Cdevlib-MPU6050/library.properties"
+        },
+        {
+          "name": "dd:provenance",
+          "value": "manifest/repo-scan; included in build-attested BOM (library identity from manifests; link status below)"
+        },
+        {
+          "name": "dd:build-env",
+          "value": "tasmota-kettle"
+        },
+        {
+          "name": "dd:build-linked",
+          "value": "true"
+        }
+      ],
+      "description": "This is a library for the MPU6050.",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/jrowberg/i2cdevlib"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "Joba_Tsl2561@2.0.10",
+      "name": "Joba_Tsl2561",
+      "purl": "pkg:generic/Joba_Tsl2561@2.0.10?vcs_url=git+https://github.com/joba-1/Joba_Tsl2561.git",
+      "properties": [
+        {
+          "name": "dd:evidence-source",
+          "value": "lib/lib_i2c/Joba_Tsl2561-2.0.10/library.json;lib/lib_i2c/Joba_Tsl2561-2.0.10/library.properties"
+        },
+        {
+          "name": "dd:provenance",
+          "value": "manifest/repo-scan; included in build-attested BOM (library identity from manifests; link status below)"
+        },
+        {
+          "name": "dd:build-env",
+          "value": "tasmota-kettle"
+        },
+        {
+          "name": "dd:build-linked",
+          "value": "true"
+        }
+      ],
+      "version": "2.0.10",
+      "description": "Arduino library for ams (taos) luminance chip Tsl2561 with autogain. Tested with Nano, Esp8266 and Esp32.",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/joba-1/Joba_Tsl2561.git"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "LOLIN_HP303B@1.0.0",
+      "name": "LOLIN_HP303B",
+      "purl": "pkg:generic/LOLIN_HP303B@1.0.0?vcs_url=git+https://github.com/wemos/LOLIN_HP303B_Library",
+      "properties": [
+        {
+          "name": "dd:evidence-source",
+          "value": "lib/lib_i2c/LOLIN_HP303B/library.properties"
+        },
+        {
+          "name": "dd:provenance",
+          "value": "manifest/repo-scan; included in build-attested BOM (library identity from manifests; link status below)"
+        },
+        {
+          "name": "dd:build-env",
+          "value": "tasmota-kettle"
+        },
+        {
+          "name": "dd:build-linked",
+          "value": "true"
+        }
+      ],
+      "version": "1.0.0",
+      "description": "LOLIN HP303B",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/wemos/LOLIN_HP303B_Library"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "LOLIN_HP303B@1.0.0#71",
+      "name": "LOLIN_HP303B",
+      "purl": "pkg:generic/LOLIN_HP303B@1.0.0?vcs_url=git+https://github.com/wemos/LOLIN_HP303B_Library",
+      "properties": [
+        {
+          "name": "dd:evidence-source",
+          "value": "lib/lib_i2c/LOLIN_HP303B/examples/library.properties"
+        },
+        {
+          "name": "dd:provenance",
+          "value": "manifest/repo-scan; included in build-attested BOM (library identity from manifests; link status below)"
+        },
+        {
+          "name": "dd:build-env",
+          "value": "tasmota-kettle"
+        },
+        {
+          "name": "dd:build-linked",
+          "value": "true"
+        }
+      ],
+      "version": "1.0.0",
+      "description": "LOLIN HP303B",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/wemos/LOLIN_HP303B_Library"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "MPU_accel@unknown",
+      "name": "MPU_accel",
+      "purl": "pkg:generic/MPU_accel@unknown?vcs_url=git+https://github.com/m5stack/M5StickC/blob/master/src/utility",
+      "properties": [
+        {
+          "name": "dd:evidence-source",
+          "value": "lib/lib_i2c/MPU_accel/library.properties"
+        },
+        {
+          "name": "dd:provenance",
+          "value": "manifest/repo-scan; included in build-attested BOM (library identity from manifests; link status below)"
+        },
+        {
+          "name": "dd:build-env",
+          "value": "tasmota-kettle"
+        },
+        {
+          "name": "dd:build-linked",
+          "value": "true"
+        }
+      ],
+      "description": "Support for MPU6886, MPU9250",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/m5stack/M5StickC/blob/master/src/utility"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "Mutichannel_Gas_Sensor@0.0.1",
+      "name": "Mutichannel_Gas_Sensor",
+      "purl": "pkg:generic/Mutichannel_Gas_Sensor@0.0.1?vcs_url=git+https://github.com/Seeed-Studio/Mutichannel_Gas_Sensor.git",
+      "properties": [
+        {
+          "name": "dd:evidence-source",
+          "value": "lib/lib_i2c/Mutichannel_Gas_Sensor/library.json;lib/lib_i2c/Mutichannel_Gas_Sensor/library.properties"
+        },
+        {
+          "name": "dd:provenance",
+          "value": "manifest/repo-scan; included in build-attested BOM (library identity from manifests; link status below)"
+        },
+        {
+          "name": "dd:build-env",
+          "value": "tasmota-kettle"
+        },
+        {
+          "name": "dd:build-linked",
+          "value": "true"
+        }
+      ],
+      "version": "0.0.1",
+      "description": "Grove - Multichannel Gas Sensor",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/Seeed-Studio/Mutichannel_Gas_Sensor.git"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "SPL06-007@0.1.0",
+      "name": "SPL06-007",
+      "purl": "pkg:generic/SPL06-007@0.1.0?vcs_url=git+https://github.com/rv701/SPL06-007",
+      "properties": [
+        {
+          "name": "dd:evidence-source",
+          "value": "lib/lib_i2c/SPL06_007/library.properties"
+        },
+        {
+          "name": "dd:provenance",
+          "value": "manifest/repo-scan; included in build-attested BOM (library identity from manifests; link status below)"
+        },
+        {
+          "name": "dd:build-env",
+          "value": "tasmota-kettle"
+        },
+        {
+          "name": "dd:build-linked",
+          "value": "true"
+        }
+      ],
+      "version": "0.1.0",
+      "description": "Supports SPL06-007 I2C pressure sensor.",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/rv701/SPL06-007"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "ScioSense ENS16x@8.0.0",
+      "name": "ScioSense ENS16x",
+      "purl": "pkg:generic/ScioSense%20ENS16x@8.0.0?vcs_url=git+https://github.com/sciosense/ens16x",
+      "properties": [
+        {
+          "name": "dd:evidence-source",
+          "value": "lib/lib_i2c/ScioSense_ENS16x/library.properties"
+        },
+        {
+          "name": "dd:provenance",
+          "value": "manifest/repo-scan; included in build-attested BOM (library identity from manifests; link status below)"
+        },
+        {
+          "name": "dd:build-env",
+          "value": "tasmota-kettle"
+        },
+        {
+          "name": "dd:build-linked",
+          "value": "true"
+        }
+      ],
+      "version": "8.0.0",
+      "description": "This library controls the ENS160 and ENS161. The main feature of this library is performing a single shot measurement, retrieving the measurement data.",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/sciosense/ens16x"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "ScioSense ENS210@3.0.0",
+      "name": "ScioSense ENS210",
+      "purl": "pkg:generic/ScioSense%20ENS210@3.0.0?vcs_url=git+https://github.com/sciosense/ens210",
+      "properties": [
+        {
+          "name": "dd:evidence-source",
+          "value": "lib/lib_i2c/ScioSense_ENS210/library.properties"
+        },
+        {
+          "name": "dd:provenance",
+          "value": "manifest/repo-scan; included in build-attested BOM (library identity from manifests; link status below)"
+        },
+        {
+          "name": "dd:build-env",
+          "value": "tasmota-kettle"
+        },
+        {
+          "name": "dd:build-linked",
+          "value": "true"
+        }
+      ],
+      "version": "3.0.0",
+      "description": "This library controls the ENS210. The main feature of this library is performing a single shot measurement, retrieving the measurement data.",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/sciosense/ens210"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "Sensirion Core@0.6.0",
+      "name": "Sensirion Core",
+      "purl": "pkg:generic/Sensirion%20Core@0.6.0?vcs_url=git+https://github.com/Sensirion/arduino-core",
+      "properties": [
+        {
+          "name": "dd:evidence-source",
+          "value": "lib/lib_i2c/Sensirion_Core/library.properties"
+        },
+        {
+          "name": "dd:provenance",
+          "value": "manifest/repo-scan; included in build-attested BOM (library identity from manifests; link status below)"
+        },
+        {
+          "name": "dd:build-env",
+          "value": "tasmota-kettle"
+        },
+        {
+          "name": "dd:build-linked",
+          "value": "false"
+        }
+      ],
+      "version": "0.6.0",
+      "description": "All Libraries for Sensirion Sensors use this library as a code base. In this library the Sensirion specific parts for I2C and UART communication are implemented. It provides dynamic frame construction, checksum calculation and buffer han...",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/Sensirion/arduino-core"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "Sensirion I2C SEN5X@0.2.0",
+      "name": "Sensirion I2C SEN5X",
+      "purl": "pkg:generic/Sensirion%20I2C%20SEN5X@0.2.0?vcs_url=git+https://github.com/Sensirion/arduino-i2c-sen5x",
+      "properties": [
+        {
+          "name": "dd:evidence-source",
+          "value": "lib/lib_i2c/Sensirion_I2C_SEN5X/library.properties"
+        },
+        {
+          "name": "dd:provenance",
+          "value": "manifest/repo-scan; included in build-attested BOM (library identity from manifests; link status below)"
+        },
+        {
+          "name": "dd:build-env",
+          "value": "tasmota-kettle"
+        },
+        {
+          "name": "dd:build-linked",
+          "value": "true"
+        }
+      ],
+      "version": "0.2.0",
+      "description": "Enables you to use the SEN50, SEN54 and SEN55 via I2C.",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/Sensirion/arduino-i2c-sen5x"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "Sensirion I2C SGP41@0.1.0",
+      "name": "Sensirion I2C SGP41",
+      "purl": "pkg:generic/Sensirion%20I2C%20SGP41@0.1.0?vcs_url=git+https://github.com/Sensirion/arduino-i2c-sgp41",
+      "properties": [
+        {
+          "name": "dd:evidence-source",
+          "value": "lib/lib_i2c/arduino-i2c-sgp41/library.properties"
+        },
+        {
+          "name": "dd:provenance",
+          "value": "manifest/repo-scan; included in build-attested BOM (library identity from manifests; link status below)"
+        },
+        {
+          "name": "dd:build-env",
+          "value": "tasmota-kettle"
+        },
+        {
+          "name": "dd:build-linked",
+          "value": "true"
+        }
+      ],
+      "version": "0.1.0",
+      "description": "Enables you to use the SGP41 via I2C.",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/Sensirion/arduino-i2c-sgp41"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "MLX90640@unknown",
+      "name": "MLX90640",
+      "purl": "pkg:generic/MLX90640@unknown",
+      "properties": [
+        {
+          "name": "dd:evidence-source",
+          "value": "lib/lib_i2c/mlx90640-library/library.properties"
+        },
+        {
+          "name": "dd:provenance",
+          "value": "manifest/repo-scan; included in build-attested BOM (library identity from manifests; link status below)"
+        },
+        {
+          "name": "dd:build-env",
+          "value": "tasmota-kettle"
+        },
+        {
+          "name": "dd:build-linked",
+          "value": "true"
+        }
+      ],
+      "description": "MLX90640"
+    },
+    {
+      "type": "library",
+      "bom-ref": "VL53L0X@1.0.2",
+      "name": "VL53L0X",
+      "purl": "pkg:generic/VL53L0X@1.0.2?vcs_url=git+https://github.com/pololu/vl53l0x-arduino",
+      "properties": [
+        {
+          "name": "dd:evidence-source",
+          "value": "lib/lib_i2c/vl53l0x-arduino-1.02/library.properties"
+        },
+        {
+          "name": "dd:provenance",
+          "value": "manifest/repo-scan; included in build-attested BOM (library identity from manifests; link status below)"
+        },
+        {
+          "name": "dd:build-env",
+          "value": "tasmota-kettle"
+        },
+        {
+          "name": "dd:build-linked",
+          "value": "true"
+        }
+      ],
+      "version": "1.0.2",
+      "description": "This is a library for the Arduino IDE that helps interface with ST's VL53L0X distance sensor.",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/pololu/vl53l0x-arduino"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "VL53L1X@1.0.1",
+      "name": "VL53L1X",
+      "purl": "pkg:generic/VL53L1X@1.0.1?vcs_url=git+https://github.com/pololu/vl53l1x-arduino",
+      "properties": [
+        {
+          "name": "dd:evidence-source",
+          "value": "lib/lib_i2c/vl53l1x-arduino-1.01/library.properties"
+        },
+        {
+          "name": "dd:provenance",
+          "value": "manifest/repo-scan; included in build-attested BOM (library identity from manifests; link status below)"
+        },
+        {
+          "name": "dd:build-env",
+          "value": "tasmota-kettle"
+        },
+        {
+          "name": "dd:build-linked",
+          "value": "true"
+        }
+      ],
+      "version": "1.0.1",
+      "description": "This is a library for the Arduino IDE that helps interface with ST's VL53L1X distance sensor.",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/pololu/vl53l1x-arduino"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "KeeloqLib@1.1",
+      "name": "KeeloqLib",
+      "purl": "pkg:generic/KeeloqLib@1.1",
+      "properties": [
+        {
+          "name": "dd:evidence-source",
+          "value": "lib/lib_rf/KeeloqLib/library.properties"
+        },
+        {
+          "name": "dd:provenance",
+          "value": "manifest/repo-scan; included in build-attested BOM (library identity from manifests; link status below)"
+        },
+        {
+          "name": "dd:build-env",
+          "value": "tasmota-kettle"
+        },
+        {
+          "name": "dd:build-linked",
+          "value": "true"
+        }
+      ],
+      "version": "1.1",
+      "description": "Developed/Tested on Arduino/ESP8266 with Arduino IDE Environment."
+    },
+    {
+      "type": "library",
+      "bom-ref": "LoRa@0.8.0",
+      "name": "LoRa",
+      "purl": "pkg:generic/LoRa@0.8.0?vcs_url=git+https://github.com/sandeepmistry/arduino-LoRa",
+      "properties": [
+        {
+          "name": "dd:evidence-source",
+          "value": "lib/lib_rf/LoRa/library.properties"
+        },
+        {
+          "name": "dd:provenance",
+          "value": "manifest/repo-scan; included in build-attested BOM (library identity from manifests; link status below)"
+        },
+        {
+          "name": "dd:build-env",
+          "value": "tasmota-kettle"
+        },
+        {
+          "name": "dd:build-linked",
+          "value": "true"
+        }
+      ],
+      "version": "0.8.0",
+      "description": "Supports Semtech SX1276/77/78/79 based boards/shields.",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/sandeepmistry/arduino-LoRa"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "RF24@1.3.3",
+      "name": "RF24",
+      "purl": "pkg:generic/RF24@1.3.3?vcs_url=git+https://github.com/nRF24/RF24.git",
+      "properties": [
+        {
+          "name": "dd:evidence-source",
+          "value": "lib/lib_rf/RF24/library.json;lib/lib_rf/RF24/library.properties"
+        },
+        {
+          "name": "dd:provenance",
+          "value": "manifest/repo-scan; included in build-attested BOM (library identity from manifests; link status below)"
+        },
+        {
+          "name": "dd:build-env",
+          "value": "tasmota-kettle"
+        },
+        {
+          "name": "dd:build-linked",
+          "value": "true"
+        }
+      ],
+      "version": "1.3.3",
+      "description": "Optimized High Speed Driver for nRF24L01(+) 2.4GHz Wireless Transceiver",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/nRF24/RF24.git"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "RadioLib@6.4.2",
+      "name": "RadioLib",
+      "purl": "pkg:generic/RadioLib@6.4.2?vcs_url=git+https://github.com/jgromes/RadioLib.git",
+      "properties": [
+        {
+          "name": "dd:evidence-source",
+          "value": "lib/lib_rf/RadioLib/library.json;lib/lib_rf/RadioLib/library.properties"
+        },
+        {
+          "name": "dd:provenance",
+          "value": "manifest/repo-scan; included in build-attested BOM (library identity from manifests; link status below)"
+        },
+        {
+          "name": "dd:build-env",
+          "value": "tasmota-kettle"
+        },
+        {
+          "name": "dd:build-linked",
+          "value": "true"
+        }
+      ],
+      "version": "6.4.2",
+      "description": "Universal wireless communication library. User-friendly library for sub-GHz radio modules (SX1278, RF69, CC1101, SX1268, and many others), as well as ham radio digital modes (RTTY, SSTV, AX.25 etc.) and other protocols (Pagers, LoRaWAN).",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/jgromes/RadioLib.git"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "cc1101@1.0",
+      "name": "cc1101",
+      "purl": "pkg:generic/cc1101@1.0",
+      "properties": [
+        {
+          "name": "dd:evidence-source",
+          "value": "lib/lib_rf/cc1101/library.json;lib/lib_rf/cc1101/library.properties"
+        },
+        {
+          "name": "dd:provenance",
+          "value": "manifest/repo-scan; included in build-attested BOM (library identity from manifests; link status below)"
+        },
+        {
+          "name": "dd:build-env",
+          "value": "tasmota-kettle"
+        },
+        {
+          "name": "dd:build-linked",
+          "value": "true"
+        }
+      ],
+      "version": "1.0",
+      "description": "cc1101 library"
+    },
+    {
+      "type": "library",
+      "bom-ref": "rc-switch@1.0.0",
+      "name": "rc-switch",
+      "purl": "pkg:generic/rc-switch@1.0.0?vcs_url=git+https://github.com/arendst/Tasmota.git",
+      "properties": [
+        {
+          "name": "dd:evidence-source",
+          "value": "lib/lib_rf/rc-switch/library.json;lib/lib_rf/rc-switch/library.properties"
+        },
+        {
+          "name": "dd:provenance",
+          "value": "manifest/repo-scan; included in build-attested BOM (library identity from manifests; link status below)"
+        },
+        {
+          "name": "dd:build-env",
+          "value": "tasmota-kettle"
+        },
+        {
+          "name": "dd:build-linked",
+          "value": "true"
+        }
+      ],
+      "version": "1.0.0",
+      "description": "Use ESP8266/ESP32 to operate remote radio controlled devices",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/arendst/Tasmota.git"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "BearSSL@0.6",
+      "name": "BearSSL",
+      "purl": "pkg:generic/BearSSL@0.6?vcs_url=git+https://github.com/earlephilhower/bearssl-esp8266.git",
+      "properties": [
+        {
+          "name": "dd:evidence-source",
+          "value": "lib/lib_ssl/bearssl-esp8266/library.properties"
+        },
+        {
+          "name": "dd:provenance",
+          "value": "manifest/repo-scan; included in build-attested BOM (library identity from manifests; link status below)"
+        },
+        {
+          "name": "dd:build-env",
+          "value": "tasmota-kettle"
+        },
+        {
+          "name": "dd:build-linked",
+          "value": "true"
+        }
+      ],
+      "version": "0.6",
+      "description": "BearSSL implementation of the SSL/TLS protocol optimized for ESP8266 by Earle F. Philhower, optimized for Tasmota by Stephan Hadinger",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/earlephilhower/bearssl-esp8266.git"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "TLS mini client derived from Arduino@1.0",
+      "name": "TLS mini client derived from Arduino",
+      "purl": "pkg:generic/TLS%20mini%20client%20derived%20from%20Arduino@1.0?vcs_url=git+https://github.com/arendst/Tasmota",
+      "properties": [
+        {
+          "name": "dd:evidence-source",
+          "value": "lib/lib_ssl/tls_mini/library.json"
+        },
+        {
+          "name": "dd:provenance",
+          "value": "manifest/repo-scan; included in build-attested BOM (library identity from manifests; link status below)"
+        },
+        {
+          "name": "dd:build-env",
+          "value": "tasmota-kettle"
+        },
+        {
+          "name": "dd:build-linked",
+          "value": "true"
+        }
+      ],
+      "version": "1.0",
+      "description": "TLS mini client derived from Arduino",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/arendst/Tasmota"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "DHT sensor library@1.4.3",
+      "name": "DHT sensor library",
+      "purl": "pkg:generic/DHT%20sensor%20library@1.4.3?vcs_url=git+https://github.com/adafruit/DHT-sensor-library",
+      "properties": [
+        {
+          "name": "dd:evidence-source",
+          "value": "lib/libesp32/DHT-sensor-library/library.properties"
+        },
+        {
+          "name": "dd:provenance",
+          "value": "manifest/repo-scan; included in build-attested BOM (library identity from manifests; link status below)"
+        },
+        {
+          "name": "dd:build-env",
+          "value": "tasmota-kettle"
+        },
+        {
+          "name": "dd:build-linked",
+          "value": "false"
+        }
+      ],
+      "version": "1.4.3",
+      "description": "Arduino library for DHT11, DHT22, etc Temp & Humidity Sensors",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/adafruit/DHT-sensor-library"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "ESP Mail Client@3.4.9",
+      "name": "ESP Mail Client",
+      "purl": "pkg:generic/ESP%20Mail%20Client@3.4.9?vcs_url=git+https://github.com/mobizt/ESP-Mail-Client.git",
+      "properties": [
+        {
+          "name": "dd:evidence-source",
+          "value": "lib/libesp32/ESP-Mail-Client/library.json;lib/libesp32/ESP-Mail-Client/library.properties"
+        },
+        {
+          "name": "dd:provenance",
+          "value": "manifest/repo-scan; included in build-attested BOM (library identity from manifests; link status below)"
+        },
+        {
+          "name": "dd:build-env",
+          "value": "tasmota-kettle"
+        },
+        {
+          "name": "dd:build-linked",
+          "value": "false"
+        }
+      ],
+      "version": "3.4.9",
+      "description": "Arduino E-Mail Client Library to send, read and get incoming email notification for ESP32, ESP8266 and SAMD21 devices. The library also supported other Arduino Devices using Clients interfaces e.g. WiFiClient, EthernetClient, and GSMClient.",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/mobizt/ESP-Mail-Client.git"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "ESP32-to-ESP8266-compat@0.0.2",
+      "name": "ESP32-to-ESP8266-compat",
+      "purl": "pkg:generic/ESP32-to-ESP8266-compat@0.0.2",
+      "properties": [
+        {
+          "name": "dd:evidence-source",
+          "value": "lib/libesp32/ESP32-to-ESP8266-compat/library.json;lib/libesp32/ESP32-to-ESP8266-compat/library.properties"
+        },
+        {
+          "name": "dd:provenance",
+          "value": "manifest/repo-scan; included in build-attested BOM (library identity from manifests; link status below)"
+        },
+        {
+          "name": "dd:build-env",
+          "value": "tasmota-kettle"
+        },
+        {
+          "name": "dd:build-linked",
+          "value": "false"
+        }
+      ],
+      "version": "0.0.2",
+      "description": "Allows Tasmota to compile for esp32"
+    },
+    {
+      "type": "library",
+      "bom-ref": "HttpClient light@1.0",
+      "name": "HttpClient light",
+      "purl": "pkg:generic/HttpClient%20light@1.0?vcs_url=git+https://github.com/arendst/Tasmota",
+      "properties": [
+        {
+          "name": "dd:evidence-source",
+          "value": "lib/libesp32/HttpClientLight/library.json"
+        },
+        {
+          "name": "dd:provenance",
+          "value": "manifest/repo-scan; included in build-attested BOM (library identity from manifests; link status below)"
+        },
+        {
+          "name": "dd:build-env",
+          "value": "tasmota-kettle"
+        },
+        {
+          "name": "dd:build-linked",
+          "value": "false"
+        }
+      ],
+      "version": "1.0",
+      "description": "Forked version of Arduino HttpClient to support BearSSL instead of mbedTLS",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/arendst/Tasmota"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "JPEGDEC@1.2.7",
+      "name": "JPEGDEC",
+      "purl": "pkg:generic/JPEGDEC@1.2.7?vcs_url=git+https://github.com/bitbank2/JPEGDEC",
+      "properties": [
+        {
+          "name": "dd:evidence-source",
+          "value": "lib/libesp32/JPEGDEC/library.json;lib/libesp32/JPEGDEC/library.properties"
+        },
+        {
+          "name": "dd:provenance",
+          "value": "manifest/repo-scan; included in build-attested BOM (library identity from manifests; link status below)"
+        },
+        {
+          "name": "dd:version-conflict",
+          "value": "library.json=1.2.7; library.properties=1.5.0"
+        },
+        {
+          "name": "dd:build-env",
+          "value": "tasmota-kettle"
+        },
+        {
+          "name": "dd:build-linked",
+          "value": "false"
+        }
+      ],
+      "version": "1.2.7",
+      "description": "A fast JPEG library with a unique set of functions to make viewing image on microcontrollers easy. Includes fast downscaling options and the ability to view Exif embedded thumbnails. Supports baseline grayscale and color images with Huff...",
+      "licenses": [
+        {
+          "license": {
+            "name": "Apache License 2.0"
+          }
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/bitbank2/JPEGDEC"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "Zip-readonly-FS@1.0",
+      "name": "Zip-readonly-FS",
+      "purl": "pkg:generic/Zip-readonly-FS@1.0?vcs_url=git+https://github.com/arendst/Tasmota",
+      "properties": [
+        {
+          "name": "dd:evidence-source",
+          "value": "lib/libesp32/Zip-readonly-FS/library.json"
+        },
+        {
+          "name": "dd:provenance",
+          "value": "manifest/repo-scan; included in build-attested BOM (library identity from manifests; link status below)"
+        },
+        {
+          "name": "dd:build-env",
+          "value": "tasmota-kettle"
+        },
+        {
+          "name": "dd:build-linked",
+          "value": "false"
+        }
+      ],
+      "version": "1.0",
+      "description": "Simple filesystem to open an uncompressed ZIP file and read-only",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/arendst/Tasmota"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "Berry@7.0",
+      "name": "Berry",
+      "purl": "pkg:generic/Berry@7.0?vcs_url=git+https://github.com/Skiars/berry",
+      "properties": [
+        {
+          "name": "dd:evidence-source",
+          "value": "lib/libesp32/berry/library.json"
+        },
+        {
+          "name": "dd:provenance",
+          "value": "manifest/repo-scan; included in build-attested BOM (library identity from manifests; link status below)"
+        },
+        {
+          "name": "dd:build-env",
+          "value": "tasmota-kettle"
+        },
+        {
+          "name": "dd:build-linked",
+          "value": "false"
+        }
+      ],
+      "version": "7.0",
+      "description": "Berry scripting language for Tasmota32",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT License"
+          }
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/Skiars/berry"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "Berry animation library for WS2812 leds@0.1",
+      "name": "Berry animation library for WS2812 leds",
+      "purl": "pkg:generic/Berry%20animation%20library%20for%20WS2812%20leds@0.1?vcs_url=git+https://github.com/arendst/Tasmota",
+      "properties": [
+        {
+          "name": "dd:evidence-source",
+          "value": "lib/libesp32/berry_animate/library.json"
+        },
+        {
+          "name": "dd:provenance",
+          "value": "manifest/repo-scan; included in build-attested BOM (library identity from manifests; link status below)"
+        },
+        {
+          "name": "dd:build-env",
+          "value": "tasmota-kettle"
+        },
+        {
+          "name": "dd:build-linked",
+          "value": "false"
+        }
+      ],
+      "version": "0.1",
+      "description": "Berry animation library for WS2812 leds",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/arendst/Tasmota"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "Berry custom template@0.1",
+      "name": "Berry custom template",
+      "purl": "pkg:generic/Berry%20custom%20template@0.1?vcs_url=git+https://github.com/arendst/Tasmota",
+      "properties": [
+        {
+          "name": "dd:evidence-source",
+          "value": "lib/libesp32/berry_custom/library.json"
+        },
+        {
+          "name": "dd:provenance",
+          "value": "manifest/repo-scan; included in build-attested BOM (library identity from manifests; link status below)"
+        },
+        {
+          "name": "dd:build-env",
+          "value": "tasmota-kettle"
+        },
+        {
+          "name": "dd:build-linked",
+          "value": "false"
+        }
+      ],
+      "version": "0.1",
+      "description": "Berry library to solidify external scripts in the build process",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/arendst/Tasmota"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "Berry int64 implementation for 32 bits architecture@1.0",
+      "name": "Berry int64 implementation for 32 bits architecture",
+      "purl": "pkg:generic/Berry%20int64%20implementation%20for%2032%20bits%20architecture@1.0?vcs_url=git+https://github.com/%2Ag",
+      "properties": [
+        {
+          "name": "dd:evidence-source",
+          "value": "lib/libesp32/berry_int64/library.json"
+        },
+        {
+          "name": "dd:provenance",
+          "value": "manifest/repo-scan; included in build-attested BOM (library identity from manifests; link status below)"
+        },
+        {
+          "name": "dd:build-env",
+          "value": "tasmota-kettle"
+        },
+        {
+          "name": "dd:build-linked",
+          "value": "false"
+        }
+      ],
+      "version": "1.0",
+      "description": "Berry int64",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/*g"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "Berry mapping to C@1.0",
+      "name": "Berry mapping to C",
+      "purl": "pkg:generic/Berry%20mapping%20to%20C@1.0?vcs_url=git+https://github.com/berry-lang/berry_mapping",
+      "properties": [
+        {
+          "name": "dd:evidence-source",
+          "value": "lib/libesp32/berry_mapping/library.json"
+        },
+        {
+          "name": "dd:provenance",
+          "value": "manifest/repo-scan; included in build-attested BOM (library identity from manifests; link status below)"
+        },
+        {
+          "name": "dd:build-env",
+          "value": "tasmota-kettle"
+        },
+        {
+          "name": "dd:build-linked",
+          "value": "false"
+        }
+      ],
+      "version": "1.0",
+      "description": "Mapping to C functions",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/berry-lang/berry_mapping"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "Berry Matter protocol implementation@0.1",
+      "name": "Berry Matter protocol implementation",
+      "purl": "pkg:generic/Berry%20Matter%20protocol%20implementation@0.1?vcs_url=git+https://github.com/arendst/Tasmota",
+      "properties": [
+        {
+          "name": "dd:evidence-source",
+          "value": "lib/libesp32/berry_matter/library.json"
+        },
+        {
+          "name": "dd:provenance",
+          "value": "manifest/repo-scan; included in build-attested BOM (library identity from manifests; link status below)"
+        },
+        {
+          "name": "dd:build-env",
+          "value": "tasmota-kettle"
+        },
+        {
+          "name": "dd:build-linked",
+          "value": "false"
+        }
+      ],
+      "version": "0.1",
+      "description": "Implementation of the Matter protocol specification in Berry for Tasmota, acting as an end-device over Wifi",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/arendst/Tasmota"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "Berry Tasmota mapping@1.0",
+      "name": "Berry Tasmota mapping",
+      "purl": "pkg:generic/Berry%20Tasmota%20mapping@1.0?vcs_url=git+https://github.com/arendst/Tasmota",
+      "properties": [
+        {
+          "name": "dd:evidence-source",
+          "value": "lib/libesp32/berry_tasmota/library.json"
+        },
+        {
+          "name": "dd:provenance",
+          "value": "manifest/repo-scan; included in build-attested BOM (library identity from manifests; link status below)"
+        },
+        {
+          "name": "dd:build-env",
+          "value": "tasmota-kettle"
+        },
+        {
+          "name": "dd:build-linked",
+          "value": "false"
+        }
+      ],
+      "version": "1.0",
+      "description": "Mapping of Tasmota features to Berry",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/arendst/Tasmota"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "ccronexpr@unknown",
+      "name": "ccronexpr",
+      "purl": "pkg:generic/ccronexpr@unknown?vcs_url=git+https://github.com/staticlibs/ccronexpr",
+      "properties": [
+        {
+          "name": "dd:evidence-source",
+          "value": "lib/libesp32/ccronexpr/library.json"
+        },
+        {
+          "name": "dd:provenance",
+          "value": "manifest/repo-scan; included in build-attested BOM (library identity from manifests; link status below)"
+        },
+        {
+          "name": "dd:build-env",
+          "value": "tasmota-kettle"
+        },
+        {
+          "name": "dd:build-linked",
+          "value": "false"
+        }
+      ],
+      "description": "Crontab parser",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/staticlibs/ccronexpr"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "re1.5@0.9",
+      "name": "re1.5",
+      "purl": "pkg:generic/re1.5@0.9?vcs_url=git+https://github.com/pfalcon/re1.5",
+      "properties": [
+        {
+          "name": "dd:evidence-source",
+          "value": "lib/libesp32/re1.5/library.json"
+        },
+        {
+          "name": "dd:provenance",
+          "value": "manifest/repo-scan; included in build-attested BOM (library identity from manifests; link status below)"
+        },
+        {
+          "name": "dd:build-env",
+          "value": "tasmota-kettle"
+        },
+        {
+          "name": "dd:build-linked",
+          "value": "false"
+        }
+      ],
+      "version": "0.9",
+      "description": "Regex",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/pfalcon/re1.5"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "Micro-RTSP@0.1.6",
+      "name": "Micro-RTSP",
+      "purl": "pkg:generic/Micro-RTSP@0.1.6?vcs_url=git+https://github.com/geeksville/Micro-RTSP.git",
+      "properties": [
+        {
+          "name": "dd:evidence-source",
+          "value": "lib/libesp32/rtsp/library.json;lib/libesp32/rtsp/library.properties"
+        },
+        {
+          "name": "dd:provenance",
+          "value": "manifest/repo-scan; included in build-attested BOM (library identity from manifests; link status below)"
+        },
+        {
+          "name": "dd:build-env",
+          "value": "tasmota-kettle"
+        },
+        {
+          "name": "dd:build-linked",
+          "value": "false"
+        }
+      ],
+      "version": "0.1.6",
+      "description": "Mikro RTSP server",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/geeksville/Micro-RTSP.git"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "esp-nimble-cpp@1.4.1",
+      "name": "esp-nimble-cpp",
+      "purl": "pkg:generic/esp-nimble-cpp@1.4.1?vcs_url=git+https://github.com/h2zero/esp-nimble-cpp",
+      "properties": [
+        {
+          "name": "dd:evidence-source",
+          "value": "lib/libesp32_div/esp-nimble-cpp/library.json;lib/libesp32_div/esp-nimble-cpp/library.properties"
+        },
+        {
+          "name": "dd:provenance",
+          "value": "manifest/repo-scan; included in build-attested BOM (library identity from manifests; link status below)"
+        },
+        {
+          "name": "dd:build-env",
+          "value": "tasmota-kettle"
+        },
+        {
+          "name": "dd:build-linked",
+          "value": "false"
+        }
+      ],
+      "version": "1.4.1",
+      "description": "Bluetooth low energy (BLE) library for esp32 based on NimBLE",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/h2zero/esp-nimble-cpp"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "epdiy@1.0.0",
+      "name": "epdiy",
+      "purl": "pkg:generic/epdiy@1.0.0?vcs_url=git+https://github.com/vroland/epdiy",
+      "properties": [
+        {
+          "name": "dd:evidence-source",
+          "value": "lib/libesp32_eink/epdiy/library.properties"
+        },
+        {
+          "name": "dd:provenance",
+          "value": "manifest/repo-scan; included in build-attested BOM (library identity from manifests; link status below)"
+        },
+        {
+          "name": "dd:build-env",
+          "value": "tasmota-kettle"
+        },
+        {
+          "name": "dd:build-linked",
+          "value": "false"
+        }
+      ],
+      "version": "1.0.0",
+      "description": "See https://github.com/vroland/epdiy for details.",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/vroland/epdiy"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "LVGL_assets@7.0",
+      "name": "LVGL_assets",
+      "purl": "pkg:generic/LVGL_assets@7.0",
+      "properties": [
+        {
+          "name": "dd:evidence-source",
+          "value": "lib/libesp32_lvgl/LVGL_assets/library.json"
+        },
+        {
+          "name": "dd:provenance",
+          "value": "manifest/repo-scan; included in build-attested BOM (library identity from manifests; link status below)"
+        },
+        {
+          "name": "dd:build-env",
+          "value": "tasmota-kettle"
+        },
+        {
+          "name": "dd:build-linked",
+          "value": "false"
+        }
+      ],
+      "version": "7.0",
+      "description": "Assets for LVGL on ESP32",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT License"
+          }
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "freetype@2.13.2",
+      "name": "freetype",
+      "purl": "pkg:generic/freetype@2.13.2?vcs_url=git+https://gitlab.freedesktop.org/freetype",
+      "properties": [
+        {
+          "name": "dd:evidence-source",
+          "value": "lib/libesp32_lvgl/freetype/library.json"
+        },
+        {
+          "name": "dd:provenance",
+          "value": "manifest/repo-scan; included in build-attested BOM (library identity from manifests; link status below)"
+        },
+        {
+          "name": "dd:build-env",
+          "value": "tasmota-kettle"
+        },
+        {
+          "name": "dd:build-linked",
+          "value": "false"
+        }
+      ],
+      "version": "2.13.2",
+      "description": "Software library to render fonts",
+      "licenses": [
+        {
+          "license": {
+            "name": "FreeType License"
+          }
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://gitlab.freedesktop.org/freetype"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "Berry mapping to LVGL@1.0",
+      "name": "Berry mapping to LVGL",
+      "purl": "pkg:generic/Berry%20mapping%20to%20LVGL@1.0?vcs_url=git+https://github.com/lvgl/lv_binding_berry",
+      "properties": [
+        {
+          "name": "dd:evidence-source",
+          "value": "lib/libesp32_lvgl/lv_binding_berry/library.json"
+        },
+        {
+          "name": "dd:provenance",
+          "value": "manifest/repo-scan; included in build-attested BOM (library identity from manifests; link status below)"
+        },
+        {
+          "name": "dd:build-env",
+          "value": "tasmota-kettle"
+        },
+        {
+          "name": "dd:build-linked",
+          "value": "false"
+        }
+      ],
+      "version": "1.0",
+      "description": "Mapping of LVGL functions to Berry. Currently supporting LVGL 8.2.0",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/lvgl/lv_binding_berry"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "HASPmota@1.0",
+      "name": "HASPmota",
+      "purl": "pkg:generic/HASPmota@1.0",
+      "properties": [
+        {
+          "name": "dd:evidence-source",
+          "value": "lib/libesp32_lvgl/lv_haspmota/library.json"
+        },
+        {
+          "name": "dd:provenance",
+          "value": "manifest/repo-scan; included in build-attested BOM (library identity from manifests; link status below)"
+        },
+        {
+          "name": "dd:build-env",
+          "value": "tasmota-kettle"
+        },
+        {
+          "name": "dd:build-linked",
+          "value": "false"
+        }
+      ],
+      "version": "1.0",
+      "description": "HASPmota is a tool for easy display interfaces, inspired from OpenHASP"
+    },
+    {
+      "type": "library",
+      "bom-ref": "lvgl@9.2.0",
+      "name": "lvgl",
+      "purl": "pkg:generic/lvgl@9.2.0?vcs_url=git+https://github.com/lvgl/lvgl.git",
+      "properties": [
+        {
+          "name": "dd:evidence-source",
+          "value": "lib/libesp32_lvgl/lvgl/library.json;lib/libesp32_lvgl/lvgl/library.properties"
+        },
+        {
+          "name": "dd:provenance",
+          "value": "manifest/repo-scan; included in build-attested BOM (library identity from manifests; link status below)"
+        },
+        {
+          "name": "dd:build-env",
+          "value": "tasmota-kettle"
+        },
+        {
+          "name": "dd:build-linked",
+          "value": "false"
+        }
+      ],
+      "version": "9.2.0",
+      "description": "Graphics library to create embedded GUI with easy-to-use graphical elements, beautiful visual effects and low memory footprint. It offers anti-aliasing, opacity, and animations using only one frame buffer.",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/lvgl/lvgl.git"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "MElFreqencyExtractor@1.0",
+      "name": "MElFreqencyExtractor",
+      "purl": "pkg:generic/MElFreqencyExtractor@1.0",
+      "properties": [
+        {
+          "name": "dd:evidence-source",
+          "value": "lib/libesp32_ml/mel_freq_extractor/library.properties"
+        },
+        {
+          "name": "dd:provenance",
+          "value": "manifest/repo-scan; included in build-attested BOM (library identity from manifests; link status below)"
+        },
+        {
+          "name": "dd:build-env",
+          "value": "tasmota-kettle"
+        },
+        {
+          "name": "dd:build-linked",
+          "value": "false"
+        }
+      ],
+      "version": "1.0",
+      "description": "Uses ESP-DSP library."
+    },
+    {
+      "type": "library",
+      "bom-ref": "tf_lite_esp32@0.0.1",
+      "name": "tf_lite_esp32",
+      "purl": "pkg:generic/tf_lite_esp32@0.0.1",
+      "properties": [
+        {
+          "name": "dd:evidence-source",
+          "value": "lib/libesp32_ml/tf_lite_esp32/library.json;lib/libesp32_ml/tf_lite_esp32/library.properties"
+        },
+        {
+          "name": "dd:provenance",
+          "value": "manifest/repo-scan; included in build-attested BOM (library identity from manifests; link status below)"
+        },
+        {
+          "name": "dd:version-conflict",
+          "value": "library.json=0.0.1; library.properties=0.0.1-ALPHA"
+        },
+        {
+          "name": "dd:build-env",
+          "value": "tasmota-kettle"
+        },
+        {
+          "name": "dd:build-linked",
+          "value": "false"
+        }
+      ],
+      "version": "0.0.1",
+      "description": "Tensor flow lite for Arduino-ESP32"
+    }
+  ]
+}

@@ -1,17 +1,24 @@
 # SBOM generation (KettleCompanion / Tasmota)
 
-## What this produces
+## Artifacts
 
 | Artifact | How | Attestation |
 |----------|-----|-------------|
-| `sbom/kettlecompanion-libs.cdx.json` | `generate_lib_cyclonedx.py` over `lib/**/library.json` + `library.properties` | Manifest/repo-scan — **not** build-attested |
-| Syft filesystem CDX (CI) | `anchore/sbom-action` | Scan of checkout — complementary; weak on Arduino libs |
+| `sbom/kettlecompanion-libs.cdx.json` | Manifest scan of `lib/**` | Not build-attested |
+| `sbom/tasmota-kettle.build-attested.cdx.json` | `pio run -e tasmota-kettle` + PIO packages + manifests + firmware SHA-256 | Build-attested |
+| `sbom/tasmota-kettle-minimal.build-attested.cdx.json` | Same for minimal env | Build-attested |
 
-Preloop CRA audits need **build-attested** SBOMs (exact versions from a real `pio` build). This workflow is the first CI gate so releases always emit an inventory; a later step should run after `pio run -e tasmota-kettle` and merge PlatformIO package locks.
+Build-attested BOM records: git SHA, env, firmware path/size/SHA-256, exact PlatformIO platform/tool versions from `pio pkg list`, and `dd:build-linked` on vendored libs matched from the LDF dependency graph.
+
+JPEGDEC lives under `libesp32/` — ESP8266 kettle builds will list it as present in-tree but `dd:build-linked=false`.
 
 ## Local
 
 ```bash
-python3 tools/sbom/generate_lib_cyclonedx.py --root . --out sbom/kettlecompanion-libs.cdx.json
-python3 tools/sbom/check_min_elements.py sbom/kettlecompanion-libs.cdx.json
+pio run -e tasmota-kettle 2>&1 | tee sbom/pio-run-tasmota-kettle.log
+PYTHONPATH=tools/sbom python3 tools/sbom/generate_build_attested_cyclonedx.py \
+  --root . --env tasmota-kettle \
+  --out sbom/tasmota-kettle.build-attested.cdx.json \
+  --firmware build_output/firmware/tasmota-kettle.bin \
+  --ldf-log sbom/pio-run-tasmota-kettle.log
 ```

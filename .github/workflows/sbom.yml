@@ -39,11 +39,52 @@ jobs:
         uses: actions/upload-artifact@v5
         with:
           name: kettlecompanion-libs-cdx
-          path: |
-            sbom/kettlecompanion-libs.cdx.json
+          path: sbom/kettlecompanion-libs.cdx.json
           if-no-files-found: error
 
-  # Filesystem scan — complementary; mostly catches Actions/tooling, not Arduino libs.
+  build-attested-cyclonedx:
+    name: Build-attested CycloneDX (tasmota-kettle)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install PlatformIO
+        run: pip install -U "platformio>=6.1.19"
+
+      - name: Build firmware
+        env:
+          PLATFORMIO_BUILD_FLAGS: "-DBUILD_TYPE=devel"
+        run: |
+          set -o pipefail
+          mkdir -p sbom
+          pio run -e tasmota-kettle 2>&1 | tee sbom/pio-run-tasmota-kettle.log
+
+      - name: Generate build-attested CycloneDX
+        run: |
+          PYTHONPATH=tools/sbom python3 tools/sbom/generate_build_attested_cyclonedx.py \
+            --root . \
+            --env tasmota-kettle \
+            --out sbom/tasmota-kettle.build-attested.cdx.json \
+            --firmware build_output/firmware/tasmota-kettle.bin \
+            --ldf-log sbom/pio-run-tasmota-kettle.log \
+            --name kettlecompanion-tasmota
+          python3 tools/sbom/check_min_elements.py sbom/tasmota-kettle.build-attested.cdx.json
+
+      - name: Upload build-attested SBOM
+        uses: actions/upload-artifact@v5
+        with:
+          name: tasmota-kettle-build-attested-cdx
+          path: |
+            sbom/tasmota-kettle.build-attested.cdx.json
+            sbom/pio-run-tasmota-kettle.log
+          if-no-files-found: error
+
   syft-filesystem:
     name: Syft filesystem scan
     runs-on: ubuntu-latest
@@ -51,7 +92,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
 
-      - name: Generate Syft CycloneDX + SPDX
+      - name: Generate Syft CycloneDX
         uses: anchore/sbom-action@v0
         with:
           path: .
