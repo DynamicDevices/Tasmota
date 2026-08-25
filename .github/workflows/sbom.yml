@@ -1,0 +1,61 @@
+name: SBOM
+
+on:
+  push:
+    branches: [kettlecompanion, main, master]
+  pull_request:
+    branches: [kettlecompanion, main, master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  lib-manifest-cyclonedx:
+    name: Vendored-lib CycloneDX
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Generate CycloneDX from lib manifests
+        run: |
+          mkdir -p sbom
+          python3 tools/sbom/generate_lib_cyclonedx.py \
+            --root . \
+            --out sbom/kettlecompanion-libs.cdx.json \
+            --name kettlecompanion-tasmota \
+            --version "${GITHUB_SHA}"
+
+      - name: Gate version coverage
+        run: python3 tools/sbom/check_min_elements.py sbom/kettlecompanion-libs.cdx.json
+
+      - name: Upload SBOM artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: kettlecompanion-libs-cdx
+          path: |
+            sbom/kettlecompanion-libs.cdx.json
+          if-no-files-found: error
+
+  # Filesystem scan — complementary; mostly catches Actions/tooling, not Arduino libs.
+  syft-filesystem:
+    name: Syft filesystem scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Generate Syft CycloneDX + SPDX
+        uses: anchore/sbom-action@v0
+        with:
+          path: .
+          format: cyclonedx-json
+          artifact-name: kettlecompanion-syft.cdx.json
+          output-file: sbom/kettlecompanion-syft.cdx.json
+          upload-artifact: true
